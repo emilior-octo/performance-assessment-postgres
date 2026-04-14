@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Area Admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1100px; margin: 40px auto; padding: 0 16px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; }
+    th { background: #f6f6f6; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .muted { color: #666; }
+    button { padding: 10px 14px; border: 0; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>Area Admin</h1>
+      <p class="muted"><%= organizationName %></p>
+    </div>
+
+    <form method="POST" action="/admin/logout">
+      <button type="submit">Logout</button>
+    </form>
+  </div>
+
+  <% if (!submissions.length) { %>
+    <p>Nessuna compilazione presente.</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Email</th>
+          <th>Ruolo</th>
+          <th>Data</th>
+          <th>Score medio</th>
+          <th>Orientamento</th>
+          <th>Punti forti</th>
+          <th>Azione</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% submissions.forEach(function(item) { %>
+          <tr>
+            <td><%= item.name %></td>
+            <td><%= item.email || "-" %></td>
+            <td><%= item.role %></td>
+            <td><%= new Date(item.createdAt).toLocaleString("it-IT") %></td>
+            <td><%= item.avgScore ?? "-" %></td>
+            <td><%= item.orientation %></td>
+            <td><%= item.topTraits.join(", ") || "-" %></td>
+            <td><a href="/admin/<%= item.id %>">Apri</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } %>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dettaglio Assessment</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .trait { border: 1px solid #eee; border-radius: 10px; padding: 16px; }
+    .muted { color: #666; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .actions a { margin-left: 12px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <p><a href="/admin">← Torna alla lista</a></p>
+    <div class="actions">
+      <a href="/admin/<%= submission.id %>/pdf" target="_blank">Apri PDF</a>
+    </div>
+  </div>
+
+  <h1>Dettaglio Assessment</h1>
+  <p class="muted"><strong>Azienda:</strong> <%= organizationName %></p>
+
+  <div class="card">
+    <h2>Dati compilazione</h2>
+    <ul>
+      <li><strong>ID:</strong> <%= submission.id %></li>
+      <li><strong>Nome:</strong> <%= submission.name %></li>
+      <li><strong>Email:</strong> <%= submission.email || "-" %></li>
+      <li><strong>Ruolo:</strong> <%= submission.role %></li>
+      <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Relazione di sintesi del profilo comportamentale</h2>
+    <p><strong>Score medio:</strong> <%= submission.analysis.avgScore %></p>
+    <p><strong>Fascia media:</strong> <%= submission.analysis.avgRange %></p>
+    <p><strong>Lettura sintetica del profilo:</strong> Il profilo evidenzia un <%= submission.analysis.summary.orientation %>, con una combinazione di tratti che suggeriscono specifiche modalità di funzionamento nel contesto lavorativo.</p>
+    <p><strong>Lettura rispetto al ruolo:</strong> <%= submission.analysis.summary.roleComment %> Questa indicazione rappresenta una prima chiave interpretativa e sarà oggetto di approfondimento in fase di restituzione.</p>
+    <p><strong>Punti forti emergenti:</strong> <%= submission.analysis.summary.topTraits.join(", ") %></p>
+    <p><strong>Aree più deboli:</strong> <%= submission.analysis.summary.weakTraits.join(", ") %></p>
+
+    <p style="margin-top: 16px; font-size: 14px; color: #666;">
+      La presente analisi rappresenta una prima lettura strutturata dei tratti emersi dal questionario e non costituisce una valutazione definitiva. I risultati saranno approfonditi e contestualizzati durante la fase di restituzione e confronto.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Analisi per tratto</h2>
+    <div class="grid">
+      <% submission.analysis.traits.forEach(function(item) { %>
+        <div class="trait">
+          <h3><%= item.name %></h3>
+          <p><strong>Score:</strong> <%= item.score %></p>
+          <p><strong>Fascia:</strong> <%= item.range %></p>
+        </div>
+      <% }) %>
+    </div>
+  </div>
+</body>
+</html>

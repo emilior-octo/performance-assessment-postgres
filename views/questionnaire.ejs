@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Questionario</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .field { margin-bottom: 16px; }
+    .options label { display: block; margin: 8px 0; }
+    button { padding: 12px 20px; border: 0; border-radius: 8px; cursor: pointer; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Questionario</h1>
+  <p class="muted"><strong>Azienda:</strong> <%= companyName %></p>
+  <p class="muted"><strong>Ruolo target:</strong> <%= requestedRole %></p>
+  <p>Compila il questionario in modo spontaneo e sincero.</p>
+
+  <form method="POST" action="/q/<%= token %>">
+    <input type="hidden" name="requestedRole" value="<%= requestedRole %>" />
+
+    <div class="card">
+      <div class="field">
+        <label for="respondentName">Nome</label><br />
+        <input id="respondentName" name="respondentName" type="text" required />
+      </div>
+
+      <div class="field">
+        <label for="respondentEmail">Email</label><br />
+        <input id="respondentEmail" name="respondentEmail" type="email" />
+      </div>
+    </div>
+
+    <% const questions = [
+      ["q1", "Mi considero una persona determinata."],
+      ["q2", "Pianifico e organizzo bene le attività."],
+      ["q3", "Riesco a mantenere lucidità anche sotto pressione."],
+      ["q4", "Riesco a comprendere bene le esigenze delle altre persone."],
+      ["q5", "Mi viene naturale entrare in relazione con persone nuove."],
+      ["q6", "Le persone tendono a vedermi come un punto di riferimento."],
+      ["q7", "Lavoro bene in squadra e valorizzo il contributo degli altri."],
+      ["q8", "Mi assumo responsabilità in prima persona."],
+      ["q9", "Quando incontro difficoltà, tendo a insistere fino a trovare una soluzione."],
+      ["q10", "Riesco a gestire più attività mantenendo ordine e priorità."],
+      ["q11", "In situazioni stressanti riesco a mantenere controllo emotivo."],
+      ["q12", "Riesco a mettermi facilmente nei panni degli altri."],
+      ["q13", "Mi sento a mio agio nel parlare davanti ad altre persone."],
+      ["q14", "Tendo a prendere iniziativa quando serve guidare."],
+      ["q15", "Mi impegno per far funzionare il gruppo in modo efficace."],
+      ["q16", "Mi sento direttamente responsabile dei risultati che ottengo."]
+    ]; %>
+
+    <% questions.forEach(function(q, idx) { %>
+      <div class="card">
+        <p><strong><%= idx + 1 %>. <%= q[1] %></strong></p>
+        <div class="options">
+          <label><input type="radio" name="<%= q[0] %>" value="agree" required /> Sono d’accordo</label>
+          <label><input type="radio" name="<%= q[0] %>" value="uncertain" /> Incerto</label>
+          <label><input type="radio" name="<%= q[0] %>" value="disagree" /> Non sono d’accordo</label>
+        </div>
+      </div>
+    <% }) %>
+
+    <button type="submit">Invia questionario</button>
+  </form>
+</body>
+</html>

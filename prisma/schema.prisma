@@ -1,0 +1,69 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Organization {
+  id              String           @id @default(cuid())
+  name            String
+  slug            String           @unique
+  createdAt       DateTime         @default(now())
+  admins          AdminUser[]
+  assessmentLinks AssessmentLink[]
+  assessments     Assessment[]
+}
+
+model AdminUser {
+  id             String       @id @default(cuid())
+  organizationId String
+  name           String
+  email          String       @unique
+  passwordHash   String
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model AssessmentLink {
+  id             String       @id @default(cuid())
+  organizationId String
+  token          String       @unique
+  label          String
+  requestedRole  String
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessments    Assessment[]
+}
+
+model Assessment {
+  id               String            @id @default(cuid())
+  organizationId   String
+  assessmentLinkId String
+  respondentName   String
+  respondentEmail  String?
+  requestedRole    String
+  createdAt        DateTime          @default(now())
+
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assessmentLink   AssessmentLink    @relation(fields: [assessmentLinkId], references: [id], onDelete: Cascade)
+  result           AssessmentResult?
+}
+
+model AssessmentResult {
+  id           String      @id @default(cuid())
+  assessmentId String      @unique
+  avgScore     Int
+  avgRange     String
+  orientation  String
+  roleComment  String
+  traitsJson   Json
+  createdAt    DateTime    @default(now())
+
+  assessment   Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+}
