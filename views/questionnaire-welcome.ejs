@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Questionari disponibili</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 860px;
+      margin: 50px auto;
+      padding: 0 16px;
+      color: #1f1f1f;
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 24px;
+      background: #fff;
+    }
+
+    .muted {
+      color: #666;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    button, .btn {
+      display: inline-block;
+      padding: 12px 18px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      background: #111;
+      color: #fff;
+    }
+
+    .secondary {
+      background: #f5f5f5;
+      color: #111;
+      border: 1px solid #ddd;
+    }
+
+    .link-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .top-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 16px;
+    }
+
+    code {
+      background: #f6f6f6;
+      padding: 2px 6px;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-actions">
+    <a class="btn secondary" href="/admin/login">Admin Login</a>
+  </div>
+
+  <div class="card">
+    <h1>Welcome questionari</h1>
+    <p class="muted">
+      Da questa pagina puoi aprire rapidamente il questionario corretto in base al ruolo.
+      Il compilatore vedrà solo il questionario e la pagina finale di conferma.
+      Report e PDF restano visibili solo nell’area admin.
+    </p>
+    <p class="muted"><strong>Azienda:</strong> <%= companyName %></p>
+  </div>
+
+  <div class="card">
+    <h2>Apri questionario per ruolo</h2>
+
+    <div class="field">
+      <label for="roleSelect">Seleziona ruolo</label><br />
+      <select id="roleSelect">
+        <% links.forEach(function(link, idx) { %>
+          <option value="<%= link.url %>" <%= idx === 0 ? "selected" : "" %>>
+            <%= link.label %>
+          </option>
+        <% }) %>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="generatedUrl">Link generato</label><br />
+      <input id="generatedUrl" type="text" readonly value="<%= links[0]?.url || '' %>" />
+    </div>
+
+    <div class="inline-actions">
+      <a id="openLinkBtn" class="btn" href="<%= links[0]?.url || '#' %>" target="_blank">
+        Apri questionario
+      </a>
+      <button id="copyLinkBtn" type="button" class="btn secondary">
+        Copia link
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Link diretti disponibili</h2>
+    <ul class="link-list">
+      <% links.forEach(function(link) { %>
+        <li style="margin-bottom: 10px;">
+          <strong><%= link.label %></strong><br />
+          <a href="<%= link.url %>" target="_blank"><%= link.url %></a><br />
+          <span class="muted">Token: <code><%= link.token %></code></span>
+        </li>
+      <% }) %>
+    </ul>
+  </div>
+
+  <script>
+    const roleSelect = document.getElementById("roleSelect");
+    const generatedUrl = document.getElementById("generatedUrl");
+    const openLinkBtn = document.getElementById("openLinkBtn");
+    const copyLinkBtn = document.getElementById("copyLinkBtn");
+
+    function syncSelectedLink() {
+      const url = roleSelect.value;
+      generatedUrl.value = url;
+      openLinkBtn.href = url;
+    }
+
+    roleSelect.addEventListener("change", syncSelectedLink);
+
+    copyLinkBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(generatedUrl.value);
+        copyLinkBtn.textContent = "Link copiato";
+        setTimeout(() => {
+          copyLinkBtn.textContent = "Copia link";
+        }, 1500);
+      } catch (e) {
+        alert("Impossibile copiare il link automaticamente.");
+      }
+    });
+
+    syncSelectedLink();
+  </script>
+</body>
+</html>

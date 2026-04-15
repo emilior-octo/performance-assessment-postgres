@@ -17,16 +17,30 @@ app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
-app.use(session({
-  secret: process.env.SESSION_SECRET || "change-me-now",
-  resave: false,
-  saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: "lax", secure: false, maxAge: 1000 * 60 * 60 * 8 }
-}));
-app.use((req, res, next) => { res.locals.currentAdmin = req.session?.admin || null; next(); });
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "change-me-now",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 8
+    }
+  })
+);
+
+app.use((req, res, next) => {
+  res.locals.currentAdmin = req.session?.admin || null;
+  next();
+});
 
 function requireAdmin(req, res, next) {
-  if (!req.session?.admin) return res.redirect("/admin/login");
+  if (!req.session?.admin) {
+    return res.redirect("/admin/login");
+  }
   next();
 }
 
@@ -51,13 +65,18 @@ function avg(arr) {
 
 function buildTrait(name, answers) {
   const finalScore = avg(answers.map(score));
-  return { name, answers, score: finalScore, range: range(finalScore) };
+  return {
+    name,
+    answers,
+    score: finalScore,
+    range: range(finalScore)
+  };
 }
 
 function buildSummary(traits, role) {
   const sorted = [...traits].sort((a, b) => b.score - a.score);
-  const top = sorted.slice(0, 3).map(t => t.name);
-  const low = [...sorted].reverse().slice(0, 2).map(t => t.name);
+  const top = sorted.slice(0, 3).map((t) => t.name);
+  const low = [...sorted].reverse().slice(0, 2).map((t) => t.name);
 
   let orientation = "profilo equilibrato";
   const topSet = new Set(top);
@@ -70,30 +89,84 @@ function buildSummary(traits, role) {
     orientation = "orientamento organizzativo / coordinamento";
   }
 
-  let roleComment = "Il profilo richiede ulteriori elementi per una lettura più precisa rispetto al ruolo.";
+  let roleComment =
+    "Il profilo richiede ulteriori elementi per una lettura più precisa rispetto al ruolo.";
 
   if (role === "manager") {
     roleComment =
-      (topSet.has("Leadership") || topSet.has("Responsabilità") || topSet.has("Organizzazione"))
+      topSet.has("Leadership") ||
+      topSet.has("Responsabilità") ||
+      topSet.has("Organizzazione")
         ? "Il profilo mostra elementi coerenti con un ruolo manageriale, soprattutto sul piano della guida, della responsabilità e della struttura."
         : "Per un ruolo manageriale sarà utile approfondire in particolare guida, responsabilità e capacità organizzativa.";
   } else if (role === "sales") {
     roleComment =
-      (topSet.has("Estroversione") || topSet.has("Determinazione") || topSet.has("Empatia"))
+      topSet.has("Estroversione") ||
+      topSet.has("Determinazione") ||
+      topSet.has("Empatia")
         ? "Il profilo mostra elementi interessanti per un ruolo commerciale, soprattutto su spinta, relazione e influenza."
         : "Per un ruolo commerciale sarà utile approfondire soprattutto componente relazionale, iniziativa e orientamento al risultato.";
   } else if (role === "amministrativo") {
     roleComment =
-      (topSet.has("Organizzazione") || topSet.has("Collaborazione") || topSet.has("Responsabilità"))
+      topSet.has("Organizzazione") ||
+      topSet.has("Collaborazione") ||
+      topSet.has("Responsabilità")
         ? "Il profilo mostra elementi coerenti con un ruolo amministrativo, soprattutto su metodo, affidabilità e continuità."
         : "Per un ruolo amministrativo sarà utile approfondire soprattutto metodo, precisione e affidabilità.";
   }
 
-  return { orientation, topTraits: top, weakTraits: low, roleComment };
+  return {
+    orientation,
+    topTraits: top,
+    weakTraits: low,
+    roleComment
+  };
 }
 
-app.get("/", (_req, res) => res.redirect("/admin/login"));
+/**
+ * HOME PUBBLICA QUESTIONARI
+ */
+app.get("/", (_req, res) => {
+  res.redirect("/questionnaires");
+});
 
+app.get("/questionnaires", async (_req, res) => {
+  const companySlug = process.env.COMPANY_SLUG || "demo-company";
+  const publicBaseUrl =
+    process.env.PUBLIC_BASE_URL ||
+    `http://127.0.0.1:${PORT}`;
+
+  const links = [
+    {
+      role: "manager",
+      label: "Manager",
+      token: `${companySlug}-manager-001`
+    },
+    {
+      role: "sales",
+      label: "Sales",
+      token: `${companySlug}-sales-001`
+    },
+    {
+      role: "amministrativo",
+      label: "Amministrativo",
+      token: `${companySlug}-amministrativo-001`
+    }
+  ].map((item) => ({
+    ...item,
+    url: `${publicBaseUrl}/q/${item.token}`
+  }));
+
+  res.render("questionnaire-welcome", {
+    links,
+    companyName: process.env.COMPANY_NAME || "Demo Company",
+    publicBaseUrl
+  });
+});
+
+/**
+ * QUESTIONARIO PUBBLICO
+ */
 app.get("/q/:token", async (req, res) => {
   const link = await prisma.assessmentLink.findUnique({
     where: { token: req.params.token },
@@ -133,7 +206,7 @@ app.post("/q/:token", async (req, res) => {
       buildTrait("Responsabilità", [req.body.q8, req.body.q16])
     ];
 
-    const avgScore = avg(traits.map(t => t.score));
+    const avgScore = avg(traits.map((t) => t.score));
     const requestedRole = req.body.requestedRole || link.requestedRole;
     const summary = buildSummary(traits, requestedRole);
 
@@ -154,7 +227,11 @@ app.post("/q/:token", async (req, res) => {
         avgRange: range(avgScore),
         orientation: summary.orientation,
         roleComment: summary.roleComment,
-        traitsJson: { traits, topTraits: summary.topTraits, weakTraits: summary.weakTraits }
+        traitsJson: {
+          traits,
+          topTraits: summary.topTraits,
+          weakTraits: summary.weakTraits
+        }
       }
     });
 
@@ -165,24 +242,37 @@ app.post("/q/:token", async (req, res) => {
   }
 });
 
-app.get("/thank-you", (_req, res) => res.render("thank-you"));
-app.get("/admin/login", (_req, res) => res.render("admin-login", { error: null }));
+app.get("/thank-you", (_req, res) => {
+  res.render("thank-you");
+});
+
+/**
+ * ADMIN AUTH
+ */
+app.get("/admin/login", (_req, res) => {
+  res.render("admin-login", { error: null });
+});
 
 app.post("/admin/login", async (req, res) => {
   const { email, password } = req.body;
+
   const admin = await prisma.adminUser.findUnique({
     where: { email },
     include: { organization: true }
   });
 
   if (!admin) {
-    return res.status(401).render("admin-login", { error: "Credenziali non valide." });
+    return res.status(401).render("admin-login", {
+      error: "Credenziali non valide."
+    });
   }
 
   const ok = await bcrypt.compare(password, admin.passwordHash);
 
   if (!ok) {
-    return res.status(401).render("admin-login", { error: "Credenziali non valide." });
+    return res.status(401).render("admin-login", {
+      error: "Credenziali non valide."
+    });
   }
 
   req.session.admin = {
@@ -197,14 +287,25 @@ app.post("/admin/login", async (req, res) => {
 });
 
 app.post("/admin/logout", (req, res) => {
-  req.session.destroy(() => res.redirect("/admin/login"));
+  req.session.destroy(() => {
+    res.redirect("/admin/login");
+  });
 });
 
+/**
+ * AREA ADMIN
+ */
 app.get("/admin", requireAdmin, async (req, res) => {
   const assessments = await prisma.assessment.findMany({
-    where: { organizationId: req.session.admin.organizationId },
-    include: { result: true },
-    orderBy: { createdAt: "desc" }
+    where: {
+      organizationId: req.session.admin.organizationId
+    },
+    include: {
+      result: true
+    },
+    orderBy: {
+      createdAt: "desc"
+    }
   });
 
   const submissions = assessments.map((item) => {
@@ -233,7 +334,9 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       id: req.params.id,
       organizationId: req.session.admin.organizationId
     },
-    include: { result: true }
+    include: {
+      result: true
+    }
   });
 
   if (!assessment) {
@@ -267,13 +370,18 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   });
 });
 
+/**
+ * PDF REPORT
+ */
 app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
       id: req.params.id,
       organizationId: req.session.admin.organizationId
     },
-    include: { result: true }
+    include: {
+      result: true
+    }
   });
 
   if (!assessment) {
@@ -283,16 +391,24 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const payload = assessment.result?.traitsJson || {};
   const traits = Array.isArray(payload.traits) ? payload.traits : [];
 
-  const doc = new PDFDocument({ margin: 50, size: "A4" });
+  const doc = new PDFDocument({
+    margin: 50,
+    size: "A4"
+  });
 
   res.setHeader("Content-Type", "application/pdf");
-  res.setHeader("Content-Disposition", `inline; filename=report-${assessment.id}.pdf`);
+  res.setHeader(
+    "Content-Disposition",
+    `inline; filename=report-${assessment.id}.pdf`
+  );
 
   doc.pipe(res);
 
   doc.fontSize(22).text("Performance Assessment Report", { align: "center" });
   doc.moveDown(0.5);
-  doc.fontSize(10).fillColor("#666").text(req.session.admin.organizationName, { align: "center" });
+  doc.fontSize(10).fillColor("#666").text(req.session.admin.organizationName, {
+    align: "center"
+  });
   doc.fillColor("black");
   doc.moveDown();
 
