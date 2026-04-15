@@ -124,6 +124,13 @@ function buildSummary(traits, role) {
 }
 
 /**
+ * ROUTE DI CHECK VERSIONE DEPLOY
+ */
+app.get("/ping-version", (_req, res) => {
+  res.send("questionnaires-live-v1");
+});
+
+/**
  * HOME PUBBLICA QUESTIONARI
  */
 app.get("/", (_req, res) => {
