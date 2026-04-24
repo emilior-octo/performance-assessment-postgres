@@ -56,14 +56,23 @@ model Assessment {
 }
 
 model AssessmentResult {
-  id           String      @id @default(cuid())
-  assessmentId String      @unique
-  avgScore     Int
-  avgRange     String
-  orientation  String
-  roleComment  String
-  traitsJson   Json
-  createdAt    DateTime    @default(now())
+  id                        String     @id @default(cuid())
+  assessmentId              String     @unique
 
-  assessment   Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  avgScore                  Int
+  avgRange                  String
+  orientation               String
+  roleComment               String
+
+  reliabilityScore          Int?
+  reliabilityLabel          String?
+
+  traitsJson                Json
+  expandedReportJson        Json?
+  expandedReportGeneratedAt DateTime?
+
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+
+  assessment                Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
 }
