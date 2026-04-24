@@ -55,6 +55,112 @@
       margin-bottom: 4px;
     }
 
+    .histogram {
+      margin: 18px 0 24px;
+      padding: 18px;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+
+    .histogram-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .histogram-help {
+      margin: 0 0 16px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .histogram-scale {
+      display: grid;
+      grid-template-columns: 120px 1fr 44px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #777;
+    }
+
+    .histogram-scale-line {
+      position: relative;
+      height: 18px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .histogram-scale-line::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: -1px;
+      width: 1px;
+      background: #aaa;
+    }
+
+    .histogram-scale-labels {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .histogram-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 44px;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .histogram-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .histogram-track {
+      position: relative;
+      height: 22px;
+      background: #f1f1f1;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #e5e5e5;
+    }
+
+    .histogram-track::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #999;
+      z-index: 2;
+    }
+
+    .histogram-bar {
+      position: absolute;
+      top: 3px;
+      height: 14px;
+      border-radius: 999px;
+    }
+
+    .histogram-bar-positive {
+      left: 50%;
+      background: #111;
+    }
+
+    .histogram-bar-negative {
+      right: 50%;
+      background: #999;
+    }
+
+    .histogram-score {
+      font-size: 14px;
+      font-weight: 700;
+      text-align: right;
+    }
+
     form { margin: 0; }
 
     @media (max-width: 700px) {
@@ -65,6 +171,20 @@
 
       .grid {
         grid-template-columns: 1fr;
+      }
+
+      .histogram-scale,
+      .histogram-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .histogram-score {
+        text-align: left;
+      }
+
+      .histogram-name {
+        font-size: 13px;
       }
     }
   </style>
@@ -161,6 +281,46 @@
     <h2>Analisi per tratto</h2>
 
     <% if (submission.analysis.traits && submission.analysis.traits.length) { %>
+      <div class="histogram">
+        <h3 class="histogram-title">Distribuzione dei punteggi</h3>
+        <p class="histogram-help">
+          Scala da -30 a +30. Lo zero rappresenta il punto neutro; le barre verso destra indicano punteggi positivi, quelle verso sinistra aree da presidiare.
+        </p>
+
+        <div class="histogram-scale">
+          <div></div>
+          <div>
+            <div class="histogram-scale-line"></div>
+            <div class="histogram-scale-labels">
+              <span>-30</span>
+              <span>0</span>
+              <span>+30</span>
+            </div>
+          </div>
+          <div></div>
+        </div>
+
+        <% submission.analysis.traits.forEach(function(item) {
+          const rawScore = Number(item.score || 0);
+          const safeScore = Math.max(-30, Math.min(30, rawScore));
+          const width = Math.abs(safeScore) / 30 * 50;
+          const isPositive = safeScore >= 0;
+        %>
+          <div class="histogram-row">
+            <div class="histogram-name"><%= item.name %></div>
+
+            <div class="histogram-track">
+              <div
+                class="histogram-bar <%= isPositive ? 'histogram-bar-positive' : 'histogram-bar-negative' %>"
+                style="width: <%= width %>%;"
+              ></div>
+            </div>
+
+            <div class="histogram-score"><%= rawScore %></div>
+          </div>
+        <% }) %>
+      </div>
+
       <div class="grid">
         <% submission.analysis.traits.forEach(function(item) { %>
           <div class="trait">

@@ -18,7 +18,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
+
 app.set("trust proxy", 1);
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
@@ -32,7 +34,8 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-secure: false,      maxAge: 1000 * 60 * 60 * 8
+      secure: false,
+      maxAge: 1000 * 60 * 60 * 8
     }
   })
 );
@@ -310,11 +313,91 @@ function startExpandedReportJob({
     });
 }
 
+function drawTraitHistogram(doc, traits) {
+  if (!Array.isArray(traits) || traits.length === 0) {
+    return;
+  }
+
+  const pageWidth = doc.page.width;
+  const marginLeft = doc.page.margins.left;
+  const marginRight = doc.page.margins.right;
+  const usableWidth = pageWidth - marginLeft - marginRight;
+
+  const labelWidth = 115;
+  const scoreWidth = 35;
+  const gap = 10;
+  const trackWidth = usableWidth - labelWidth - scoreWidth - gap * 2;
+  const trackX = marginLeft + labelWidth + gap;
+  const scoreX = trackX + trackWidth + gap;
+  const centerX = trackX + trackWidth / 2;
+
+  doc.moveDown(0.5);
+  doc.fontSize(14).fillColor("black").text("Distribuzione dei punteggi");
+  doc.moveDown(0.2);
+  doc.fontSize(9).fillColor("#666").text(
+    "Scala da -30 a +30. Lo zero rappresenta il punto neutro; le barre verso destra indicano punteggi positivi, quelle verso sinistra aree da presidiare."
+  );
+  doc.moveDown(0.8);
+
+  const startY = doc.y;
+  const rowHeight = 24;
+  const barHeight = 9;
+
+  doc.fontSize(8).fillColor("#666");
+  doc.text("-30", trackX, startY, { width: 30, align: "left" });
+  doc.text("0", centerX - 8, startY, { width: 16, align: "center" });
+  doc.text("+30", trackX + trackWidth - 30, startY, { width: 30, align: "right" });
+
+  let y = startY + 16;
+
+  traits.forEach((trait) => {
+    if (y > doc.page.height - doc.page.margins.bottom - 35) {
+      doc.addPage();
+      y = doc.page.margins.top;
+    }
+
+    const rawScore = Number(trait.score || 0);
+    const safeScore = Math.max(-30, Math.min(30, rawScore));
+    const halfTrack = trackWidth / 2;
+    const barWidth = Math.abs(safeScore) / 30 * halfTrack;
+    const barX = safeScore >= 0 ? centerX : centerX - barWidth;
+
+    doc.fontSize(9).fillColor("black").text(trait.name || "Tratto", marginLeft, y - 2, {
+      width: labelWidth
+    });
+
+    doc
+      .roundedRect(trackX, y, trackWidth, barHeight, 4)
+      .fillAndStroke("#f3f3f3", "#dddddd");
+
+    doc
+      .moveTo(centerX, y - 3)
+      .lineTo(centerX, y + barHeight + 3)
+      .lineWidth(0.8)
+      .strokeColor("#999999")
+      .stroke();
+
+    doc
+      .roundedRect(barX, y, Math.max(barWidth, 1), barHeight, 4)
+      .fill(safeScore >= 0 ? "#111111" : "#999999");
+
+    doc.fontSize(9).fillColor("black").text(String(rawScore), scoreX, y - 2, {
+      width: scoreWidth,
+      align: "right"
+    });
+
+    y += rowHeight;
+  });
+
+  doc.y = y + 4;
+  doc.fillColor("black");
+}
+
 /**
  * ROUTE DI CHECK VERSIONE DEPLOY
  */
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v3-auto-safe");
+  res.send("openai-expanded-report-v4-auto-safe-histogram");
 });
 
 /**
@@ -564,10 +647,6 @@ app.get("/admin", requireAdmin, async (req, res) => {
 
 /**
  * GENERAZIONE RELAZIONE ESPLOSA MANUALE
- * Fallback admin:
- * - utile se la generazione automatica fallisce
- * - risponde subito al browser
- * - salva quando OpenAI termina
  */
 app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) => {
   try {
@@ -738,6 +817,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     traits.forEach((t) => {
       doc.fontSize(11).text(`${t.name}: ${t.score} (${t.range})`);
     });
+
+    drawTraitHistogram(doc, traits);
   }
 
   if (expanded?.generalSummary) {
