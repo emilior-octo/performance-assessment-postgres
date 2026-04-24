@@ -18,7 +18,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
-
+app.set("trust proxy", 1);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
@@ -32,8 +32,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 8
+secure: false,      maxAge: 1000 * 60 * 60 * 8
     }
   })
 );
