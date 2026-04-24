@@ -4,10 +4,16 @@ import path from "path";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import PDFDocument from "pdfkit";
+import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
+
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
@@ -123,11 +129,133 @@ function buildSummary(traits, role) {
   };
 }
 
+function buildReliability(answers) {
+  let issues = 0;
+  let checks = 0;
+
+  const pair = (a, b) => {
+    checks += 1;
+    if ((a === "agree" && b === "disagree") || (a === "disagree" && b === "agree")) {
+      issues += 1;
+    }
+  };
+
+  pair(answers.q1, answers.q9);
+  pair(answers.q2, answers.q10);
+  pair(answers.q3, answers.q11);
+  pair(answers.q4, answers.q12);
+  pair(answers.q5, answers.q13);
+  pair(answers.q6, answers.q14);
+  pair(answers.q7, answers.q15);
+  pair(answers.q8, answers.q16);
+
+  const reliabilityScore = Math.max(
+    0,
+    Math.round(100 - (issues / Math.max(checks, 1)) * 100)
+  );
+
+  let reliabilityLabel = "Alta affidabilità";
+  if (reliabilityScore < 80) reliabilityLabel = "Buona affidabilità";
+  if (reliabilityScore < 60) reliabilityLabel = "Attendibilità da verificare";
+  if (reliabilityScore < 40) reliabilityLabel = "Bassa attendibilità";
+
+  return { reliabilityScore, reliabilityLabel };
+}
+
+async function generateExpandedReportPayload({
+  companyName,
+  role,
+  avgScore,
+  avgRange,
+  summary,
+  traits,
+  reliabilityScore,
+  reliabilityLabel
+}) {
+  if (!openai) {
+    throw new Error("OPENAI_API_KEY non configurata.");
+  }
+
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    properties: {
+      generalSummary: { type: "string" },
+      traits: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            name: { type: "string" },
+            expandedText: { type: "string" },
+            improvementPlan: { type: "string" },
+            teamLeverage: { type: "string" }
+          },
+          required: ["name", "expandedText", "improvementPlan", "teamLeverage"]
+        }
+      }
+    },
+    required: ["generalSummary", "traits"]
+  };
+
+  const input = `
+Sei un consulente organizzativo senior.
+Genera una relazione esplosa professionale in italiano.
+
+CONTESTO
+- Azienda: ${companyName}
+- Ruolo target: ${role}
+- Score medio: ${avgScore}
+- Fascia media: ${avgRange}
+- Orientamento: ${summary.orientation}
+- Lettura ruolo: ${summary.roleComment}
+- Attendibilità: ${reliabilityLabel} (${reliabilityScore})
+
+TRATTI:
+${JSON.stringify(traits, null, 2)}
+
+ISTRUZIONI
+1. Scrivi una relazione generale sul profilo.
+2. Per ogni tratto scrivi:
+   - lettura approfondita di circa 8-10 righe
+   - piano di improvement concreto
+   - come usare la forza del tratto nel gruppo di lavoro
+3. Linguaggio professionale, consulenziale, non clinico.
+4. Non contraddire i punteggi.
+5. Se il tratto è debole, il teamLeverage può spiegare come compensarlo nel contesto organizzativo.
+`;
+
+  console.log("[EXPANDED] OpenAI call start", {
+    model: process.env.OPENAI_MODEL || "gpt-5-mini",
+    traitCount: traits.length,
+    role,
+    avgScore
+  });
+
+  const response = await openai.responses.create({
+    model: process.env.OPENAI_MODEL || "gpt-5-mini",
+    input,
+    text: {
+      format: {
+        type: "json_schema",
+        name: "expanded_assessment_report",
+        schema,
+        strict: true
+      }
+    }
+  });
+
+  console.log("[EXPANDED] OpenAI call done");
+
+  return JSON.parse(response.output_text);
+}
+
 /**
  * ROUTE DI CHECK VERSIONE DEPLOY
  */
 app.get("/ping-version", (_req, res) => {
-  res.send("questionnaires-live-v1");
+  res.send("openai-expanded-report-v2-background");
 });
 
 /**
@@ -202,20 +330,40 @@ app.post("/q/:token", async (req, res) => {
       return res.status(404).send("Link questionario non valido o non attivo.");
     }
 
+    const answers = {
+      q1: req.body.q1,
+      q2: req.body.q2,
+      q3: req.body.q3,
+      q4: req.body.q4,
+      q5: req.body.q5,
+      q6: req.body.q6,
+      q7: req.body.q7,
+      q8: req.body.q8,
+      q9: req.body.q9,
+      q10: req.body.q10,
+      q11: req.body.q11,
+      q12: req.body.q12,
+      q13: req.body.q13,
+      q14: req.body.q14,
+      q15: req.body.q15,
+      q16: req.body.q16
+    };
+
     const traits = [
-      buildTrait("Determinazione", [req.body.q1, req.body.q9]),
-      buildTrait("Organizzazione", [req.body.q2, req.body.q10]),
-      buildTrait("Gestione pressione", [req.body.q3, req.body.q11]),
-      buildTrait("Empatia", [req.body.q4, req.body.q12]),
-      buildTrait("Estroversione", [req.body.q5, req.body.q13]),
-      buildTrait("Leadership", [req.body.q6, req.body.q14]),
-      buildTrait("Collaborazione", [req.body.q7, req.body.q15]),
-      buildTrait("Responsabilità", [req.body.q8, req.body.q16])
+      buildTrait("Determinazione", [answers.q1, answers.q9]),
+      buildTrait("Organizzazione", [answers.q2, answers.q10]),
+      buildTrait("Gestione pressione", [answers.q3, answers.q11]),
+      buildTrait("Empatia", [answers.q4, answers.q12]),
+      buildTrait("Estroversione", [answers.q5, answers.q13]),
+      buildTrait("Leadership", [answers.q6, answers.q14]),
+      buildTrait("Collaborazione", [answers.q7, answers.q15]),
+      buildTrait("Responsabilità", [answers.q8, answers.q16])
     ];
 
     const avgScore = avg(traits.map((t) => t.score));
     const requestedRole = req.body.requestedRole || link.requestedRole;
     const summary = buildSummary(traits, requestedRole);
+    const { reliabilityScore, reliabilityLabel } = buildReliability(answers);
 
     const assessment = await prisma.assessment.create({
       data: {
@@ -234,6 +382,8 @@ app.post("/q/:token", async (req, res) => {
         avgRange: range(avgScore),
         orientation: summary.orientation,
         roleComment: summary.roleComment,
+        reliabilityScore,
+        reliabilityLabel,
         traitsJson: {
           traits,
           topTraits: summary.topTraits,
@@ -325,7 +475,8 @@ app.get("/admin", requireAdmin, async (req, res) => {
       createdAt: item.createdAt,
       avgScore: item.result?.avgScore ?? null,
       orientation: item.result?.orientation ?? "-",
-      topTraits: payload.topTraits || []
+      topTraits: payload.topTraits || [],
+      expandedReady: !!item.result?.expandedReportJson
     };
   });
 
@@ -333,6 +484,73 @@ app.get("/admin", requireAdmin, async (req, res) => {
     submissions,
     organizationName: req.session.admin.organizationName
   });
+});
+
+/**
+ * GENERAZIONE RELAZIONE ESPLOSA
+ * Versione background "fake":
+ * - risponde subito al browser
+ * - genera in background
+ * - salva il risultato quando OpenAI termina
+ */
+app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: {
+        result: true
+      }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    if (assessment.result.expandedReportJson) {
+      return res.redirect(`/admin/${assessment.id}`);
+    }
+
+    const payload = assessment.result.traitsJson || {};
+    const traits = Array.isArray(payload.traits) ? payload.traits : [];
+
+    console.log("[EXPANDED] background start:", assessment.id);
+
+    generateExpandedReportPayload({
+      companyName: req.session.admin.organizationName,
+      role: assessment.requestedRole,
+      avgScore: assessment.result.avgScore,
+      avgRange: assessment.result.avgRange,
+      summary: {
+        orientation: assessment.result.orientation,
+        roleComment: assessment.result.roleComment
+      },
+      traits,
+      reliabilityScore: assessment.result.reliabilityScore ?? 0,
+      reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile"
+    })
+      .then(async (expandedReportJson) => {
+        await prisma.assessmentResult.update({
+          where: { assessmentId: assessment.id },
+          data: {
+            expandedReportJson,
+            expandedReportGeneratedAt: new Date()
+          }
+        });
+
+        console.log("[EXPANDED] background done:", assessment.id);
+      })
+      .catch((error) => {
+        console.error("[EXPANDED] background error:", error);
+      });
+
+    return res.redirect(`/admin/${assessment.id}?generating=1`);
+  } catch (error) {
+    console.error("Errore avvio generazione relazione esplosa:", error);
+    res.status(500).send("Errore durante l'avvio della generazione della relazione esplosa.");
+  }
 });
 
 app.get("/admin/:id", requireAdmin, async (req, res) => {
@@ -351,6 +569,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
+  const expanded = assessment.result?.expandedReportJson || null;
 
   const submission = {
     id: assessment.id,
@@ -361,19 +580,23 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     analysis: {
       avgScore: assessment.result?.avgScore ?? "-",
       avgRange: assessment.result?.avgRange ?? "-",
+      reliabilityScore: assessment.result?.reliabilityScore ?? "-",
+      reliabilityLabel: assessment.result?.reliabilityLabel ?? "-",
       summary: {
         orientation: assessment.result?.orientation ?? "-",
         roleComment: assessment.result?.roleComment ?? "-",
         topTraits: payload.topTraits || [],
         weakTraits: payload.weakTraits || []
       },
-      traits: payload.traits || []
+      traits: payload.traits || [],
+      expandedReport: expanded
     }
   };
 
   res.render("detail", {
     submission,
-    organizationName: req.session.admin.organizationName
+    organizationName: req.session.admin.organizationName,
+    isGenerating: req.query.generating === "1" && !expanded
   });
 });
 
@@ -397,6 +620,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   const payload = assessment.result?.traitsJson || {};
   const traits = Array.isArray(payload.traits) ? payload.traits : [];
+  const expanded = assessment.result?.expandedReportJson || null;
 
   const doc = new PDFDocument({
     margin: 50,
@@ -433,13 +657,14 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   doc.text(`Fascia media: ${assessment.result?.avgRange ?? "-"}`);
   doc.text(`Orientamento prevalente: ${assessment.result?.orientation ?? "-"}`);
   doc.text(`Lettura rispetto al ruolo: ${assessment.result?.roleComment ?? "-"}`);
+  doc.text(`Attendibilità: ${assessment.result?.reliabilityLabel ?? "-"} (${assessment.result?.reliabilityScore ?? "-"})`);
 
   doc.moveDown();
   doc.fontSize(14).text("Punti forti emergenti");
   doc.fontSize(11).text((payload.topTraits || []).join(", ") || "-");
 
   doc.moveDown();
-  doc.fontSize(14).text("Aree più deboli");
+  doc.fontSize(14).text("Aree di miglioramento");
   doc.fontSize(11).text((payload.weakTraits || []).join(", ") || "-");
 
   doc.moveDown();
@@ -452,6 +677,27 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     traits.forEach((t) => {
       doc.fontSize(11).text(`${t.name}: ${t.score} (${t.range})`);
     });
+  }
+
+  if (expanded?.generalSummary) {
+    doc.addPage();
+    doc.fontSize(16).text("Relazione esplosa");
+    doc.moveDown(0.5);
+    doc.fontSize(11).text(expanded.generalSummary);
+    doc.moveDown();
+
+    if (Array.isArray(expanded.traits)) {
+      expanded.traits.forEach((t) => {
+        doc.fontSize(14).text(t.name || "Tratto");
+        doc.moveDown(0.2);
+        doc.fontSize(11).text(t.expandedText || "");
+        doc.moveDown(0.3);
+        doc.fontSize(11).text(`Piano di improvement: ${t.improvementPlan || "-"}`);
+        doc.moveDown(0.3);
+        doc.fontSize(11).text(`Uso della forza nel team: ${t.teamLeverage || "-"}`);
+        doc.moveDown();
+      });
+    }
   }
 
   doc.moveDown();

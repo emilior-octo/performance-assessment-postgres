@@ -9,17 +9,76 @@
     .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
     .trait { border: 1px solid #eee; border-radius: 10px; padding: 16px; }
     .muted { color: #666; }
-    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .actions a { margin-left: 12px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; }
+    .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      background: #111;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #111;
+      border: 1px solid #ddd;
+    }
+    .notice {
+      padding: 14px 16px;
+      margin: 16px 0 24px;
+      border-radius: 10px;
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      line-height: 1.45;
+    }
+    .notice strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+    form { margin: 0; }
+
+    @media (max-width: 700px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
+
+  <% if (isGenerating) { %>
+    <meta http-equiv="refresh" content="8">
+  <% } %>
 </head>
 <body>
   <div class="topbar">
     <p><a href="/admin">← Torna alla lista</a></p>
     <div class="actions">
-      <a href="/admin/<%= submission.id %>/pdf" target="_blank">Apri PDF</a>
+      <a class="btn btn-secondary" href="/admin/<%= submission.id %>/pdf" target="_blank">Apri PDF</a>
+
+      <% if (!submission.analysis.expandedReport && !isGenerating) { %>
+        <form method="POST" action="/admin/<%= submission.id %>/generate-expanded-report" id="generate-expanded-form">
+          <button class="btn" type="submit" id="generate-expanded-button">Genera relazione esplosa</button>
+        </form>
+      <% } %>
     </div>
   </div>
+
+  <% if (isGenerating) { %>
+    <div class="notice">
+      <strong>Relazione in generazione.</strong>
+      Il report esploso è in preparazione. Attendi qualche secondo: la pagina si aggiornerà automaticamente.
+    </div>
+  <% } %>
 
   <h1>Dettaglio Assessment</h1>
   <p class="muted"><strong>Azienda:</strong> <%= organizationName %></p>
@@ -39,10 +98,11 @@
     <h2>Relazione di sintesi del profilo comportamentale</h2>
     <p><strong>Score medio:</strong> <%= submission.analysis.avgScore %></p>
     <p><strong>Fascia media:</strong> <%= submission.analysis.avgRange %></p>
+    <p><strong>Indice attendibilità:</strong> <%= submission.analysis.reliabilityLabel %> (<%= submission.analysis.reliabilityScore %>)</p>
     <p><strong>Lettura sintetica del profilo:</strong> Il profilo evidenzia un <%= submission.analysis.summary.orientation %>, con una combinazione di tratti che suggeriscono specifiche modalità di funzionamento nel contesto lavorativo.</p>
     <p><strong>Lettura rispetto al ruolo:</strong> <%= submission.analysis.summary.roleComment %> Questa indicazione rappresenta una prima chiave interpretativa e sarà oggetto di approfondimento in fase di restituzione.</p>
     <p><strong>Punti forti emergenti:</strong> <%= submission.analysis.summary.topTraits.join(", ") %></p>
-    <p><strong>Aree più deboli:</strong> <%= submission.analysis.summary.weakTraits.join(", ") %></p>
+    <p><strong>Aree di miglioramento:</strong> <%= submission.analysis.summary.weakTraits.join(", ") %></p>
 
     <p style="margin-top: 16px; font-size: 14px; color: #666;">
       La presente analisi rappresenta una prima lettura strutturata dei tratti emersi dal questionario e non costituisce una valutazione definitiva. I risultati saranno approfonditi e contestualizzati durante la fase di restituzione e confronto.
@@ -61,5 +121,40 @@
       <% }) %>
     </div>
   </div>
+
+  <% if (submission.analysis.expandedReport) { %>
+    <div class="card">
+      <h2>Relazione esplosa</h2>
+      <p><%= submission.analysis.expandedReport.generalSummary %></p>
+    </div>
+
+    <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
+      <div class="card">
+        <h3><%= item.name %></h3>
+        <p><strong>Lettura approfondita</strong></p>
+        <p><%= item.expandedText %></p>
+
+        <p><strong>Piano di improvement</strong></p>
+        <p><%= item.improvementPlan %></p>
+
+        <p><strong>Uso della forza nel team</strong></p>
+        <p><%= item.teamLeverage %></p>
+      </div>
+    <% }) %>
+  <% } %>
+
+  <script>
+    const form = document.getElementById("generate-expanded-form");
+    const button = document.getElementById("generate-expanded-button");
+
+    if (form && button) {
+      form.addEventListener("submit", function () {
+        button.disabled = true;
+        button.innerText = "Generazione in corso...";
+        button.style.opacity = "0.7";
+        button.style.cursor = "not-allowed";
+      });
+    }
+  </script>
 </body>
 </html>
