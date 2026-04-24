@@ -32,7 +32,7 @@ app.use(
     cookie: {
       httpOnly: true,
       sameSite: "lax",
-      secure: false,
+      secure: process.env.NODE_ENV === "production",
       maxAge: 1000 * 60 * 60 * 8
     }
   })
@@ -190,9 +190,9 @@ async function generateExpandedReportPayload({
             name: { type: "string" },
             expandedText: { type: "string" },
             improvementPlan: { type: "string" },
-            teamLeverage: { type: "string" }
+            skillAction: { type: "string" }
           },
-          required: ["name", "expandedText", "improvementPlan", "teamLeverage"]
+          required: ["name", "expandedText", "improvementPlan", "skillAction"]
         }
       }
     },
@@ -201,29 +201,45 @@ async function generateExpandedReportPayload({
 
   const input = `
 Sei un consulente organizzativo senior.
-Genera una relazione esplosa professionale in italiano.
+Genera una relazione professionale in italiano per un assessment comportamentale in ambito aziendale.
 
 CONTESTO
 - Azienda: ${companyName}
 - Ruolo target: ${role}
 - Score medio: ${avgScore}
 - Fascia media: ${avgRange}
-- Orientamento: ${summary.orientation}
-- Lettura ruolo: ${summary.roleComment}
+- Orientamento prevalente: ${summary.orientation}
+- Lettura rispetto al ruolo: ${summary.roleComment}
 - Attendibilità: ${reliabilityLabel} (${reliabilityScore})
 
-TRATTI:
+TRATTI VALUTATI
 ${JSON.stringify(traits, null, 2)}
 
-ISTRUZIONI
-1. Scrivi una relazione generale sul profilo.
-2. Per ogni tratto scrivi:
-   - lettura approfondita di circa 8-10 righe
-   - piano di improvement concreto
-   - come usare la forza del tratto nel gruppo di lavoro
-3. Linguaggio professionale, consulenziale, non clinico.
-4. Non contraddire i punteggi.
-5. Se il tratto è debole, il teamLeverage può spiegare come compensarlo nel contesto organizzativo.
+ISTRUZIONI GENERALI
+1. Scrivi una relazione generale chiara, consulenziale e concreta.
+2. Non usare linguaggio clinico, diagnostico o psicologico-medico.
+3. Non presentare il questionario come valutazione definitiva.
+4. Non contraddire i punteggi numerici e le fasce.
+5. Mantieni un tono professionale, utile per HR, management e restituzione al cliente.
+6. Evita frasi generiche, ripetitive o troppo "da AI".
+7. Quando possibile, collega le osservazioni al ruolo target.
+8. Evidenzia potenziale, rischi operativi e azioni manageriali concrete.
+
+ISTRUZIONI PER OGNI TRATTO
+Per ogni tratto restituisci:
+- expandedText: lettura approfondita del tratto, circa 7-9 righe, concreta e collegata al ruolo.
+- improvementPlan: piano di sviluppo pratico, con azioni osservabili e applicabili.
+- skillAction: campo dinamico:
+  - se il tratto è positivo o forte, spiega come valorizzare concretamente quella skill nel ruolo, nel team e nell'organizzazione;
+  - se il tratto è debole o critico, spiega come svilupparlo, compensarlo o presidiarlo operativamente nel contesto aziendale;
+  - se il tratto è intermedio, spiega come consolidarlo e renderlo più stabile.
+
+IMPORTANTE
+- Non scrivere "uso della forza".
+- Non usare metafore tipo Jedi, superpoteri o simili.
+- Non forzare una skill debole come se fosse un punto di forza.
+- Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
+- Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 `;
 
   console.log("[EXPANDED] OpenAI call start", {
@@ -251,11 +267,55 @@ ISTRUZIONI
   return JSON.parse(response.output_text);
 }
 
+function startExpandedReportJob({
+  assessmentId,
+  companyName,
+  role,
+  avgScore,
+  avgRange,
+  summary,
+  traits,
+  reliabilityScore,
+  reliabilityLabel
+}) {
+  if (!assessmentId) {
+    console.error("[EXPANDED] missing assessmentId, job skipped");
+    return;
+  }
+
+  console.log("[EXPANDED] background start:", assessmentId);
+
+  generateExpandedReportPayload({
+    companyName,
+    role,
+    avgScore,
+    avgRange,
+    summary,
+    traits,
+    reliabilityScore,
+    reliabilityLabel
+  })
+    .then(async (expandedReportJson) => {
+      await prisma.assessmentResult.update({
+        where: { assessmentId },
+        data: {
+          expandedReportJson,
+          expandedReportGeneratedAt: new Date()
+        }
+      });
+
+      console.log("[EXPANDED] background done:", assessmentId);
+    })
+    .catch((error) => {
+      console.error("[EXPANDED] background error:", error);
+    });
+}
+
 /**
  * ROUTE DI CHECK VERSIONE DEPLOY
  */
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v2-background");
+  res.send("openai-expanded-report-v3-auto-safe");
 });
 
 /**
@@ -361,6 +421,7 @@ app.post("/q/:token", async (req, res) => {
     ];
 
     const avgScore = avg(traits.map((t) => t.score));
+    const avgRange = range(avgScore);
     const requestedRole = req.body.requestedRole || link.requestedRole;
     const summary = buildSummary(traits, requestedRole);
     const { reliabilityScore, reliabilityLabel } = buildReliability(answers);
@@ -379,7 +440,7 @@ app.post("/q/:token", async (req, res) => {
       data: {
         assessmentId: assessment.id,
         avgScore,
-        avgRange: range(avgScore),
+        avgRange,
         orientation: summary.orientation,
         roleComment: summary.roleComment,
         reliabilityScore,
@@ -390,6 +451,21 @@ app.post("/q/:token", async (req, res) => {
           weakTraits: summary.weakTraits
         }
       }
+    });
+
+    startExpandedReportJob({
+      assessmentId: assessment.id,
+      companyName: link.organization.name,
+      role: requestedRole,
+      avgScore,
+      avgRange,
+      summary: {
+        orientation: summary.orientation,
+        roleComment: summary.roleComment
+      },
+      traits,
+      reliabilityScore,
+      reliabilityLabel
     });
 
     res.redirect("/thank-you");
@@ -476,7 +552,8 @@ app.get("/admin", requireAdmin, async (req, res) => {
       avgScore: item.result?.avgScore ?? null,
       orientation: item.result?.orientation ?? "-",
       topTraits: payload.topTraits || [],
-      expandedReady: !!item.result?.expandedReportJson
+      expandedReady: !!item.result?.expandedReportJson,
+      expandedGenerating: !item.result?.expandedReportJson
     };
   });
 
@@ -487,11 +564,11 @@ app.get("/admin", requireAdmin, async (req, res) => {
 });
 
 /**
- * GENERAZIONE RELAZIONE ESPLOSA
- * Versione background "fake":
+ * GENERAZIONE RELAZIONE ESPLOSA MANUALE
+ * Fallback admin:
+ * - utile se la generazione automatica fallisce
  * - risponde subito al browser
- * - genera in background
- * - salva il risultato quando OpenAI termina
+ * - salva quando OpenAI termina
  */
 app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) => {
   try {
@@ -516,9 +593,8 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
     const payload = assessment.result.traitsJson || {};
     const traits = Array.isArray(payload.traits) ? payload.traits : [];
 
-    console.log("[EXPANDED] background start:", assessment.id);
-
-    generateExpandedReportPayload({
+    startExpandedReportJob({
+      assessmentId: assessment.id,
       companyName: req.session.admin.organizationName,
       role: assessment.requestedRole,
       avgScore: assessment.result.avgScore,
@@ -530,21 +606,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       traits,
       reliabilityScore: assessment.result.reliabilityScore ?? 0,
       reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile"
-    })
-      .then(async (expandedReportJson) => {
-        await prisma.assessmentResult.update({
-          where: { assessmentId: assessment.id },
-          data: {
-            expandedReportJson,
-            expandedReportGeneratedAt: new Date()
-          }
-        });
-
-        console.log("[EXPANDED] background done:", assessment.id);
-      })
-      .catch((error) => {
-        console.error("[EXPANDED] background error:", error);
-      });
+    });
 
     return res.redirect(`/admin/${assessment.id}?generating=1`);
   } catch (error) {
@@ -690,11 +752,16 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
       expanded.traits.forEach((t) => {
         doc.fontSize(14).text(t.name || "Tratto");
         doc.moveDown(0.2);
+
         doc.fontSize(11).text(t.expandedText || "");
         doc.moveDown(0.3);
+
         doc.fontSize(11).text(`Piano di improvement: ${t.improvementPlan || "-"}`);
         doc.moveDown(0.3);
-        doc.fontSize(11).text(`Uso della forza nel team: ${t.teamLeverage || "-"}`);
+
+        doc.fontSize(11).text(
+          `Come valorizzare o sviluppare questa skill: ${t.skillAction || t.teamLeverage || "-"}`
+        );
         doc.moveDown();
       });
     }
