@@ -281,6 +281,13 @@ async function generateExpandedReportPayload({
     required: ["generalSummary", "traits"]
   };
 
+  const aiTraits = traits.map((t) => ({
+    name: t.name,
+    score: t.score,
+    range: t.range,
+    questionCount: Array.isArray(t.answers) ? t.answers.length : undefined
+  }));
+
   const input = `
 Sei un consulente organizzativo senior.
 Genera una relazione professionale in italiano per un assessment comportamentale in ambito aziendale.
@@ -295,7 +302,7 @@ CONTESTO
 - Attendibilità: ${reliabilityLabel} (${reliabilityScore})
 
 TRATTI VALUTATI
-${JSON.stringify(traits, null, 2)}
+${JSON.stringify(aiTraits, null, 2)}
 
 ISTRUZIONI GENERALI
 1. Scrivi una relazione generale chiara, consulenziale e concreta.
