@@ -2,166 +2,265 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Questionari disponibili</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Performance Assessment</title>
+
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 860px;
-      margin: 50px auto;
-      padding: 0 16px;
-      color: #1f1f1f;
-    }
-
-    .card {
-      border: 1px solid #ddd;
-      border-radius: 14px;
-      padding: 24px;
-      margin-bottom: 24px;
-      background: #fff;
-    }
-
-    .muted {
-      color: #666;
-    }
-
-    .field {
-      margin-bottom: 18px;
-    }
-
-    select, input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
+    * {
       box-sizing: border-box;
     }
 
-    button, .btn {
-      display: inline-block;
-      padding: 12px 18px;
-      border: 0;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
-      background: #111;
-      color: #fff;
-    }
-
-    .secondary {
-      background: #f5f5f5;
-      color: #111;
-      border: 1px solid #ddd;
-    }
-
-    .link-list {
+    body {
       margin: 0;
-      padding-left: 20px;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #111827;
     }
 
-    .inline-actions {
+    .page {
+      min-height: 100vh;
       display: flex;
-      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 16px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 980px;
+    }
+
+    .hero {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+    }
+
+    .brand-band {
+      background: linear-gradient(135deg, #0b6fb3, #1685cf);
+      padding: 36px 24px;
+      text-align: center;
+    }
+
+    .brand-logo {
+      width: min(520px, 88%);
+      max-height: 130px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .content {
+      padding: 34px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: #0b6fb3;
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(30px, 5vw, 46px);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .intro {
+      max-width: 720px;
+      margin: 0;
+      color: #4b5563;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+
+    .section-title {
+      margin: 34px 0 14px;
+      font-size: 18px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 170px;
+      padding: 20px;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      background: #ffffff;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: #0b6fb3;
+      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
+    }
+
+    .card-label {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+
+    .card-copy {
+      margin: 10px 0 18px;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .card-action {
+      margin-top: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #111827;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .footer-actions {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
       flex-wrap: wrap;
-      margin-top: 16px;
     }
 
-    .top-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 16px;
+    .admin-copy {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
     }
 
-    code {
-      background: #f6f6f6;
-      padding: 2px 6px;
-      border-radius: 6px;
+    .admin-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #d1d5db;
+      color: #111827;
+      background: #f9fafb;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        align-items: flex-start;
+        padding: 16px;
+      }
+
+      .brand-band {
+        padding: 28px 18px;
+      }
+
+      .content {
+        padding: 24px 18px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        min-height: auto;
+      }
+
+      .footer-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .admin-link {
+        width: 100%;
+      }
     }
   </style>
 </head>
+
 <body>
-  <div class="top-actions">
-    <a class="btn secondary" href="/admin/login">Admin Login</a>
-  </div>
+  <main class="page">
+    <section class="shell">
+      <div class="hero">
+        <div class="brand-band">
+          <img class="brand-logo" src="/zenith-logo.jpeg" alt="Zenith 360" />
+        </div>
 
-  <div class="card">
-    <h1>Welcome questionari</h1>
-    <p class="muted">
-      Da questa pagina puoi aprire rapidamente il questionario corretto in base al ruolo.
-      Il compilatore vedrà solo il questionario e la pagina finale di conferma.
-      Report e PDF restano visibili solo nell’area admin.
-    </p>
-    <p class="muted"><strong>Azienda:</strong> <%= companyName %></p>
-  </div>
+        <div class="content">
+          <p class="eyebrow">Area risorse</p>
+          <h1>Performance Assessment</h1>
 
-  <div class="card">
-    <h2>Apri questionario per ruolo</h2>
+          <p class="intro">
+            Benvenuto/a nella piattaforma di assessment.
+            Seleziona il questionario assegnato e procedi con la compilazione.
+            Le risposte saranno utilizzate per produrre una lettura strutturata del profilo in relazione al ruolo di riferimento.
+          </p>
 
-    <div class="field">
-      <label for="roleSelect">Seleziona ruolo</label><br />
-      <select id="roleSelect">
-        <% links.forEach(function(link, idx) { %>
-          <option value="<%= link.url %>" <%= idx === 0 ? "selected" : "" %>>
-            <%= link.label %>
-          </option>
-        <% }) %>
-      </select>
-    </div>
+          <h2 class="section-title">Seleziona il questionario</h2>
 
-    <div class="field">
-      <label for="generatedUrl">Link generato</label><br />
-      <input id="generatedUrl" type="text" readonly value="<%= links[0]?.url || '' %>" />
-    </div>
+          <div class="cards">
+            <% links.forEach(function(item) { %>
+              <a class="card" href="<%= item.url %>">
+                <div>
+                  <p class="card-label">Questionario</p>
+                  <h3 class="card-title"><%= item.label %></h3>
+                  <p class="card-copy">
+                    Avvia la compilazione per il ruolo <strong><%= item.label %></strong>.
+                  </p>
+                </div>
 
-    <div class="inline-actions">
-      <a id="openLinkBtn" class="btn" href="<%= links[0]?.url || '#' %>" target="_blank">
-        Apri questionario
-      </a>
-      <button id="copyLinkBtn" type="button" class="btn secondary">
-        Copia link
-      </button>
-    </div>
-  </div>
+                <span class="card-action">Inizia assessment</span>
+              </a>
+            <% }) %>
+          </div>
 
-  <div class="card">
-    <h2>Link diretti disponibili</h2>
-    <ul class="link-list">
-      <% links.forEach(function(link) { %>
-        <li style="margin-bottom: 10px;">
-          <strong><%= link.label %></strong><br />
-          <a href="<%= link.url %>" target="_blank"><%= link.url %></a><br />
-          <span class="muted">Token: <code><%= link.token %></code></span>
-        </li>
-      <% }) %>
-    </ul>
-  </div>
+          <div class="footer-actions">
+            <p class="admin-copy">
+              Accesso riservato ad amministratori e consulenti autorizzati.
+            </p>
 
-  <script>
-    const roleSelect = document.getElementById("roleSelect");
-    const generatedUrl = document.getElementById("generatedUrl");
-    const openLinkBtn = document.getElementById("openLinkBtn");
-    const copyLinkBtn = document.getElementById("copyLinkBtn");
-
-    function syncSelectedLink() {
-      const url = roleSelect.value;
-      generatedUrl.value = url;
-      openLinkBtn.href = url;
-    }
-
-    roleSelect.addEventListener("change", syncSelectedLink);
-
-    copyLinkBtn.addEventListener("click", async () => {
-      try {
-        await navigator.clipboard.writeText(generatedUrl.value);
-        copyLinkBtn.textContent = "Link copiato";
-        setTimeout(() => {
-          copyLinkBtn.textContent = "Copia link";
-        }, 1500);
-      } catch (e) {
-        alert("Impossibile copiare il link automaticamente.");
-      }
-    });
-
-    syncSelectedLink();
-  </script>
+            <a class="admin-link" href="/admin/login">
+              Accedi all’area admin
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 </body>
 </html>

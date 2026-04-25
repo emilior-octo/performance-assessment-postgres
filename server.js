@@ -7,6 +7,9 @@ import PDFDocument from "pdfkit";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
+import ZPI_QUESTIONS from "./questions.js";
+
+const QUESTIONS = Array.isArray(ZPI_QUESTIONS) ? ZPI_QUESTIONS : [];
 
 const prisma = new PrismaClient();
 
@@ -20,9 +23,9 @@ const app = express();
 const PORT = Number(process.env.PORT || 3001);
 
 app.set("trust proxy", 1);
-
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -49,6 +52,7 @@ function requireAdmin(req, res, next) {
   if (!req.session?.admin) {
     return res.redirect("/admin/login");
   }
+
   next();
 }
 
@@ -57,6 +61,18 @@ function score(answer) {
   if (answer === "uncertain") return 10;
   if (answer === "disagree") return -30;
   return 0;
+}
+
+function scoreQuestion(answer, question) {
+  const baseScore = score(answer);
+  return question?.reverse ? baseScore * -1 : baseScore;
+}
+
+function answerLabel(answer) {
+  if (answer === "agree") return "D’accordo";
+  if (answer === "uncertain") return "Incerto / parzialmente";
+  if (answer === "disagree") return "In disaccordo";
+  return "-";
 }
 
 function range(v) {
@@ -73,12 +89,51 @@ function avg(arr) {
 
 function buildTrait(name, answers) {
   const finalScore = avg(answers.map(score));
+
   return {
     name,
     answers,
     score: finalScore,
     range: range(finalScore)
   };
+}
+
+function getScoredQuestions() {
+  return QUESTIONS.filter((q) => q && q.key && q.scored !== false && (q.responseType || "likert") === "likert");
+}
+
+function buildTraitsFromAnswers(answers) {
+  const traitMap = {};
+
+  getScoredQuestions().forEach((question) => {
+    const answer = answers[question.key];
+
+    if (!answer) {
+      return;
+    }
+
+    const traitName = question.trait || "Comportamento generale";
+
+    if (!traitMap[traitName]) {
+      traitMap[traitName] = { scores: [], questionKeys: [] };
+    }
+
+    traitMap[traitName].scores.push(scoreQuestion(answer, question));
+    traitMap[traitName].questionKeys.push(question.key);
+  });
+
+  return Object.entries(traitMap)
+    .map(([name, payload]) => {
+      const finalScore = avg(payload.scores);
+
+      return {
+        name,
+        answers: payload.questionKeys,
+        score: finalScore,
+        range: range(finalScore)
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, "it"));
 }
 
 function buildSummary(traits, role) {
@@ -137,6 +192,7 @@ function buildReliability(answers) {
 
   const pair = (a, b) => {
     checks += 1;
+
     if ((a === "agree" && b === "disagree") || (a === "disagree" && b === "agree")) {
       issues += 1;
     }
@@ -162,6 +218,30 @@ function buildReliability(answers) {
   if (reliabilityScore < 40) reliabilityLabel = "Bassa attendibilità";
 
   return { reliabilityScore, reliabilityLabel };
+}
+
+function getQuestionTexts() {
+  return Object.fromEntries(
+    QUESTIONS
+      .filter((q) => q && q.key && q.text)
+      .map((q) => [q.key, q.text])
+  );
+}
+
+async function withTimeout(promise, ms, label = "Operazione") {
+  let timeoutId;
+
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timeout dopo ${ms}ms`));
+    }, ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function generateExpandedReportPayload({
@@ -236,6 +316,15 @@ Per ogni tratto restituisci:
   - se il tratto è debole o critico, spiega come svilupparlo, compensarlo o presidiarlo operativamente nel contesto aziendale;
   - se il tratto è intermedio, spiega come consolidarlo e renderlo più stabile.
 
+STILE DI SCRITTURA
+- Scrivi come un consulente HR senior, non come un modello AI.
+- Evita formule ripetitive tra i tratti.
+- Usa frasi concrete, osservabili e collegate al lavoro.
+- Non gonfiare artificialmente il testo.
+- Ogni sezione deve aggiungere un’informazione nuova.
+- Dove c’è un rischio, descrivilo in termini operativi.
+- Dove c’è una forza, descrivi come può produrre valore nel team.
+
 IMPORTANTE
 - Non scrivere "uso della forza".
 - Non usare metafore tipo Jedi, superpoteri o simili.
@@ -251,18 +340,22 @@ IMPORTANTE
     avgScore
   });
 
-  const response = await openai.responses.create({
-    model: process.env.OPENAI_MODEL || "gpt-5-mini",
-    input,
-    text: {
-      format: {
-        type: "json_schema",
-        name: "expanded_assessment_report",
-        schema,
-        strict: true
+  const response = await withTimeout(
+    openai.responses.create({
+      model: process.env.OPENAI_MODEL || "gpt-5-mini",
+      input,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "expanded_assessment_report",
+          schema,
+          strict: true
+        }
       }
-    }
-  });
+    }),
+    Number(process.env.OPENAI_TIMEOUT_MS || 60000),
+    "OpenAI expanded report"
+  );
 
   console.log("[EXPANDED] OpenAI call done");
 
@@ -285,38 +378,70 @@ function startExpandedReportJob({
     return;
   }
 
-  console.log("[EXPANDED] background start:", assessmentId);
+  console.log("[EXPANDED] job queued", { assessmentId, role, avgScore });
 
-  generateExpandedReportPayload({
-    companyName,
-    role,
-    avgScore,
-    avgRange,
-    summary,
-    traits,
-    reliabilityScore,
-    reliabilityLabel
-  })
+  prisma.assessmentResult
+    .update({
+      where: { assessmentId },
+      data: {
+        isGenerating: true,
+        generationError: null
+      }
+    })
+    .then(() => {
+      console.log("[EXPANDED] background start", { assessmentId });
+
+      return generateExpandedReportPayload({
+        companyName,
+        role,
+        avgScore,
+        avgRange,
+        summary,
+        traits,
+        reliabilityScore,
+        reliabilityLabel
+      });
+    })
     .then(async (expandedReportJson) => {
       await prisma.assessmentResult.update({
         where: { assessmentId },
         data: {
           expandedReportJson,
-          expandedReportGeneratedAt: new Date()
+          expandedReportGeneratedAt: new Date(),
+          isGenerating: false,
+          generationError: null
         }
       });
 
-      console.log("[EXPANDED] background done:", assessmentId);
+      console.log("[EXPANDED] background done", { assessmentId });
     })
-    .catch((error) => {
-      console.error("[EXPANDED] background error:", error);
+    .catch(async (error) => {
+      console.error("[EXPANDED] background error", {
+        assessmentId,
+        message: error?.message,
+        status: error?.status,
+        stack: error?.stack
+      });
+
+      try {
+        await prisma.assessmentResult.update({
+          where: { assessmentId },
+          data: {
+            isGenerating: false,
+            generationError: error?.message || "Errore generazione relazione"
+          }
+        });
+      } catch (updateError) {
+        console.error("[EXPANDED] failed to save generation error", {
+          assessmentId,
+          message: updateError?.message
+        });
+      }
     });
 }
 
 function drawTraitHistogram(doc, traits) {
-  if (!Array.isArray(traits) || traits.length === 0) {
-    return;
-  }
+  if (!Array.isArray(traits) || traits.length === 0) return;
 
   const pageWidth = doc.page.width;
   const marginLeft = doc.page.margins.left;
@@ -366,9 +491,7 @@ function drawTraitHistogram(doc, traits) {
       width: labelWidth
     });
 
-    doc
-      .roundedRect(trackX, y, trackWidth, barHeight, 4)
-      .fillAndStroke("#f3f3f3", "#dddddd");
+    doc.roundedRect(trackX, y, trackWidth, barHeight, 4).fillAndStroke("#f3f3f3", "#dddddd");
 
     doc
       .moveTo(centerX, y - 3)
@@ -393,42 +516,33 @@ function drawTraitHistogram(doc, traits) {
   doc.fillColor("black");
 }
 
-/**
- * ROUTE DI CHECK VERSIONE DEPLOY
- */
+function drawLogo(doc) {
+  const logoPath = path.join(__dirname, "public", "zenith-logo-pdf.jpeg");
+
+  try {
+    doc.image(logoPath, 50, 32, { width: 170 });
+    doc.y = 100;
+  } catch (_error) {
+    doc.y = 50;
+  }
+}
+
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v4-auto-safe-histogram");
+  res.send("openai-expanded-report-v7-dynamic-questions");
 });
 
-/**
- * HOME PUBBLICA QUESTIONARI
- */
 app.get("/", (_req, res) => {
   res.redirect("/questionnaires");
 });
 
 app.get("/questionnaires", async (_req, res) => {
   const companySlug = process.env.COMPANY_SLUG || "demo-company";
-  const publicBaseUrl =
-    process.env.PUBLIC_BASE_URL ||
-    `http://127.0.0.1:${PORT}`;
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
 
   const links = [
-    {
-      role: "manager",
-      label: "Manager",
-      token: `${companySlug}-manager-001`
-    },
-    {
-      role: "sales",
-      label: "Sales",
-      token: `${companySlug}-sales-001`
-    },
-    {
-      role: "amministrativo",
-      label: "Amministrativo",
-      token: `${companySlug}-amministrativo-001`
-    }
+    { role: "manager", label: "Manager", token: `${companySlug}-manager-001` },
+    { role: "sales", label: "Sales", token: `${companySlug}-sales-001` },
+    { role: "amministrativo", label: "Amministrativo", token: `${companySlug}-amministrativo-001` }
   ].map((item) => ({
     ...item,
     url: `${publicBaseUrl}/q/${item.token}`
@@ -441,9 +555,6 @@ app.get("/questionnaires", async (_req, res) => {
   });
 });
 
-/**
- * QUESTIONARIO PUBBLICO
- */
 app.get("/q/:token", async (req, res) => {
   const link = await prisma.assessmentLink.findUnique({
     where: { token: req.params.token },
@@ -457,7 +568,8 @@ app.get("/q/:token", async (req, res) => {
   res.render("questionnaire", {
     token: link.token,
     companyName: link.organization.name,
-    requestedRole: link.requestedRole
+    requestedRole: link.requestedRole,
+    questions: getQuestionTexts()
   });
 });
 
@@ -472,35 +584,13 @@ app.post("/q/:token", async (req, res) => {
       return res.status(404).send("Link questionario non valido o non attivo.");
     }
 
-    const answers = {
-      q1: req.body.q1,
-      q2: req.body.q2,
-      q3: req.body.q3,
-      q4: req.body.q4,
-      q5: req.body.q5,
-      q6: req.body.q6,
-      q7: req.body.q7,
-      q8: req.body.q8,
-      q9: req.body.q9,
-      q10: req.body.q10,
-      q11: req.body.q11,
-      q12: req.body.q12,
-      q13: req.body.q13,
-      q14: req.body.q14,
-      q15: req.body.q15,
-      q16: req.body.q16
-    };
+    const answers = Object.fromEntries(
+      QUESTIONS
+        .filter((q) => q && q.key)
+        .map((q) => [q.key, req.body[q.key] || null])
+    );
 
-    const traits = [
-      buildTrait("Determinazione", [answers.q1, answers.q9]),
-      buildTrait("Organizzazione", [answers.q2, answers.q10]),
-      buildTrait("Gestione pressione", [answers.q3, answers.q11]),
-      buildTrait("Empatia", [answers.q4, answers.q12]),
-      buildTrait("Estroversione", [answers.q5, answers.q13]),
-      buildTrait("Leadership", [answers.q6, answers.q14]),
-      buildTrait("Collaborazione", [answers.q7, answers.q15]),
-      buildTrait("Responsabilità", [answers.q8, answers.q16])
-    ];
+    const traits = buildTraitsFromAnswers(answers);
 
     const avgScore = avg(traits.map((t) => t.score));
     const avgRange = range(avgScore);
@@ -514,6 +604,7 @@ app.post("/q/:token", async (req, res) => {
         assessmentLinkId: link.id,
         respondentName: req.body.respondentName || "Anonimo",
         respondentEmail: req.body.respondentEmail || null,
+        candidateCompany: req.body.candidateCompany || null,
         requestedRole
       }
     });
@@ -531,7 +622,10 @@ app.post("/q/:token", async (req, res) => {
           traits,
           topTraits: summary.topTraits,
           weakTraits: summary.weakTraits
-        }
+        },
+        answersJson: answers,
+        isGenerating: false,
+        generationError: null
       }
     });
 
@@ -561,9 +655,6 @@ app.get("/thank-you", (_req, res) => {
   res.render("thank-you");
 });
 
-/**
- * ADMIN AUTH
- */
 app.get("/admin/login", (_req, res) => {
   res.render("admin-login", { error: null });
 });
@@ -607,13 +698,20 @@ app.post("/admin/logout", (req, res) => {
   });
 });
 
-/**
- * AREA ADMIN
- */
 app.get("/admin", requireAdmin, async (req, res) => {
+  const companyFilter = (req.query.company || "").toString().trim();
+
   const assessments = await prisma.assessment.findMany({
     where: {
-      organizationId: req.session.admin.organizationId
+      organizationId: req.session.admin.organizationId,
+      ...(companyFilter
+        ? {
+            candidateCompany: {
+              contains: companyFilter,
+              mode: "insensitive"
+            }
+          }
+        : {})
     },
     include: {
       result: true
@@ -625,29 +723,32 @@ app.get("/admin", requireAdmin, async (req, res) => {
 
   const submissions = assessments.map((item) => {
     const payload = item.result?.traitsJson || {};
+
     return {
       id: item.id,
       name: item.respondentName,
       email: item.respondentEmail,
+      candidateCompany: item.candidateCompany,
       role: item.requestedRole,
       createdAt: item.createdAt,
       avgScore: item.result?.avgScore ?? null,
       orientation: item.result?.orientation ?? "-",
       topTraits: payload.topTraits || [],
       expandedReady: !!item.result?.expandedReportJson,
-      expandedGenerating: !item.result?.expandedReportJson
+      expandedGenerating: !!item.result?.isGenerating,
+      generationError: item.result?.generationError || null
     };
   });
 
   res.render("admin", {
     submissions,
-    organizationName: req.session.admin.organizationName
+    organizationName: req.session.admin.organizationName,
+    filters: {
+      company: companyFilter
+    }
   });
 });
 
-/**
- * GENERAZIONE RELAZIONE ESPLOSA MANUALE
- */
 app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) => {
   try {
     const assessment = await prisma.assessment.findFirst({
@@ -665,6 +766,10 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
     }
 
     if (assessment.result.expandedReportJson) {
+      return res.redirect(`/admin/${assessment.id}`);
+    }
+
+    if (assessment.result.isGenerating) {
       return res.redirect(`/admin/${assessment.id}`);
     }
 
@@ -686,7 +791,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile"
     });
 
-    return res.redirect(`/admin/${assessment.id}?generating=1`);
+    return res.redirect(`/admin/${assessment.id}`);
   } catch (error) {
     console.error("Errore avvio generazione relazione esplosa:", error);
     res.status(500).send("Errore durante l'avvio della generazione della relazione esplosa.");
@@ -715,6 +820,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     id: assessment.id,
     name: assessment.respondentName,
     email: assessment.respondentEmail,
+    candidateCompany: assessment.candidateCompany,
     role: assessment.requestedRole,
     createdAt: assessment.createdAt,
     analysis: {
@@ -722,6 +828,10 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       avgRange: assessment.result?.avgRange ?? "-",
       reliabilityScore: assessment.result?.reliabilityScore ?? "-",
       reliabilityLabel: assessment.result?.reliabilityLabel ?? "-",
+      answers: assessment.result?.answersJson || {},
+      questions: getQuestionTexts(),
+      isGenerating: !!assessment.result?.isGenerating,
+      generationError: assessment.result?.generationError || null,
       summary: {
         orientation: assessment.result?.orientation ?? "-",
         roleComment: assessment.result?.roleComment ?? "-",
@@ -736,13 +846,10 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   res.render("detail", {
     submission,
     organizationName: req.session.admin.organizationName,
-    isGenerating: req.query.generating === "1" && !expanded
+    isGenerating: !!assessment.result?.isGenerating && !expanded
   });
 });
 
-/**
- * PDF REPORT
- */
 app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
@@ -775,11 +882,17 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   doc.pipe(res);
 
-  doc.fontSize(22).text("Performance Assessment Report", { align: "center" });
+  drawLogo(doc);
+
+  doc.fontSize(22).fillColor("black").text("Performance Assessment Report", {
+    align: "center"
+  });
+
   doc.moveDown(0.5);
   doc.fontSize(10).fillColor("#666").text(req.session.admin.organizationName, {
     align: "center"
   });
+
   doc.fillColor("black");
   doc.moveDown();
 
@@ -787,6 +900,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   doc.fontSize(11);
   doc.text(`Nome: ${assessment.respondentName || "-"}`);
   doc.text(`Email: ${assessment.respondentEmail || "-"}`);
+  doc.text(`Azienda risorsa: ${assessment.candidateCompany || "-"}`);
   doc.text(`Ruolo: ${assessment.requestedRole || "-"}`);
   doc.text(`Data: ${new Date(assessment.createdAt).toLocaleString("it-IT")}`);
 
@@ -797,7 +911,9 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   doc.text(`Fascia media: ${assessment.result?.avgRange ?? "-"}`);
   doc.text(`Orientamento prevalente: ${assessment.result?.orientation ?? "-"}`);
   doc.text(`Lettura rispetto al ruolo: ${assessment.result?.roleComment ?? "-"}`);
-  doc.text(`Attendibilità: ${assessment.result?.reliabilityLabel ?? "-"} (${assessment.result?.reliabilityScore ?? "-"})`);
+  doc.text(
+    `Attendibilità: ${assessment.result?.reliabilityLabel ?? "-"} (${assessment.result?.reliabilityScore ?? "-"})`
+  );
 
   doc.moveDown();
   doc.fontSize(14).text("Punti forti emergenti");
@@ -823,7 +939,9 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   if (expanded?.generalSummary) {
     doc.addPage();
-    doc.fontSize(16).text("Relazione esplosa");
+    drawLogo(doc);
+
+    doc.fontSize(16).fillColor("black").text("Relazione esplosa");
     doc.moveDown(0.5);
     doc.fontSize(11).text(expanded.generalSummary);
     doc.moveDown();

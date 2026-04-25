@@ -2,68 +2,290 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Questionario</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Questionario Assessment</title>
+
   <style>
-    body { font-family: Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 16px; }
-    .card { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-    .field { margin-bottom: 16px; }
-    .options label { display: block; margin: 8px 0; }
-    button { padding: 12px 20px; border: 0; border-radius: 8px; cursor: pointer; }
-    .muted { color: #666; }
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #111827;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 28px 16px;
+    }
+
+    .shell {
+      width: 100%;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      box-shadow: 0 14px 40px rgba(15, 23, 42, 0.06);
+    }
+
+    .brand-band {
+      background: linear-gradient(135deg, #0b6fb3, #1685cf);
+      padding: 26px 20px;
+      text-align: center;
+    }
+
+    .brand-logo {
+      width: min(420px, 88%);
+      max-height: 100px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .header-content {
+      padding: 26px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #0b6fb3;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 40px);
+      letter-spacing: -0.03em;
+    }
+
+    .intro {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    form {
+      margin: 0;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 22px;
+      margin-bottom: 18px;
+    }
+
+    .card h2 {
+      margin: 0 0 16px;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    input[type="text"],
+    input[type="email"] {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    .question {
+      padding: 18px 0;
+      border-top: 1px solid #eef0f3;
+    }
+
+    .question:first-child {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .question-title {
+      margin: 0 0 12px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .option {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 400;
+      margin: 0;
+    }
+
+    .option input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+
+    .actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 18px;
+    }
+
+    .btn {
+      border: 0;
+      cursor: pointer;
+      border-radius: 12px;
+      background: #111827;
+      color: #fff;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .muted {
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 16px;
+      }
+
+      .header-content,
+      .card {
+        padding: 18px;
+      }
+
+      .options {
+        grid-template-columns: 1fr;
+      }
+
+      .actions {
+        justify-content: stretch;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
   </style>
 </head>
+
 <body>
-  <h1>Questionario</h1>
-  <p class="muted"><strong>Azienda:</strong> <%= companyName %></p>
-  <p class="muted"><strong>Ruolo target:</strong> <%= requestedRole %></p>
-  <p>Compila il questionario in modo spontaneo e sincero.</p>
-
-  <form method="POST" action="/q/<%= token %>">
-    <input type="hidden" name="requestedRole" value="<%= requestedRole %>" />
-
-    <div class="card">
-      <div class="field">
-        <label for="respondentName">Nome</label><br />
-        <input id="respondentName" name="respondentName" type="text" required />
-      </div>
-
-      <div class="field">
-        <label for="respondentEmail">Email</label><br />
-        <input id="respondentEmail" name="respondentEmail" type="email" />
-      </div>
-    </div>
-
-    <% const questions = [
-      ["q1", "Mi considero una persona determinata."],
-      ["q2", "Pianifico e organizzo bene le attività."],
-      ["q3", "Riesco a mantenere lucidità anche sotto pressione."],
-      ["q4", "Riesco a comprendere bene le esigenze delle altre persone."],
-      ["q5", "Mi viene naturale entrare in relazione con persone nuove."],
-      ["q6", "Le persone tendono a vedermi come un punto di riferimento."],
-      ["q7", "Lavoro bene in squadra e valorizzo il contributo degli altri."],
-      ["q8", "Mi assumo responsabilità in prima persona."],
-      ["q9", "Quando incontro difficoltà, tendo a insistere fino a trovare una soluzione."],
-      ["q10", "Riesco a gestire più attività mantenendo ordine e priorità."],
-      ["q11", "In situazioni stressanti riesco a mantenere controllo emotivo."],
-      ["q12", "Riesco a mettermi facilmente nei panni degli altri."],
-      ["q13", "Mi sento a mio agio nel parlare davanti ad altre persone."],
-      ["q14", "Tendo a prendere iniziativa quando serve guidare."],
-      ["q15", "Mi impegno per far funzionare il gruppo in modo efficace."],
-      ["q16", "Mi sento direttamente responsabile dei risultati che ottengo."]
-    ]; %>
-
-    <% questions.forEach(function(q, idx) { %>
-      <div class="card">
-        <p><strong><%= idx + 1 %>. <%= q[1] %></strong></p>
-        <div class="options">
-          <label><input type="radio" name="<%= q[0] %>" value="agree" required /> Sono d’accordo</label>
-          <label><input type="radio" name="<%= q[0] %>" value="uncertain" /> Incerto</label>
-          <label><input type="radio" name="<%= q[0] %>" value="disagree" /> Non sono d’accordo</label>
+  <main class="page">
+    <div class="shell">
+      <header class="header">
+        <div class="brand-band">
+          <img class="brand-logo" src="/zenith-logo.jpeg" alt="Zenith 360" />
         </div>
-      </div>
-    <% }) %>
 
-    <button type="submit">Invia questionario</button>
-  </form>
+        <div class="header-content">
+          <p class="eyebrow">Questionario assessment</p>
+          <h1>Performance Assessment</h1>
+
+          <p class="intro">
+            Compila il questionario rispondendo in modo spontaneo e coerente con il tuo comportamento abituale nel contesto lavorativo.
+            Non esistono risposte giuste o sbagliate.
+          </p>
+        </div>
+      </header>
+
+      <form method="POST" action="/q/<%= token %>" id="assessment-form">
+        <input type="hidden" name="requestedRole" value="<%= requestedRole %>" />
+
+        <section class="card">
+          <h2>Dati compilazione</h2>
+
+          <label for="respondentName">Nome e cognome</label>
+          <input id="respondentName" type="text" name="respondentName" required />
+
+          <label for="respondentEmail">Email</label>
+          <input id="respondentEmail" type="email" name="respondentEmail" />
+
+          <label for="candidateCompany">Azienda / Cliente di riferimento</label>
+          <input id="candidateCompany" type="text" name="candidateCompany" placeholder="Es. Zenith 360" />
+
+          <p class="muted">
+            I dati saranno utilizzati esclusivamente per associare correttamente la compilazione al percorso di assessment.
+          </p>
+        </section>
+
+        <section class="card">
+          <h2>Domande</h2>
+
+          <% Object.keys(questions).forEach(function(key, index) { %>
+            <div class="question">
+              <p class="question-title"><%= index + 1 %>. <%= questions[key] %></p>
+
+              <div class="options">
+                <label class="option">
+                  <input type="radio" name="<%= key %>" value="agree" required />
+                  <span>D’accordo</span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="<%= key %>" value="uncertain" required />
+                  <span>Incerto / parzialmente</span>
+                </label>
+
+                <label class="option">
+                  <input type="radio" name="<%= key %>" value="disagree" required />
+                  <span>In disaccordo</span>
+                </label>
+              </div>
+            </div>
+          <% }) %>
+
+          <div class="actions">
+            <button class="btn" type="submit" id="submit-button">
+              Invia assessment
+            </button>
+          </div>
+        </section>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    const form = document.getElementById("assessment-form");
+    const button = document.getElementById("submit-button");
+
+    if (form && button) {
+      form.addEventListener("submit", function () {
+        button.disabled = true;
+        button.innerText = "Invio in corso...";
+        button.style.opacity = "0.7";
+        button.style.cursor = "not-allowed";
+      });
+    }
+  </script>
 </body>
 </html>

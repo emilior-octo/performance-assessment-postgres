@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Dettaglio Assessment</title>
+
   <style>
     body { font-family: Arial, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 16px; }
     .card { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
@@ -48,6 +49,12 @@
       background: #f0fdf4;
       border: 1px solid #bbf7d0;
       color: #166534;
+    }
+
+    .notice-error {
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
     }
 
     .notice strong {
@@ -161,6 +168,25 @@
       text-align: right;
     }
 
+    .answers-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .answers-table th,
+    .answers-table td {
+      border: 1px solid #e5e5e5;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .answers-table th {
+      background: #f7f7f7;
+    }
+
     form { margin: 0; }
 
     @media (max-width: 700px) {
@@ -186,6 +212,10 @@
       .histogram-name {
         font-size: 13px;
       }
+
+      .answers-table {
+        font-size: 13px;
+      }
     }
   </style>
 
@@ -193,6 +223,7 @@
     <meta http-equiv="refresh" content="8">
   <% } %>
 </head>
+
 <body>
   <div class="topbar">
     <p><a href="/admin">← Torna alla lista</a></p>
@@ -215,8 +246,14 @@
   <% if (isGenerating) { %>
     <div class="notice notice-warning">
       <strong>Relazione in generazione.</strong>
-      Il report esploso è in preparazione. Attendi qualche secondo: la pagina si aggiornerà automaticamente.
-      Se dopo qualche aggiornamento non compare, usa il pulsante di generazione manuale come fallback.
+      Il report esploso è in preparazione. La pagina si aggiornerà automaticamente.
+    </div>
+  <% } %>
+
+  <% if (submission.analysis.generationError) { %>
+    <div class="notice notice-error">
+      <strong>Generazione non completata.</strong>
+      <%= submission.analysis.generationError %>. Puoi rilanciare la generazione dal pulsante fallback.
     </div>
   <% } %>
 
@@ -236,6 +273,7 @@
       <li><strong>ID:</strong> <%= submission.id %></li>
       <li><strong>Nome:</strong> <%= submission.name %></li>
       <li><strong>Email:</strong> <%= submission.email || "-" %></li>
+      <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
       <li><strong>Ruolo:</strong> <%= submission.role %></li>
       <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
     </ul>
@@ -246,6 +284,7 @@
 
     <p><strong>Score medio:</strong> <%= submission.analysis.avgScore %></p>
     <p><strong>Fascia media:</strong> <%= submission.analysis.avgRange %></p>
+
     <p>
       <strong>Indice attendibilità:</strong>
       <%= submission.analysis.reliabilityLabel %> (<%= submission.analysis.reliabilityScore %>)
@@ -332,6 +371,41 @@
       </div>
     <% } else { %>
       <p class="muted">Nessun dettaglio tratti disponibile.</p>
+    <% } %>
+  </div>
+
+  <div class="card">
+    <h2>Risposte grezze</h2>
+
+    <% if (submission.analysis.answers && Object.keys(submission.analysis.answers).length) { %>
+      <table class="answers-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Domanda</th>
+            <th>Risposta</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <% Object.keys(submission.analysis.questions).forEach(function(key, index) {
+            const answer = submission.analysis.answers[key];
+            let label = "-";
+
+            if (answer === "agree") label = "D’accordo";
+            if (answer === "uncertain") label = "Incerto / parzialmente";
+            if (answer === "disagree") label = "In disaccordo";
+          %>
+            <tr>
+              <td><%= index + 1 %></td>
+              <td><%= submission.analysis.questions[key] %></td>
+              <td><%= label %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } else { %>
+      <p class="muted">Risposte grezze non disponibili per questa compilazione.</p>
     <% } %>
   </div>
 
