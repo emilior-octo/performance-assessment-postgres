@@ -7,9 +7,7 @@ import PDFDocument from "pdfkit";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
-import ZPI_QUESTIONS from "./questions.js";
-
-const QUESTIONS = Array.isArray(ZPI_QUESTIONS) ? ZPI_QUESTIONS : [];
+import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
 
 const prisma = new PrismaClient();
 
@@ -26,7 +24,7 @@ app.set("trust proxy", 1);
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use(
@@ -56,23 +54,23 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-function score(answer) {
+function baseScore(answer) {
   if (answer === "agree") return 30;
   if (answer === "uncertain") return 10;
   if (answer === "disagree") return -30;
   return 0;
 }
 
-function scoreQuestion(answer, question) {
-  const baseScore = score(answer);
-  return question?.reverse ? baseScore * -1 : baseScore;
+function scoreAnswer(answer, reverse = false) {
+  const value = baseScore(answer);
+  return reverse ? value * -1 : value;
 }
 
 function answerLabel(answer) {
   if (answer === "agree") return "D’accordo";
   if (answer === "uncertain") return "Incerto / parzialmente";
   if (answer === "disagree") return "In disaccordo";
-  return "-";
+  return answer || "-";
 }
 
 function range(v) {
@@ -87,53 +85,54 @@ function avg(arr) {
   return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
 }
 
-function buildTrait(name, answers) {
-  const finalScore = avg(answers.map(score));
-
-  return {
-    name,
-    answers,
-    score: finalScore,
-    range: range(finalScore)
-  };
+function getQuestionTexts() {
+  return Object.fromEntries(ZPI_QUESTIONS.map((q) => [q.key, q.text]));
 }
 
-function getScoredQuestions() {
-  return QUESTIONS.filter((q) => q && q.key && q.scored !== false && (q.responseType || "likert") === "likert");
+function collectAnswers(body) {
+  return Object.fromEntries(
+    ZPI_QUESTIONS.map((q) => [q.key, body[q.key] || null])
+  );
 }
 
 function buildTraitsFromAnswers(answers) {
-  const traitMap = {};
+  const groups = new Map();
 
   getScoredQuestions().forEach((question) => {
     const answer = answers[question.key];
 
-    if (!answer) {
-      return;
-    }
+    if (!answer) return;
 
     const traitName = question.trait || "Comportamento generale";
+    const value = scoreAnswer(answer, question.reverse);
 
-    if (!traitMap[traitName]) {
-      traitMap[traitName] = { scores: [], questionKeys: [] };
+    if (!groups.has(traitName)) {
+      groups.set(traitName, []);
     }
 
-    traitMap[traitName].scores.push(scoreQuestion(answer, question));
-    traitMap[traitName].questionKeys.push(question.key);
+    groups.get(traitName).push({
+      questionKey: question.key,
+      questionId: question.id,
+      answer,
+      reverse: !!question.reverse,
+      value
+    });
   });
 
-  return Object.entries(traitMap)
-    .map(([name, payload]) => {
-      const finalScore = avg(payload.scores);
+  return Array.from(groups.entries())
+    .map(([name, items]) => {
+      const values = items.map((item) => item.value);
+      const finalScore = avg(values);
 
       return {
         name,
-        answers: payload.questionKeys,
         score: finalScore,
-        range: range(finalScore)
+        range: range(finalScore),
+        questionCount: items.length,
+        items
       };
     })
-    .sort((a, b) => a.name.localeCompare(b.name, "it"));
+    .sort((a, b) => b.score - a.score);
 }
 
 function buildSummary(traits, role) {
@@ -144,12 +143,18 @@ function buildSummary(traits, role) {
   let orientation = "profilo equilibrato";
   const topSet = new Set(top);
 
-  if (topSet.has("Leadership") && topSet.has("Responsabilità")) {
+  if (topSet.has("Leadership e influenza") || topSet.has("Responsabilità e ownership")) {
     orientation = "orientamento manageriale / guida";
-  } else if (topSet.has("Estroversione") && topSet.has("Determinazione")) {
-    orientation = "orientamento commerciale / influenza";
-  } else if (topSet.has("Organizzazione") && topSet.has("Collaborazione")) {
-    orientation = "orientamento organizzativo / coordinamento";
+  } else if (
+    topSet.has("Estroversione e networking") ||
+    topSet.has("Assertività e negoziazione") ||
+    topSet.has("Energia sociale e comunicazione")
+  ) {
+    orientation = "orientamento commerciale / relazione";
+  } else if (topSet.has("Organizzazione e metodo") || topSet.has("Continuità professionale")) {
+    orientation = "orientamento organizzativo / metodo";
+  } else if (topSet.has("Creatività e innovazione") || topSet.has("Visione e orientamento al futuro")) {
+    orientation = "orientamento evolutivo / progettuale";
   }
 
   let roleComment =
@@ -157,25 +162,26 @@ function buildSummary(traits, role) {
 
   if (role === "manager") {
     roleComment =
-      topSet.has("Leadership") ||
-      topSet.has("Responsabilità") ||
-      topSet.has("Organizzazione")
-        ? "Il profilo mostra elementi coerenti con un ruolo manageriale, soprattutto sul piano della guida, della responsabilità e della struttura."
-        : "Per un ruolo manageriale sarà utile approfondire in particolare guida, responsabilità e capacità organizzativa.";
+      topSet.has("Leadership e influenza") ||
+      topSet.has("Responsabilità e ownership") ||
+      topSet.has("Organizzazione e metodo")
+        ? "Il profilo mostra elementi coerenti con un ruolo manageriale, soprattutto sul piano della guida, della responsabilità e della struttura operativa."
+        : "Per un ruolo manageriale sarà utile approfondire in particolare guida, responsabilità, capacità organizzativa e tenuta nella gestione delle persone.";
   } else if (role === "sales") {
     roleComment =
-      topSet.has("Estroversione") ||
-      topSet.has("Determinazione") ||
-      topSet.has("Empatia")
-        ? "Il profilo mostra elementi interessanti per un ruolo commerciale, soprattutto su spinta, relazione e influenza."
-        : "Per un ruolo commerciale sarà utile approfondire soprattutto componente relazionale, iniziativa e orientamento al risultato.";
+      topSet.has("Estroversione e networking") ||
+      topSet.has("Assertività e negoziazione") ||
+      topSet.has("Orientamento alla performance") ||
+      topSet.has("Energia sociale e comunicazione")
+        ? "Il profilo mostra elementi interessanti per un ruolo commerciale, soprattutto su relazione, influenza, energia comunicativa e orientamento al risultato."
+        : "Per un ruolo commerciale sarà utile approfondire soprattutto componente relazionale, iniziativa, capacità negoziale e orientamento al risultato.";
   } else if (role === "amministrativo") {
     roleComment =
-      topSet.has("Organizzazione") ||
-      topSet.has("Collaborazione") ||
-      topSet.has("Responsabilità")
-        ? "Il profilo mostra elementi coerenti con un ruolo amministrativo, soprattutto su metodo, affidabilità e continuità."
-        : "Per un ruolo amministrativo sarà utile approfondire soprattutto metodo, precisione e affidabilità.";
+      topSet.has("Organizzazione e metodo") ||
+      topSet.has("Responsabilità e ownership") ||
+      topSet.has("Continuità professionale")
+        ? "Il profilo mostra elementi coerenti con un ruolo amministrativo, soprattutto su metodo, affidabilità, continuità e presidio operativo."
+        : "Per un ruolo amministrativo sarà utile approfondire soprattutto metodo, precisione, affidabilità e continuità nell’esecuzione.";
   }
 
   return {
@@ -186,46 +192,76 @@ function buildSummary(traits, role) {
   };
 }
 
-function buildReliability(answers) {
-  let issues = 0;
-  let checks = 0;
+function buildReliability(answers, traits) {
+  const scoredQuestions = getScoredQuestions();
+  const answered = scoredQuestions.filter((q) => answers[q.key]);
+  const total = answered.length;
 
-  const pair = (a, b) => {
-    checks += 1;
+  if (!total) {
+    return {
+      reliabilityScore: 0,
+      reliabilityLabel: "Attendibilità da verificare",
+      reliabilityFlags: ["Nessuna risposta valutabile"]
+    };
+  }
 
-    if ((a === "agree" && b === "disagree") || (a === "disagree" && b === "agree")) {
-      issues += 1;
-    }
-  };
-
-  pair(answers.q1, answers.q9);
-  pair(answers.q2, answers.q10);
-  pair(answers.q3, answers.q11);
-  pair(answers.q4, answers.q12);
-  pair(answers.q5, answers.q13);
-  pair(answers.q6, answers.q14);
-  pair(answers.q7, answers.q15);
-  pair(answers.q8, answers.q16);
-
-  const reliabilityScore = Math.max(
-    0,
-    Math.round(100 - (issues / Math.max(checks, 1)) * 100)
+  const counts = answered.reduce(
+    (acc, q) => {
+      const answer = answers[q.key];
+      acc[answer] = (acc[answer] || 0) + 1;
+      return acc;
+    },
+    { agree: 0, uncertain: 0, disagree: 0 }
   );
+
+  const flags = [];
+  let penalty = 0;
+
+  const agreeRatio = counts.agree / total;
+  const disagreeRatio = counts.disagree / total;
+  const uncertainRatio = counts.uncertain / total;
+
+  if (agreeRatio >= 0.85) {
+    penalty += 20;
+    flags.push("Elevata concentrazione di risposte positive");
+  }
+
+  if (disagreeRatio >= 0.85) {
+    penalty += 20;
+    flags.push("Elevata concentrazione di risposte negative");
+  }
+
+  if (uncertainRatio <= 0.03 && total >= 80) {
+    penalty += 10;
+    flags.push("Uso molto basso delle risposte intermedie");
+  }
+
+  const extremeTraits = traits.filter((trait) => {
+    const values = Array.isArray(trait.items) ? trait.items.map((item) => item.value) : [];
+    if (values.length < 4) return false;
+
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return max - min >= 60;
+  });
+
+  if (extremeTraits.length >= 3) {
+    penalty += 15;
+    flags.push("Sono presenti oscillazioni interne significative su più tratti");
+  }
+
+  const reliabilityScore = Math.max(0, Math.round(100 - penalty));
 
   let reliabilityLabel = "Alta affidabilità";
   if (reliabilityScore < 80) reliabilityLabel = "Buona affidabilità";
   if (reliabilityScore < 60) reliabilityLabel = "Attendibilità da verificare";
   if (reliabilityScore < 40) reliabilityLabel = "Bassa attendibilità";
 
-  return { reliabilityScore, reliabilityLabel };
-}
-
-function getQuestionTexts() {
-  return Object.fromEntries(
-    QUESTIONS
-      .filter((q) => q && q.key && q.text)
-      .map((q) => [q.key, q.text])
-  );
+  return {
+    reliabilityScore,
+    reliabilityLabel,
+    reliabilityFlags: flags
+  };
 }
 
 async function withTimeout(promise, ms, label = "Operazione") {
@@ -244,6 +280,71 @@ async function withTimeout(promise, ms, label = "Operazione") {
   }
 }
 
+function normalizeTraitName(name) {
+  return String(name || "")
+    .replace(/\s*\(duplicato controllo\)\s*/gi, "")
+    .trim();
+}
+
+function isPlaceholderText(value) {
+  return String(value || "").includes("REPEAT_PLACEHOLDER");
+}
+
+function isValidExpandedTrait(trait, seenNames = new Set()) {
+  const rawName = String(trait?.name || "").trim();
+  const name = normalizeTraitName(rawName);
+  const serialized = JSON.stringify(trait || {});
+
+  if (!name) return false;
+  if (seenNames.has(name.toLowerCase())) return false;
+  if (/duplicato controllo/i.test(rawName)) return false;
+  if (isPlaceholderText(serialized)) return false;
+
+  seenNames.add(name.toLowerCase());
+  return true;
+}
+
+function cleanExpandedReport(expandedReportJson) {
+  if (!expandedReportJson || typeof expandedReportJson !== "object") {
+    return expandedReportJson;
+  }
+
+  const seenNames = new Set();
+  const cleanTraits = Array.isArray(expandedReportJson.traits)
+    ? expandedReportJson.traits
+        .filter((trait) => isValidExpandedTrait(trait, seenNames))
+        .map((trait) => ({
+          ...trait,
+          name: normalizeTraitName(trait.name)
+        }))
+    : [];
+
+  return {
+    ...expandedReportJson,
+    traits: cleanTraits
+  };
+}
+
+function buildAiTraitsForPrompt(traits) {
+  const seenNames = new Set();
+
+  return (Array.isArray(traits) ? traits : [])
+    .filter((trait) => {
+      const name = normalizeTraitName(trait?.name);
+      if (!name) return false;
+      if (seenNames.has(name.toLowerCase())) return false;
+      if (/duplicato controllo/i.test(String(trait?.name || ""))) return false;
+      seenNames.add(name.toLowerCase());
+      return true;
+    })
+    .map((trait) => ({
+      name: normalizeTraitName(trait.name),
+      score: trait.score,
+      range: trait.range,
+      questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
+    }));
+}
+
 async function generateExpandedReportPayload({
   companyName,
   role,
@@ -252,7 +353,8 @@ async function generateExpandedReportPayload({
   summary,
   traits,
   reliabilityScore,
-  reliabilityLabel
+  reliabilityLabel,
+  reliabilityFlags
 }) {
   if (!openai) {
     throw new Error("OPENAI_API_KEY non configurata.");
@@ -281,12 +383,7 @@ async function generateExpandedReportPayload({
     required: ["generalSummary", "traits"]
   };
 
-  const aiTraits = traits.map((t) => ({
-    name: t.name,
-    score: t.score,
-    range: t.range,
-    questionCount: Array.isArray(t.answers) ? t.answers.length : undefined
-  }));
+  const traitsForPrompt = buildAiTraitsForPrompt(traits);
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -300,9 +397,10 @@ CONTESTO
 - Orientamento prevalente: ${summary.orientation}
 - Lettura rispetto al ruolo: ${summary.roleComment}
 - Attendibilità: ${reliabilityLabel} (${reliabilityScore})
+- Eventuali segnali attendibilità: ${(reliabilityFlags || []).join("; ") || "nessun segnale rilevante"}
 
 TRATTI VALUTATI
-${JSON.stringify(aiTraits, null, 2)}
+${JSON.stringify(traitsForPrompt, null, 2)}
 
 ISTRUZIONI GENERALI
 1. Scrivi una relazione generale chiara, consulenziale e concreta.
@@ -338,6 +436,8 @@ IMPORTANTE
 - Non forzare una skill debole come se fosse un punto di forza.
 - Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
+- Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
+- Non scrivere mai REPEAT_PLACEHOLDER o testi provvisori.
 `;
 
   console.log("[EXPANDED] OpenAI call start", {
@@ -366,7 +466,7 @@ IMPORTANTE
 
   console.log("[EXPANDED] OpenAI call done");
 
-  return JSON.parse(response.output_text);
+  return cleanExpandedReport(JSON.parse(response.output_text));
 }
 
 function startExpandedReportJob({
@@ -378,7 +478,8 @@ function startExpandedReportJob({
   summary,
   traits,
   reliabilityScore,
-  reliabilityLabel
+  reliabilityLabel,
+  reliabilityFlags
 }) {
   if (!assessmentId) {
     console.error("[EXPANDED] missing assessmentId, job skipped");
@@ -406,14 +507,17 @@ function startExpandedReportJob({
         summary,
         traits,
         reliabilityScore,
-        reliabilityLabel
+        reliabilityLabel,
+        reliabilityFlags
       });
     })
     .then(async (expandedReportJson) => {
+      const cleanedExpandedReportJson = cleanExpandedReport(expandedReportJson);
+
       await prisma.assessmentResult.update({
         where: { assessmentId },
         data: {
-          expandedReportJson,
+          expandedReportJson: cleanedExpandedReportJson,
           expandedReportGeneratedAt: new Date(),
           isGenerating: false,
           generationError: null
@@ -591,19 +695,13 @@ app.post("/q/:token", async (req, res) => {
       return res.status(404).send("Link questionario non valido o non attivo.");
     }
 
-    const answers = Object.fromEntries(
-      QUESTIONS
-        .filter((q) => q && q.key)
-        .map((q) => [q.key, req.body[q.key] || null])
-    );
-
+    const answers = collectAnswers(req.body);
     const traits = buildTraitsFromAnswers(answers);
-
     const avgScore = avg(traits.map((t) => t.score));
     const avgRange = range(avgScore);
     const requestedRole = req.body.requestedRole || link.requestedRole;
     const summary = buildSummary(traits, requestedRole);
-    const { reliabilityScore, reliabilityLabel } = buildReliability(answers);
+    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
 
     const assessment = await prisma.assessment.create({
       data: {
@@ -628,7 +726,8 @@ app.post("/q/:token", async (req, res) => {
         traitsJson: {
           traits,
           topTraits: summary.topTraits,
-          weakTraits: summary.weakTraits
+          weakTraits: summary.weakTraits,
+          reliabilityFlags
         },
         answersJson: answers,
         isGenerating: false,
@@ -648,7 +747,8 @@ app.post("/q/:token", async (req, res) => {
       },
       traits,
       reliabilityScore,
-      reliabilityLabel
+      reliabilityLabel,
+      reliabilityFlags
     });
 
     res.redirect("/thank-you");
@@ -772,11 +872,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       return res.status(404).send("Assessment non trovato");
     }
 
-    if (assessment.result.expandedReportJson) {
-      return res.redirect(`/admin/${assessment.id}`);
-    }
-
-    if (assessment.result.isGenerating) {
+    if (assessment.result.expandedReportJson || assessment.result.isGenerating) {
       return res.redirect(`/admin/${assessment.id}`);
     }
 
@@ -795,7 +891,8 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       },
       traits,
       reliabilityScore: assessment.result.reliabilityScore ?? 0,
-      reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile"
+      reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
+      reliabilityFlags: payload.reliabilityFlags || []
     });
 
     return res.redirect(`/admin/${assessment.id}`);
@@ -821,7 +918,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
-  const expanded = assessment.result?.expandedReportJson || null;
+  const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
 
   const submission = {
     id: assessment.id,
@@ -835,6 +932,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       avgRange: assessment.result?.avgRange ?? "-",
       reliabilityScore: assessment.result?.reliabilityScore ?? "-",
       reliabilityLabel: assessment.result?.reliabilityLabel ?? "-",
+      reliabilityFlags: payload.reliabilityFlags || [],
       answers: assessment.result?.answersJson || {},
       questions: getQuestionTexts(),
       isGenerating: !!assessment.result?.isGenerating,
@@ -874,7 +972,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   const payload = assessment.result?.traitsJson || {};
   const traits = Array.isArray(payload.traits) ? payload.traits : [];
-  const expanded = assessment.result?.expandedReportJson || null;
+  const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
 
   const doc = new PDFDocument({
     margin: 50,
@@ -922,6 +1020,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     `Attendibilità: ${assessment.result?.reliabilityLabel ?? "-"} (${assessment.result?.reliabilityScore ?? "-"})`
   );
 
+  if (Array.isArray(payload.reliabilityFlags) && payload.reliabilityFlags.length) {
+    doc.text(`Segnali attendibilità: ${payload.reliabilityFlags.join("; ")}`);
+  }
+
   doc.moveDown();
   doc.fontSize(14).text("Punti forti emergenti");
   doc.fontSize(11).text((payload.topTraits || []).join(", ") || "-");
@@ -941,6 +1043,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
       doc.fontSize(11).text(`${t.name}: ${t.score} (${t.range})`);
     });
 
+    doc.addPage();
+    drawLogo(doc);
     drawTraitHistogram(doc, traits);
   }
 
