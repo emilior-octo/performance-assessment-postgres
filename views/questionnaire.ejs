@@ -102,13 +102,31 @@
     }
 
     input[type="text"],
-    input[type="email"] {
+    input[type="email"],
+    input[type="number"],
+    select {
       width: 100%;
       padding: 13px 14px;
       border: 1px solid #d1d5db;
       border-radius: 12px;
       font-size: 16px;
       margin-bottom: 16px;
+      background: #fff;
+    }
+
+    .section-hint {
+      margin: -4px 0 16px;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .other-role-wrap {
+      display: none;
+    }
+
+    .other-role-wrap.is-visible {
+      display: block;
     }
 
     .question {
@@ -219,8 +237,6 @@
       </header>
 
       <form method="POST" action="/q/<%= token %>" id="assessment-form">
-        <input type="hidden" name="requestedRole" value="<%= requestedRole %>" />
-
         <section class="card">
           <h2>Dati compilazione</h2>
 
@@ -230,8 +246,36 @@
           <label for="respondentEmail">Email</label>
           <input id="respondentEmail" type="email" name="respondentEmail" />
 
+          <label for="age">Età</label>
+          <input id="age" type="number" name="age" min="16" max="100" step="1" required />
+
           <label for="candidateCompany">Azienda / Cliente di riferimento</label>
           <input id="candidateCompany" type="text" name="candidateCompany" placeholder="Es. Zenith 360" />
+
+          <label for="requestedRole">Ruolo target</label>
+          <select id="requestedRole" name="requestedRole" required>
+            <option value="">Seleziona un ruolo</option>
+            <% (typeof roleOptions !== "undefined" ? roleOptions : []).forEach(function(role) { %>
+              <option value="<%= role.value %>" <%= requestedRole === role.value ? "selected" : "" %>>
+                <%= role.label %>
+              </option>
+            <% }) %>
+          </select>
+
+          <div id="requestedRoleOtherWrap" class="other-role-wrap">
+            <label for="requestedRoleOther">Specifica altro ruolo</label>
+            <input
+              id="requestedRoleOther"
+              type="text"
+              name="requestedRoleOther"
+              placeholder="Es. Store manager, Buyer, Addetto logistica..."
+              autocomplete="organization-title"
+            />
+          </div>
+
+          <p class="section-hint">
+            Il ruolo serve solo per interpretare il report nel contesto corretto: non modifica il punteggio numerico.
+          </p>
 
           <p class="muted">
             I dati saranno utilizzati esclusivamente per associare correttamente la compilazione al percorso di assessment.
@@ -277,6 +321,31 @@
   <script>
     const form = document.getElementById("assessment-form");
     const button = document.getElementById("submit-button");
+
+    const roleSelect = document.getElementById("requestedRole");
+    const otherWrap = document.getElementById("requestedRoleOtherWrap");
+    const otherInput = document.getElementById("requestedRoleOther");
+
+    function syncOtherRole() {
+      const isOther = roleSelect && roleSelect.value === "altro";
+
+      if (otherWrap) {
+        otherWrap.classList.toggle("is-visible", !!isOther);
+      }
+
+      if (otherInput) {
+        otherInput.required = !!isOther;
+
+        if (!isOther) {
+          otherInput.value = "";
+        }
+      }
+    }
+
+    if (roleSelect) {
+      roleSelect.addEventListener("change", syncOtherRole);
+      syncOtherRole();
+    }
 
     if (form && button) {
       form.addEventListener("submit", function () {

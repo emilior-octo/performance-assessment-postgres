@@ -273,6 +273,7 @@
       <li><strong>ID:</strong> <%= submission.id %></li>
       <li><strong>Nome:</strong> <%= submission.name %></li>
       <li><strong>Email:</strong> <%= submission.email || "-" %></li>
+      <li><strong>Età:</strong> <%= submission.age || "-" %></li>
       <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
       <li><strong>Ruolo:</strong> <%= submission.role %></li>
       <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
@@ -299,6 +300,20 @@
       <strong>Lettura rispetto al ruolo:</strong>
       <%= submission.analysis.summary.roleComment %>
       Questa indicazione rappresenta una prima chiave interpretativa e sarà oggetto di approfondimento in fase di restituzione.
+    </p>
+
+    <p>
+      <strong>Compatibilità con il ruolo:</strong>
+      <% if (submission.analysis.summary.roleFit) { %>
+        <%= submission.analysis.summary.roleFit.label %> (<%= submission.analysis.summary.roleFit.score %>%)
+      <% } else { %>
+        -
+      <% } %>
+    </p>
+
+    <p>
+      <strong>Consiglio generale di gestione:</strong>
+      <%= submission.analysis.summary.managementAdvice || "-" %>
     </p>
 
     <p>

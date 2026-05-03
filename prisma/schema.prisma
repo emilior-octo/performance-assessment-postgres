@@ -47,6 +47,7 @@ model Assessment {
   assessmentLinkId String
   respondentName   String
   respondentEmail  String?
+  age              Int?
   candidateCompany String?
   requestedRole    String
   createdAt        DateTime          @default(now())

@@ -232,8 +232,10 @@
         <tr>
           <th>Nome</th>
           <th>Email</th>
+          <th>Età</th>
           <th>Azienda risorsa</th>
           <th>Ruolo</th>
+          <th>Compatibilità ruolo</th>
           <th>Data</th>
           <th>Score medio</th>
           <th>Orientamento</th>
@@ -248,8 +250,17 @@
           <tr>
             <td><%= item.name %></td>
             <td><%= item.email || "-" %></td>
+            <td><%= item.age || "-" %></td>
             <td><%= item.candidateCompany || "-" %></td>
             <td><%= item.role %></td>
+            <td>
+              <% if (item.roleFit) { %>
+                <strong><%= item.roleFit.score %>%</strong><br>
+                <span class="muted"><%= item.roleFit.label %></span>
+              <% } else { %>
+                -
+              <% } %>
+            </td>
             <td><%= new Date(item.createdAt).toLocaleString("it-IT") %></td>
             <td><%= item.avgScore ?? "-" %></td>
             <td><%= item.orientation %></td>

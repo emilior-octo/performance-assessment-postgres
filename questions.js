@@ -1,7 +1,7 @@
 // ZPI™ – Zenith Performance Index
 // questions.js
 // Generated from uploaded ZPI questionnaire blocks.
-// NOTE: uploaded files currently include questions 1–120 and 181–243 with some numbering gaps.
+// NOTE: uploaded files currently include questions 1–243 with some numbering gaps.
 // Missing ranges/items are listed in MISSING_QUESTION_IDS below.
 
 export const ZPI_TRAITS = [
@@ -29,66 +29,6 @@ export const ZPI_TRAITS = [
 ];
 
 export const MISSING_QUESTION_IDS = [
-  121,
-  122,
-  123,
-  124,
-  125,
-  126,
-  127,
-  128,
-  129,
-  130,
-  131,
-  132,
-  133,
-  134,
-  135,
-  136,
-  137,
-  138,
-  139,
-  140,
-  141,
-  142,
-  143,
-  144,
-  145,
-  146,
-  147,
-  148,
-  149,
-  150,
-  151,
-  152,
-  153,
-  154,
-  155,
-  156,
-  157,
-  158,
-  159,
-  160,
-  161,
-  162,
-  163,
-  164,
-  165,
-  166,
-  167,
-  168,
-  169,
-  170,
-  171,
-  172,
-  173,
-  174,
-  175,
-  176,
-  177,
-  178,
-  179,
-  180,
   182,
   186,
   194,
@@ -1609,6 +1549,726 @@ export const ZPI_QUESTIONS = [
     "scored": true,
     "tags": [
       "metodo"
+    ]
+  },
+  {
+    "id": 121,
+    "key": "q121",
+    "text": "Le mie riserve finanziarie attuali sono adeguate rispetto al mio reddito mensile netto.",
+    "trait": "Autonomia economica e iniziativa",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 122,
+    "key": "q122",
+    "text": "Tendo a essere disordinato nella gestione degli spazi o delle mie cose.",
+    "trait": "Organizzazione e metodo",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 123,
+    "key": "q123",
+    "text": "Mi risulta difficile accettare di avere torto nelle discussioni o nei confronti con gli altri.",
+    "trait": "Flessibilità e adattabilità",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 124,
+    "key": "q124",
+    "text": "Mi crea disagio dover convincere altre persone ad accettare le mie idee o proposte.",
+    "trait": "Assertività e negoziazione",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 125,
+    "key": "q125",
+    "text": "La mia timidezza rappresenta un ostacolo nelle mie relazioni o opportunità.",
+    "trait": "Estroversione e networking",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 126,
+    "key": "q126",
+    "text": "Riesco a comprendere in anticipo le intenzioni o gli obiettivi delle persone con cui interagisco.",
+    "trait": "Empatia e collaborazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 127,
+    "key": "q127",
+    "text": "Possiedo un immobile di proprietà, anche se soggetto a mutuo.",
+    "trait": "Autonomia economica e iniziativa",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 128,
+    "key": "q128",
+    "text": "Ho aderito a forme di risparmio o investimento a lungo termine per il mio futuro, come fondi pensione o PAC.",
+    "trait": "Visione e orientamento al futuro",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 129,
+    "key": "q129",
+    "text": "Mostro forte curiosità verso le persone appena conosciute, ponendo molte domande per conoscerle meglio.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 130,
+    "key": "q130",
+    "text": "Dopo aver conosciuto una persona, mi capita spesso di modificare l’opinione iniziale che avevo su di lei.",
+    "trait": "Flessibilità e adattabilità",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 131,
+    "key": "q131",
+    "text": "Mi sentirei a disagio nel dover dire a un cliente che un prodotto non gli si addice.",
+    "trait": "Assertività e negoziazione",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 132,
+    "key": "q132",
+    "text": "Mi capita di sentirmi fuori posto o non completamente integrato in determinati contesti.",
+    "trait": "Fiducia relazionale e sicurezza sociale",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 133,
+    "key": "q133",
+    "text": "Ritengo che la maggior parte degli errori in azienda dipenda da scarso impegno o applicazione.",
+    "trait": "Empatia e collaborazione",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 134,
+    "key": "q134",
+    "text": "Quando acquisto qualcosa, tendo a negoziare o cercare di ottenere un prezzo migliore.",
+    "trait": "Assertività e negoziazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 135,
+    "key": "q135",
+    "text": "Dedico tempo alla pianificazione del mio futuro finanziario.",
+    "trait": "Visione e orientamento al futuro",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 136,
+    "key": "q136",
+    "text": "Mi piace porre domande agli altri per conoscere la loro storia personale e professionale.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 137,
+    "key": "q137",
+    "text": "I regali che faccio superano spesso le aspettative delle persone che li ricevono.",
+    "trait": "Empatia e collaborazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 138,
+    "key": "q138",
+    "text": "Ricevo frequentemente chiamate di lavoro anche al di fuori dell’orario lavorativo.",
+    "trait": "Responsabilità e ownership",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 139,
+    "key": "q139",
+    "text": "Mi infastidiscono i gesti affettuosi da parte di persone con cui non ho confidenza.",
+    "trait": "Fiducia relazionale e sicurezza sociale",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 140,
+    "key": "q140",
+    "text": "Riesco spesso ad anticipare ciò che una persona desidera comunicarmi prima che lo faccia esplicitamente.",
+    "trait": "Empatia e collaborazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 141,
+    "key": "q141",
+    "text": "Propongo attivamente idee per migliorare l’efficienza o la redditività della mia azienda.",
+    "trait": "Orientamento alla performance",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 142,
+    "key": "q142",
+    "text": "Sono incline a donare o cedere oggetti anche quando potrebbero essermi ancora utili.",
+    "trait": "Empatia e collaborazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 143,
+    "key": "q143",
+    "text": "Mi risulta facile perdonare gli errori o le mancanze degli altri.",
+    "trait": "Empatia e collaborazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 144,
+    "key": "q144",
+    "text": "Nell’ultimo anno, il mio lavoro è diventato più stimolante e ricco di contenuti.",
+    "trait": "Continuità professionale",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 145,
+    "key": "q145",
+    "text": "Valuto il mio potenziale di successo come superiore rispetto a quello della maggior parte delle altre persone.",
+    "trait": "Ambizione e competitività",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 146,
+    "key": "q146",
+    "text": "Sono in grado di sostenere efficacemente le mie idee di fronte a colleghi o superiori indecisi.",
+    "trait": "Assertività e negoziazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 147,
+    "key": "q147",
+    "text": "Negli ultimi due mesi ho ricevuto incarichi direttamente dal vertice aziendale.",
+    "trait": "Leadership e influenza",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 148,
+    "key": "q148",
+    "text": "Riesco a non farmi influenzare dal fatto che gli altri parlino più dei propri problemi che dei miei.",
+    "trait": "Autocontrollo e gestione emotiva",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 149,
+    "key": "q149",
+    "text": "Rispetto a due anni fa, la mia situazione finanziaria è migliorata.",
+    "trait": "Autonomia economica e iniziativa",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 150,
+    "key": "q150",
+    "text": "Nell’ultimo anno ho partecipato ad almeno due corsi di formazione specialistica legati al mio lavoro.",
+    "trait": "Continuità professionale",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 151,
+    "key": "q151",
+    "text": "In alcune situazioni mi capita di percepire la realtà come irreale o simile a un sogno.",
+    "trait": "Stabilità emotiva e fiducia",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 152,
+    "key": "q152",
+    "text": "Riesco a individuare con facilità gli argomenti che risultano più interessanti per le altre persone.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 153,
+    "key": "q153",
+    "text": "Le mie risorse finanziarie attuali mi permetterebbero di sostenermi a lungo anche senza entrate.",
+    "trait": "Autonomia economica e iniziativa",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 154,
+    "key": "q154",
+    "text": "Ritengo di avere una fiducia in me stesso superiore rispetto alla media delle altre persone.",
+    "trait": "Stabilità emotiva e fiducia",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 155,
+    "key": "q155",
+    "text": "Sono considerato da colleghi o collaboratori un modello da seguire o una figura di riferimento.",
+    "trait": "Leadership e influenza",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 156,
+    "key": "q156",
+    "text": "Utilizzo strumenti o dati statistici per monitorare l’andamento del mio lavoro.",
+    "trait": "Orientamento alla performance",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 157,
+    "key": "q157",
+    "text": "Ritengo sbagliato premiare le persone solo in base ai risultati senza considerare l’impegno.",
+    "trait": "Orientamento alla performance",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 158,
+    "key": "q158",
+    "text": "Adatto il mio modo di comunicare in base alla persona con cui sto interagendo.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 159,
+    "key": "q159",
+    "text": "Il mio ruolo lavorativo prevede un contatto frequente con i clienti.",
+    "trait": "Contesto ruolo",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": false,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 160,
+    "key": "q160",
+    "text": "Ho affrontato situazioni finanziarie o debitorie particolarmente difficili nella mia vita.",
+    "trait": "Autonomia economica e iniziativa",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 161,
+    "key": "q161",
+    "text": "Mi capita di non sapere di cosa parlare con alcune persone.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 162,
+    "key": "q162",
+    "text": "Il mio lavoro contribuisce direttamente alla generazione di fatturato per l’azienda.",
+    "trait": "Contesto ruolo",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": false,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 163,
+    "key": "q163",
+    "text": "Mi pongo obiettivi sempre più sfidanti per migliorare le mie performance lavorative.",
+    "trait": "Orientamento alla performance",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 164,
+    "key": "q164",
+    "text": "Mi considero abile nello scrivere messaggi o comunicazioni che coinvolgono emotivamente gli altri.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 165,
+    "key": "q165",
+    "text": "Ho un rapporto diretto e personale con diversi clienti dell’azienda per cui lavoro.",
+    "trait": "Estroversione e networking",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 166,
+    "key": "q166",
+    "text": "Mi sento a disagio in ambienti disordinati.",
+    "trait": "Organizzazione e metodo",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 167,
+    "key": "q167",
+    "text": "Mi dispiace quando il mio superiore non mi coinvolge nelle decisioni.",
+    "trait": "Sensibilità al riconoscimento",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 168,
+    "key": "q168",
+    "text": "Mi considero tra i professionisti più competenti e aggiornati nel mio settore.",
+    "trait": "Ambizione e competitività",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 169,
+    "key": "q169",
+    "text": "Il mio lavoro mi entusiasma al punto da volerlo condividere con gli altri.",
+    "trait": "Energia sociale e comunicazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 170,
+    "key": "q170",
+    "text": "Nei momenti difficili, i miei colleghi fanno riferimento a me per mantenere motivazione e fiducia.",
+    "trait": "Leadership e influenza",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 171,
+    "key": "q171",
+    "text": "Ci sono attività fondamentali all’interno dell’azienda che solo io sono in grado di svolgere.",
+    "trait": "Responsabilità e ownership",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 172,
+    "key": "q172",
+    "text": "Quando presento un’idea, preferisco utilizzare uno stile comunicativo incisivo anche a costo di enfatizzare il messaggio.",
+    "trait": "Assertività e negoziazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 173,
+    "key": "q173",
+    "text": "Il mio lavoro contribuisce a generare risparmi economici per l’azienda.",
+    "trait": "Orientamento alla performance",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 174,
+    "key": "q174",
+    "text": "Sono spesso invitato a partecipare a riunioni strategiche o di vertice.",
+    "trait": "Leadership e influenza",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 175,
+    "key": "q175",
+    "text": "Ritengo che eseguire le direttive dei superiori sia sempre la priorità principale di un buon collaboratore.",
+    "trait": "Autonomia economica e iniziativa",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 176,
+    "key": "q176",
+    "text": "Penso che sia più corretto premiare uniformemente tutto il personale piuttosto che valorizzare i singoli più meritevoli.",
+    "trait": "Orientamento alla performance",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 177,
+    "key": "q177",
+    "text": "Mi è stato detto che possiedo un carattere difficile.",
+    "trait": "Empatia e collaborazione",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 178,
+    "key": "q178",
+    "text": "Investo parte delle mie entrate con l’obiettivo di ottenere benefici futuri.",
+    "trait": "Visione e orientamento al futuro",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 179,
+    "key": "q179",
+    "text": "Ritengo di avere una forte influenza sul modo di pensare delle persone che mi circondano.",
+    "trait": "Leadership e influenza",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
+    ]
+  },
+  {
+    "id": 180,
+    "key": "q180",
+    "text": "Mi infastidisce quando gli altri mi dicono cosa dovrei fare.",
+    "trait": "Flessibilità e adattabilità",
+    "reverse": true,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "integrazione_121_180"
     ]
   },
   {
