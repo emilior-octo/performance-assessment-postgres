@@ -3,263 +3,392 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>Performance Assessment</title>
-
+  <title>Zenith Assessment Hub</title>
   <style>
-    * {
-      box-sizing: border-box;
+    :root {
+      --blue: #147fbd;
+      --dark: #0d1424;
+      --muted: #5e6878;
+      --border: #e4e8ef;
+      --soft: #f5f8fb;
+      --success: #0f7a4f;
     }
+
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: Arial, sans-serif;
-      background: #f4f7fb;
-      color: #111827;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f1f4f8;
+      color: var(--dark);
     }
 
     .page {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px 16px;
-    }
-
-    .shell {
-      width: 100%;
-      max-width: 980px;
+      width: min(1120px, calc(100% - 32px));
+      margin: 48px auto;
+      background: #fff;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 24px 60px rgba(13, 20, 36, 0.12);
     }
 
     .hero {
-      background: #fff;
-      border: 1px solid #e5e7eb;
-      border-radius: 24px;
-      overflow: hidden;
-      box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
-    }
-
-    .brand-band {
-      background: linear-gradient(135deg, #0b6fb3, #1685cf);
-      padding: 36px 24px;
+      background: var(--blue);
+      padding: 40px 32px;
       text-align: center;
     }
 
-    .brand-logo {
-      width: min(520px, 88%);
-      max-height: 130px;
+    .logo-wrap {
+      display: inline-flex;
+      background: #fff;
+      padding: 16px 32px;
+      border: 2px solid #0a0a0a;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    .logo-wrap img {
+      width: min(420px, 80vw);
+      max-height: 110px;
       object-fit: contain;
       display: block;
-      margin: 0 auto;
     }
 
     .content {
-      padding: 34px;
+      padding: 40px;
     }
 
     .eyebrow {
-      margin: 0 0 8px;
+      margin: 0 0 12px;
       font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
-      color: #0b6fb3;
+      color: var(--blue);
     }
 
     h1 {
-      margin: 0 0 12px;
-      font-size: clamp(30px, 5vw, 46px);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
+      margin: 0;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.02;
+      letter-spacing: -0.05em;
     }
 
     .intro {
-      max-width: 720px;
-      margin: 0;
-      color: #4b5563;
-      font-size: 17px;
-      line-height: 1.6;
+      max-width: 780px;
+      margin: 18px 0 0;
+      font-size: 19px;
+      line-height: 1.65;
+      color: #2f3d50;
     }
 
-    .section-title {
-      margin: 34px 0 14px;
-      font-size: 18px;
-    }
-
-    .cards {
+    .main-actions {
       display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 24px;
+      margin-top: 34px;
+      align-items: stretch;
     }
 
-    .card {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      min-height: 170px;
-      padding: 20px;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      background: #ffffff;
-      text-decoration: none;
-      color: inherit;
-      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      border-color: #0b6fb3;
-      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.08);
-    }
-
-    .card-label {
-      margin: 0 0 8px;
-      font-size: 12px;
-      color: #6b7280;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      font-weight: 700;
+    .card,
+    .qr-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      background: #fff;
+      box-shadow: 0 10px 28px rgba(13, 20, 36, 0.04);
     }
 
     .card-title {
-      margin: 0;
-      font-size: 22px;
-      line-height: 1.2;
+      margin: 0 0 10px;
+      font-size: 28px;
+      letter-spacing: -0.03em;
     }
 
-    .card-copy {
-      margin: 10px 0 18px;
-      color: #6b7280;
+    .card p,
+    .qr-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 16px;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 13px 24px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 800;
+      border: 1px solid transparent;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(13, 20, 36, 0.14);
+    }
+
+    .btn-primary {
+      background: var(--dark);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--dark);
+      border-color: var(--border);
+    }
+
+    .qr-card {
+      text-align: center;
+      background: var(--soft);
+    }
+
+    .qr-card img {
+      width: min(240px, 100%);
+      height: auto;
+      margin: 18px auto 14px;
+      display: block;
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px;
+      border: 1px solid var(--border);
+    }
+
+    .qr-link {
+      display: block;
+      margin-top: 10px;
+      color: var(--blue);
+      font-weight: 700;
+      word-break: break-word;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .section-title {
+      margin: 42px 0 18px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .product-card {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+      background: #fff;
+    }
+
+    .product-card.is-coming-soon {
+      background: #fbfcfe;
+      opacity: 0.88;
+    }
+
+    .product-eyebrow {
+      margin: 0 0 10px;
+      font-size: 12px;
+      color: var(--blue);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 800;
+    }
+
+    .product-card.is-coming-soon .product-eyebrow {
+      color: var(--success);
+    }
+
+    .product-card h3 {
+      margin: 0 0 10px;
+      font-size: 24px;
+      letter-spacing: -0.03em;
+    }
+
+    .product-card p {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .disabled-pill {
+      display: inline-flex;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-weight: 800;
+      color: var(--success);
+      background: #eaf7f1;
+    }
+
+
+    .wip-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      margin-left: 8px;
+      border-radius: 999px;
+      background: #eaf7f1;
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      vertical-align: middle;
+    }
+
+    .product-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .mini-qr {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 16px;
+      background: #f7fafc;
+    }
+
+    .mini-qr img {
+      width: 92px;
+      height: 92px;
+      display: block;
+      border-radius: 10px;
+      background: #fff;
+      padding: 6px;
+      border: 1px solid var(--border);
+      filter: grayscale(1);
+      opacity: 0.72;
+    }
+
+    .mini-qr-text {
+      max-width: 190px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .mini-qr-text strong {
+      display: block;
+      color: var(--success);
+      margin-bottom: 3px;
+    }
+
+    .footer-note {
+      margin-top: 32px;
+      padding-top: 22px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
       font-size: 14px;
       line-height: 1.5;
     }
 
-    .card-action {
-      margin-top: auto;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: #111827;
-      color: #fff;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .footer-actions {
-      margin-top: 28px;
-      padding-top: 22px;
-      border-top: 1px solid #e5e7eb;
-      display: flex;
-      justify-content: space-between;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .admin-copy {
-      margin: 0;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .admin-link {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 10px 14px;
-      border-radius: 10px;
-      border: 1px solid #d1d5db;
-      color: #111827;
-      background: #f9fafb;
-      text-decoration: none;
-      font-weight: 700;
-      font-size: 14px;
-    }
-
-    @media (max-width: 760px) {
-      .page {
-        align-items: flex-start;
-        padding: 16px;
-      }
-
-      .brand-band {
-        padding: 28px 18px;
-      }
-
-      .content {
-        padding: 24px 18px;
-      }
-
-      .cards {
-        grid-template-columns: 1fr;
-      }
-
-      .card {
-        min-height: auto;
-      }
-
-      .footer-actions {
-        align-items: stretch;
-        flex-direction: column;
-      }
-
-      .admin-link {
-        width: 100%;
-      }
+    @media (max-width: 820px) {
+      .page { margin: 20px auto; width: min(100% - 20px, 1120px); border-radius: 18px; }
+      .hero { padding: 28px 18px; }
+      .content { padding: 26px 20px; }
+      .main-actions, .products { grid-template-columns: 1fr; }
+      .button-row { flex-direction: column; }
+      .btn { width: 100%; }
+      .product-actions { align-items: stretch; }
+      .mini-qr { width: 100%; justify-content: flex-start; }
     }
   </style>
 </head>
-
 <body>
   <main class="page">
-    <section class="shell">
-      <div class="hero">
-        <div class="brand-band">
-          <img class="brand-logo" src="/zenith-logo.jpeg" alt="Zenith 360" />
-        </div>
-
-        <div class="content">
-          <p class="eyebrow">Area risorse</p>
-          <h1>Performance Assessment</h1>
-
-          <p class="intro">
-            Benvenuto/a nella piattaforma di assessment.
-            Seleziona il questionario assegnato e procedi con la compilazione.
-            Le risposte saranno utilizzate per produrre una lettura strutturata del profilo in relazione al ruolo di riferimento.
-          </p>
-
-          <h2 class="section-title">Seleziona il questionario</h2>
-
-          <div class="cards">
-            <% links.forEach(function(item) { %>
-              <a class="card" href="<%= item.url %>">
-                <div>
-                  <p class="card-label">Questionario</p>
-                  <h3 class="card-title"><%= item.label %></h3>
-                  <p class="card-copy">
-                    Avvia la compilazione per il ruolo <strong><%= item.label %></strong>.
-                  </p>
-                </div>
-
-                <span class="card-action">Inizia assessment</span>
-              </a>
-            <% }) %>
-          </div>
-
-          <div class="footer-actions">
-            <p class="admin-copy">
-              Accesso riservato ad amministratori e consulenti autorizzati.
-            </p>
-
-            <a class="admin-link" href="/admin/login">
-              Accedi all’area admin
-            </a>
-          </div>
-        </div>
+    <section class="hero">
+      <div class="logo-wrap">
+        <img src="/zenith-logo.jpeg" alt="Zenith" />
       </div>
+    </section>
+
+    <section class="content">
+      <p class="eyebrow">Area risorse</p>
+      <h1>Zenith Assessment Hub</h1>
+      <p class="intro">
+        Area interna per l’accesso ai questionari Zenith e alla dashboard amministrativa.
+        Usa il link o il QR code per avviare la compilazione in sala.
+      </p>
+
+      <div class="main-actions">
+        <article class="card">
+          <p class="eyebrow">Questionario attivo</p>
+          <h2 class="card-title">Zenith Assessment</h2>
+          <p>
+            Questionario comportamentale per la lettura strutturata del profilo,
+            dei tratti principali, dei parametri aggiuntivi e della compatibilità con il ruolo.
+          </p>
+          <div class="button-row">
+            <a class="btn btn-primary" href="<%= assessmentUrl %>">Vai al questionario Zenith Assessment</a>
+            <a class="btn btn-secondary" href="<%= adminUrl %>">Area Admin</a>
+          </div>
+        </article>
+
+        <aside class="qr-card">
+          <p class="eyebrow">QR code sala</p>
+          <p>Proietta o condividi questo codice per far accedere direttamente al questionario.</p>
+          <img src="<%= qrCodeUrl %>" alt="QR code questionario Zenith Assessment" />
+          <a class="qr-link" href="<%= assessmentUrl %>"><%= assessmentUrl %></a>
+        </aside>
+      </div>
+
+      <h2 class="section-title">Percorsi disponibili</h2>
+      <div class="products">
+        <% products.forEach((product) => { %>
+          <article class="product-card <%= product.status === 'coming_soon' ? 'is-coming-soon' : '' %>">
+            <p class="product-eyebrow"><%= product.eyebrow %></p>
+            <h3>
+              <%= product.title %>
+              <% if (product.status === 'coming_soon') { %>
+                <span class="wip-badge">Work in progress</span>
+              <% } %>
+            </h3>
+            <p><%= product.description %></p>
+
+            <% if (product.url) { %>
+              <a class="btn btn-primary" href="<%= product.url %>"><%= product.cta %></a>
+            <% } else { %>
+              <% const sportFutureUrl = `${publicBaseUrl}/human-sport-performance`; %>
+              <% const sportQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=14&data=${encodeURIComponent(sportFutureUrl)}`; %>
+              <div class="product-actions">
+                <span class="disabled-pill"><%= product.cta %></span>
+                <div class="mini-qr" aria-label="QR code work in progress Human & Sport Performance">
+                  <img src="<%= sportQrUrl %>" alt="QR code Human & Sport Performance work in progress" />
+                  <div class="mini-qr-text">
+                    <strong>QR già predisposto</strong>
+                    Link in work in progress: <br />
+                    <%= sportFutureUrl %>
+                  </div>
+                </div>
+              </div>
+            <% } %>
+          </article>
+        <% }) %>
+      </div>
+
+      <p class="footer-note">
+        Nota operativa: il link pubblico del questionario è stabile e non contiene riferimenti “demo”.
+        L’Area Admin resta riservata al team Zenith.
+      </p>
     </section>
   </main>
 </body>
