@@ -259,8 +259,8 @@
 
   <% if (submission.analysis.expandedReport) { %>
     <div class="notice notice-success">
-      <strong>Relazione esplosa disponibile.</strong>
-      Il report AI è stato generato correttamente ed è incluso anche nel PDF.
+      <strong>Relazione generale disponibile.</strong>
+      Il report è stato generato correttamente ed è incluso anche nel PDF.
     </div>
   <% } %>
 
@@ -273,7 +273,6 @@
       <li><strong>ID:</strong> <%= submission.id %></li>
       <li><strong>Nome:</strong> <%= submission.name %></li>
       <li><strong>Email:</strong> <%= submission.email || "-" %></li>
-      <li><strong>Età:</strong> <%= submission.age || "-" %></li>
       <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
       <li><strong>Ruolo:</strong> <%= submission.role %></li>
       <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
@@ -281,64 +280,40 @@
   </div>
 
   <div class="card">
-    <h2>Relazione di sintesi del profilo comportamentale</h2>
+    <h2>Relazione generale</h2>
 
-    <p><strong>Score medio:</strong> <%= submission.analysis.avgScore %></p>
-    <p><strong>Fascia media:</strong> <%= submission.analysis.avgRange %></p>
-
-    <p>
-      <strong>Indice attendibilità:</strong>
-      <%= submission.analysis.reliabilityLabel %> (<%= submission.analysis.reliabilityScore %>)
-    </p>
-
-    <p>
-      <strong>Lettura sintetica del profilo:</strong>
-      Il profilo evidenzia un <%= submission.analysis.summary.orientation %>, con una combinazione di tratti che suggeriscono specifiche modalità di funzionamento nel contesto lavorativo.
-    </p>
-
-    <p>
-      <strong>Lettura rispetto al ruolo:</strong>
-      <%= submission.analysis.summary.roleComment %>
-      Questa indicazione rappresenta una prima chiave interpretativa e sarà oggetto di approfondimento in fase di restituzione.
-    </p>
-
-    <p>
-      <strong>Compatibilità con il ruolo:</strong>
-      <% if (submission.analysis.summary.roleFit) { %>
-        <%= submission.analysis.summary.roleFit.label %> (<%= submission.analysis.summary.roleFit.score %>%)
-      <% } else { %>
-        -
+    <% const generalRelation = submission.analysis.summary.generalRelation || (submission.analysis.expandedReport && submission.analysis.expandedReport.generalSummary) || "-"; %>
+    <% String(generalRelation).split(/\n\s*\n/g).forEach(function(paragraph) { %>
+      <% if (paragraph.trim()) { %>
+        <p><%= paragraph.trim() %></p>
       <% } %>
-    </p>
+    <% }) %>
 
     <p>
-      <strong>Consiglio generale di gestione:</strong>
+      <strong>Indicazione pratica per la gestione:</strong><br>
       <%= submission.analysis.summary.managementAdvice || "-" %>
     </p>
 
-    <p>
-      <strong>Punti forti emergenti:</strong>
-      <%= submission.analysis.summary.topTraits.length ? submission.analysis.summary.topTraits.join(", ") : "-" %>
-    </p>
-
-    <p>
-      <strong>Aree di miglioramento:</strong>
-      <%= submission.analysis.summary.weakTraits.length ? submission.analysis.summary.weakTraits.join(", ") : "-" %>
-    </p>
+    <% if (submission.analysis.reliabilityFlags && submission.analysis.reliabilityFlags.length) { %>
+      <p style="margin-top: 16px; color: #8a2f25;">
+        <strong>Nota da tenere presente:</strong>
+        alcune risposte mostrano oscillazioni interne. Il risultato va quindi letto con attenzione e verificato nel confronto diretto con la persona.
+      </p>
+    <% } %>
 
     <p style="margin-top: 16px; font-size: 14px; color: #666;">
-      La presente analisi rappresenta una prima lettura strutturata dei tratti emersi dal questionario e non costituisce una valutazione definitiva. I risultati saranno approfonditi e contestualizzati durante la fase di restituzione e confronto.
+      Questa valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione.
     </p>
   </div>
 
   <div class="card">
-    <h2>Analisi per tratto</h2>
+    <h2>Analisi per tratti e parametri</h2>
 
     <% if (submission.analysis.traits && submission.analysis.traits.length) { %>
       <div class="histogram">
         <h3 class="histogram-title">Distribuzione dei punteggi</h3>
         <p class="histogram-help">
-          Scala da -30 a +30. Lo zero rappresenta il punto neutro; le barre verso destra indicano punteggi positivi, quelle verso sinistra aree da presidiare.
+          Lettura grafica dei tratti e dei parametri rilevati.
         </p>
 
         <div class="histogram-scale">
@@ -379,8 +354,7 @@
         <% submission.analysis.traits.forEach(function(item) { %>
           <div class="trait">
             <h3><%= item.name %></h3>
-            <p><strong>Score:</strong> <%= item.score %></p>
-            <p><strong>Fascia:</strong> <%= item.range %></p>
+            <p><strong>Indicazione:</strong> <%= item.score %></p>
           </div>
         <% }) %>
       </div>
@@ -426,7 +400,7 @@
 
   <% if (submission.analysis.expandedReport) { %>
     <div class="card">
-      <h2>Relazione esplosa</h2>
+      <h2>Relazione generale</h2>
       <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
     </div>
 
@@ -438,10 +412,10 @@
           <p><strong>Lettura approfondita</strong></p>
           <p><%= item.expandedText || "-" %></p>
 
-          <p><strong>Piano di improvement</strong></p>
+          <p><strong>Rimedi pratici</strong></p>
           <p><%= item.improvementPlan || "-" %></p>
 
-          <p><strong>Come valorizzare o sviluppare questa skill</strong></p>
+          <p><strong>Come gestirlo nella pratica</strong></p>
           <p><%= item.skillAction || item.teamLeverage || "-" %></p>
         </div>
       <% }) %>

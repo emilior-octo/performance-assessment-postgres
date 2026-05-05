@@ -95,8 +95,7 @@ const ADDITIONAL_PARAMETER_DIMENSIONS = [
   "Principi",
   "Vendite",
   "Gestione priorità",
-  "Attuabilità",
-  "Emotiva"
+  "Attendibilità"
 ];
 
 const DIMENSION_ORDER = new Map(
@@ -107,11 +106,11 @@ const DIMENSION_DEFINITIONS = {
   "Organizzazione e metodo": [
     { name: "Organizzazione e pianificazione", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Gestione priorità", category: DIMENSION_CATEGORY.ADDITIONAL },
-    { name: "Attuabilità", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Visione e orientamento al futuro": [
     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Attuabilità", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Ambizione e competitività": [
     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },
@@ -123,28 +122,28 @@ const DIMENSION_DEFINITIONS = {
   ],
   "Continuità professionale": [
     { name: "Affidabilità + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Attuabilità", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Responsabilità e ownership": [
     { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Management", category: DIMENSION_CATEGORY.ADDITIONAL },
-    { name: "Attuabilità", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Stabilità emotiva e fiducia": [
     { name: "Sicurezza", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Emotiva", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Fiducia relazionale e sicurezza sociale": [
     { name: "Sicurezza", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Emotiva", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Gestione della pressione": [
     { name: "Stress", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Emotiva", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Autocontrollo e gestione emotiva": [
     { name: "Stress", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Emotiva", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Energia sociale e comunicazione": [
     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT },
@@ -179,16 +178,16 @@ const DIMENSION_DEFINITIONS = {
   ],
   "Sensibilità al riconoscimento": [
     { name: "Sicurezza", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Emotiva", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Autonomia economica e iniziativa": [
     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Attuabilità", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Creatività e innovazione": [
     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Attuabilità", category: DIMENSION_CATEGORY.ADDITIONAL }
+    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Comportamento generale": [
     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
@@ -259,7 +258,7 @@ const ROLE_FIT_WEIGHTS = {
     "Organizzazione e pianificazione": 1.1,
     "Leadership naturale": 1.35,
     "Management": 1.3,
-    "Attuabilità": 1.2,
+    "Attendibilità": 1.2,
     "Principi": 1.05
   },
   manager: {
@@ -282,7 +281,7 @@ const ROLE_FIT_WEIGHTS = {
     "Vendite": 1.45,
     "Ascolto attivo": 1.15,
     "Comprensione": 1.1,
-    "Emotiva": 1.05
+    "Cooperazione": 1.05
   },
   marketing: {
     "Dinamismo": 1.25,
@@ -290,7 +289,7 @@ const ROLE_FIT_WEIGHTS = {
     "Espansività": 1.15,
     "Automotivazione": 1.15,
     "Comprensione": 1.15,
-    "Attuabilità": 1.25,
+    "Attendibilità": 1.25,
     "Vendite": 1.15,
     "Cooperazione": 1.1
   },
@@ -301,7 +300,7 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.1,
     "Gestione priorità": 1.3,
     "Principi": 1.25,
-    "Attuabilità": 1.2,
+    "Attendibilità": 1.2,
     "Resistenza al cambiamento": 0.85
   },
   operations: {
@@ -312,7 +311,7 @@ const ROLE_FIT_WEIGHTS = {
     "Dinamismo": 1.1,
     "Gestione priorità": 1.35,
     "Management": 1.15,
-    "Attuabilità": 1.3,
+    "Attendibilità": 1.3,
     "Cooperazione": 1.1
   },
   customer_service: {
@@ -322,7 +321,7 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.15,
     "Sicurezza": 1.1,
     "Cooperazione": 1.25,
-    "Emotiva": 1.2,
+    "Cooperazione": 1.2,
     "Principi": 1.1
   },
   hr: {
@@ -334,7 +333,7 @@ const ROLE_FIT_WEIGHTS = {
     "Cooperazione": 1.3,
     "Principi": 1.2,
     "Management": 1.1,
-    "Emotiva": 1.1
+    "Cooperazione": 1.1
   },
   it_digital: {
     "Organizzazione e pianificazione": 1.25,
@@ -343,7 +342,7 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.1,
     "Flessibilità comunicativa": 1.05,
     "Gestione priorità": 1.25,
-    "Attuabilità": 1.35,
+    "Attendibilità": 1.35,
     "Principi": 1.1,
     "Cooperazione": 1.05
   },
@@ -360,7 +359,7 @@ const ROLE_FIT_WEIGHTS = {
     "Comprensione": 1.05,
     "Espansività": 1.0,
     "Gestione priorità": 1.1,
-    "Attuabilità": 1.1,
+    "Attendibilità": 1.1,
     "Cooperazione": 1.05,
     "Principi": 1.05
   }
@@ -411,7 +410,7 @@ function calculateRoleFit(dimensions, requestedRole) {
     score,
     label: roleFitLabel(score),
     details: details.sort((a, b) => b.weight - a.weight),
-    note: "La compatibilità con il ruolo è una lettura orientativa basata sui tratti e sui parametri aggiuntivi, non modifica i punteggi di base e non sostituisce il colloquio valutativo."
+    note: "La compatibilità con il ruolo è una lettura orientativa e non sostituisce il colloquio con la persona."
   };
 }
 
@@ -806,49 +805,41 @@ Genera una relazione professionale in italiano per un assessment comportamentale
 CONTESTO
 - Azienda: ${companyName}
 - Ruolo target: ${role}
-- Score medio: ${avgScore}
-- Fascia media: ${avgRange}
 - Orientamento prevalente: ${summary.orientation}
 - Lettura rispetto al ruolo: ${summary.roleComment}
-- Compatibilità con il ruolo: ${roleFit?.label || "Non disponibile"} (${roleFit?.score ?? "-"}%)
+- Compatibilità con il ruolo: ${roleFit?.label || "Non disponibile"}
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
-- Attendibilità: ${reliabilityLabel} (${reliabilityScore})
+- Attendibilità generale: ${reliabilityLabel}
 - Eventuali segnali attendibilità: ${(reliabilityFlags || []).join("; ") || "nessun segnale rilevante"}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
 ISTRUZIONI GENERALI
-1. Scrivi una relazione generale chiara, consulenziale e concreta.
+1. Scrivi in modo semplice, diretto e utile per un imprenditore o responsabile di PMI.
 2. Non usare linguaggio clinico, diagnostico o psicologico-medico.
 3. Non presentare il questionario come valutazione definitiva.
-4. Non contraddire i punteggi numerici e le fasce.
-5. Mantieni un tono professionale, utile per HR, management e restituzione al cliente.
-6. Evita frasi generiche, ripetitive o troppo "da AI".
-7. Quando possibile, collega le osservazioni al ruolo target.
-8. Evidenzia potenziale, rischi operativi e azioni manageriali concrete.
-9. Evita inglesismi inutili quando esiste una forma italiana chiara.
-10. Se usi termini inglesi non ovvi o non di larghissimo impiego, aggiungi subito la traduzione italiana tra parentesi. Esempi: mindset (mentalità), accountability (responsabilità), feedback (riscontro), follow-up (seguito operativo).
-11. Termini ormai comuni come mission e vision possono restare senza traduzione, ma non abusarne.
-12. Compila generalManagementAdvice con un consiglio generale su come gestire la risorsa esaminata, coerente con i punteggi e con la compatibilità con il ruolo.
+4. Evita parole tecniche o inglesi non necessarie. Se proprio servono, spiega subito il significato in italiano.
+5. Non usare formule come “discreto”, “buono”, “ottimo” nel testo finale.
+6. Evita frasi generiche, ripetitive o troppo “da AI”.
+7. Quando possibile, collega le osservazioni al lavoro quotidiano, ai rapporti con colleghi/clienti e alla gestione pratica della persona.
+8. Descrivi rischi e rimedi in modo concreto: cosa può fare il titolare, il responsabile o il referente diretto già da domani.
+9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
+10. Compila generalManagementAdvice con un consiglio generale molto pratico su come gestire la risorsa esaminata.
 
 ISTRUZIONI PER OGNI TRATTO
 Per ogni tratto restituisci:
-- expandedText: lettura approfondita del tratto, circa 7-9 righe, concreta e collegata al ruolo.
-- improvementPlan: piano di sviluppo pratico, con azioni osservabili e applicabili.
-- skillAction: campo dinamico:
-  - se il tratto è positivo o forte, spiega come valorizzare concretamente quella skill nel ruolo, nel team e nell'organizzazione;
-  - se il tratto è debole o critico, spiega come svilupparlo, compensarlo o presidiarlo operativamente nel contesto aziendale;
-  - se il tratto è intermedio, spiega come consolidarlo e renderlo più stabile.
+- expandedText: spiegazione semplice del tratto, con esempi pratici di come può vedersi nel lavoro.
+- improvementPlan: rimedi pratici, facili da applicare, senza teoria complessa.
+- skillAction: cosa fare nella gestione quotidiana: come valorizzare il tratto se è forte, oppure come presidiare e migliorare il comportamento se è debole.
 
 STILE DI SCRITTURA
-- Scrivi come un consulente HR senior, non come un modello AI.
+- Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
+- Usa parole semplici e frasi brevi.
 - Evita formule ripetitive tra i tratti.
-- Usa frasi concrete, osservabili e collegate al lavoro.
-- Non gonfiare artificialmente il testo.
-- Ogni sezione deve aggiungere un’informazione nuova.
-- Dove c’è un rischio, descrivilo in termini operativi.
-- Dove c’è una forza, descrivi come può produrre valore nel team.
+- Dove c’è un rischio, spiega cosa può succedere in azienda.
+- Dove c’è una forza, spiega come usarla nella pratica.
+- Dove serve un rimedio, indica azioni semplici: obiettivi chiari, controllo periodico, affiancamento, priorità scritte, confronto diretto.
 
 IMPORTANTE
 - Non scrivere "uso della forza".
@@ -858,6 +849,7 @@ IMPORTANTE
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 - Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacità o tratto.
+- Non usare espressioni come “KPI”, “stakeholder”, “performance review”, “coaching”, “debriefing”, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
 - Non scrivere mai REPEAT_PLACEHOLDER o testi provvisori.
 `;
@@ -994,11 +986,7 @@ function drawChartTitle(doc, title, subtitle) {
 function drawTraitsVerticalChart(doc, traits) {
   if (!Array.isArray(traits) || traits.length === 0) return;
 
-  drawChartTitle(
-    doc,
-    "Tratti",
-    "Scala da -100 a +100. I valori positivi indicano una maggiore presenza del tratto, quelli negativi aree da presidiare."
-  );
+  drawChartTitle(doc, "Tratti");
 
   const marginLeft = doc.page.margins.left;
   const pageBottom = doc.page.height - doc.page.margins.bottom;
@@ -1034,7 +1022,7 @@ function drawTraitsVerticalChart(doc, traits) {
   const count = traits.length;
   const slot = plotWidth / count;
   const barWidth = Math.min(28, Math.max(16, slot * 0.72));
-  const palette = ["#4FA0B7", "#4FA0B7", "#4FA0B7", "#F4BA37", "#F4BA37", "#E9502F", "#E9502F", "#E9502F", "#B8C92F", "#B8C92F", "#B8C92F"];
+  const palette = ["#4FA0B7", "#2F7EA0", "#73AFC2", "#F4BA37", "#E99E2E", "#E9502F", "#C94129", "#F06F45", "#B8C92F", "#9FAE24", "#CDD94A"];
 
   traits.forEach((trait, index) => {
     const value = chartScore(trait.score);
@@ -1071,11 +1059,7 @@ function drawTraitsVerticalChart(doc, traits) {
 function drawAdditionalParameterBars(doc, parameters) {
   if (!Array.isArray(parameters) || parameters.length === 0) return;
 
-  drawChartTitle(
-    doc,
-    "Parametri aggiuntivi",
-    "Scala da -100 a +100. Barre orizzontali di supporto alla lettura consulenziale del profilo."
-  );
+  drawChartTitle(doc, "Parametri aggiuntivi");
 
   const marginLeft = doc.page.margins.left;
   const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
@@ -1144,13 +1128,67 @@ function drawAdditionalParameterBars(doc, parameters) {
   doc.fillColor("black");
 }
 
+function normalizeDimensionNameForDisplay(name) {
+  const value = String(name || "").trim();
+  if (value === "Attuabilità") return "Attendibilità";
+  if (value === "Emotiva") return "Cooperazione";
+  return value;
+}
+
+function mergeDimensionList(list = []) {
+  const groups = new Map();
+
+  (Array.isArray(list) ? list : []).forEach((item) => {
+    const name = normalizeDimensionNameForDisplay(item?.name);
+    if (!name) return;
+
+    const existing = groups.get(name);
+    const items = Array.isArray(item.items) ? item.items : [];
+    const score = Number(item.score || 0);
+    const questionCount = Number(item.questionCount || items.length || 0);
+
+    if (!existing) {
+      groups.set(name, {
+        ...item,
+        name,
+        score,
+        questionCount,
+        items: [...items]
+      });
+      return;
+    }
+
+    const oldWeight = Number(existing.questionCount || existing.items?.length || 1);
+    const newWeight = questionCount || 1;
+    const totalWeight = oldWeight + newWeight;
+    existing.score = Math.round(((Number(existing.score || 0) * oldWeight) + (score * newWeight)) / totalWeight);
+    existing.range = range(existing.score);
+    existing.questionCount = totalWeight;
+    existing.items = [...(existing.items || []), ...items];
+  });
+
+  return Array.from(groups.values()).sort((a, b) => {
+    const orderA = DIMENSION_ORDER.has(a.name) ? DIMENSION_ORDER.get(a.name) : 999;
+    const orderB = DIMENSION_ORDER.has(b.name) ? DIMENSION_ORDER.get(b.name) : 999;
+    return orderA - orderB;
+  });
+}
+
+function normalizeNameList(list = []) {
+  return (Array.isArray(list) ? list : [])
+    .map((name) => normalizeDimensionNameForDisplay(name))
+    .filter(Boolean)
+    .filter((name, index, arr) => arr.indexOf(name) === index);
+}
+
 function getNormalizedAnalysis(payload = {}, requestedRole = "") {
-  const traits = Array.isArray(payload.traits) ? payload.traits : [];
+  const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
+  const traits = mergeDimensionList(rawTraits);
   const split = splitDimensions(traits);
-  const mainTraits = Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits;
-  const additionalParameters = Array.isArray(payload.additionalParameters)
-    ? payload.additionalParameters
-    : split.additionalParameters;
+  const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
+    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
+  const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
+    .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
   const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
   const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
@@ -1160,8 +1198,8 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     additionalParameters,
     roleFit,
     managementAdvice,
-    topTraits: payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name),
-    weakTraits: payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name),
+    topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
+    weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
     reliabilityFlags: payload.reliabilityFlags || []
   };
 }
@@ -1582,7 +1620,8 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
         topTraits: normalized.topTraits || [],
         weakTraits: normalized.weakTraits || [],
         roleFit: normalized.roleFit,
-        managementAdvice: normalized.managementAdvice
+        managementAdvice: normalized.managementAdvice,
+        generalRelation: buildPlainGeneralRelation({ assessment, normalized, expanded })
       },
       traits: normalized.traits,
       mainTraits: normalized.mainTraits,
@@ -1597,6 +1636,45 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     isGenerating: !!assessment.result?.isGenerating && !expanded
   });
 });
+
+
+function valueDirectionLabel(score) {
+  const value = Number(score || 0);
+  if (value >= 15) return "area che può aiutare la persona nel lavoro";
+  if (value <= -15) return "area da seguire con attenzione";
+  return "area abbastanza equilibrata, da osservare nel lavoro quotidiano";
+}
+
+function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
+  if (expanded?.generalSummary) return expanded.generalSummary;
+
+  const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
+  const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
+  const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
+  const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
+  const role = assessment.requestedRole || "ruolo indicato";
+
+  return `La persona è stata valutata in riferimento al ruolo di ${role}. Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.\n\nLe aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.\n\nQuesta valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
+}
+
+function drawSimpleSectionTitle(doc, title) {
+  doc.fontSize(18).fillColor("black").text(title);
+  doc.moveDown(0.6);
+}
+
+function writeParagraphs(doc, text) {
+  String(text || "-")
+    .split(/\n\s*\n/g)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .forEach((paragraph) => {
+      doc.fontSize(11).fillColor("black").text(paragraph, {
+        align: "left",
+        lineGap: 3
+      });
+      doc.moveDown(0.6);
+    });
+}
 
 app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
@@ -1665,38 +1743,29 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   );
   doc.fillColor("black");
 
-  // PAGINA 3: sintesi, compatibilità con il ruolo e consiglio gestionale.
+  // PAGINA 3: relazione generale, in stile semplice e utilizzabile dall'imprenditore.
   doc.addPage();
   drawLogo(doc);
-  doc.fontSize(18).fillColor("black").text("Sintesi del profilo");
-  doc.moveDown(0.7);
+  drawSimpleSectionTitle(doc, "Relazione generale");
 
-  doc.fontSize(11);
-  doc.text(`Score medio: ${assessment.result?.avgScore ?? "-"}`);
-  doc.text(`Fascia media: ${assessment.result?.avgRange ?? "-"}`);
-  doc.text(`Orientamento prevalente: ${assessment.result?.orientation ?? "-"}`);
-  doc.text(`Lettura rispetto al ruolo: ${assessment.result?.roleComment ?? "-"}`);
-  doc.text(`Compatibilità con il ruolo: ${roleFit.label} (${roleFit.score}%)`);
-  doc.text(`Attendibilità: ${assessment.result?.reliabilityLabel ?? "-"} (${assessment.result?.reliabilityScore ?? "-"})`);
+  const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
+  writeParagraphs(doc, generalRelation);
+
+  doc.moveDown(0.2);
+  doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
+  doc.moveDown(0.2);
+  writeParagraphs(doc, managementAdvice || "Gestire la risorsa con obiettivi chiari, priorità scritte e momenti di confronto periodici.");
 
   if (Array.isArray(normalized.reliabilityFlags) && normalized.reliabilityFlags.length) {
-    doc.text(`Segnali attendibilità: ${normalized.reliabilityFlags.join("; ")}`);
+    doc.moveDown(0.2);
+    doc.fontSize(12).fillColor("#A33A2F").text("Nota da tenere presente");
+    doc.moveDown(0.2);
+    doc.fontSize(10).fillColor("black").text(
+      "Alcune risposte mostrano oscillazioni interne. Il risultato va quindi letto con attenzione e verificato nel confronto diretto con la persona.",
+      { lineGap: 2 }
+    );
   }
 
-  doc.moveDown();
-  doc.fontSize(14).text("Punti forti emergenti");
-  doc.fontSize(11).text((normalized.topTraits || []).join(", ") || "-");
-
-  doc.moveDown();
-  doc.fontSize(14).text("Aree di miglioramento");
-  doc.fontSize(11).text((normalized.weakTraits || []).join(", ") || "-");
-
-  doc.moveDown();
-  doc.fontSize(14).text("Consiglio generale di gestione");
-  doc.fontSize(11).text(managementAdvice || "-");
-
-  doc.moveDown();
-  doc.fontSize(9).fillColor("#666").text(roleFit.note || "", { align: "left" });
   doc.fillColor("black");
 
   // PAGINE SUCCESSIVE: dettaglio tratti e parametri.
@@ -1712,7 +1781,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.fontSize(11).text("Nessun dettaglio tratti disponibile.");
   } else {
     mainTraits.forEach((t) => {
-      doc.fontSize(11).text(`${t.name}: ${t.score} (${t.range})`);
+      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)} - ${valueDirectionLabel(t.score)}`);
     });
   }
 
@@ -1721,7 +1790,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.fontSize(14).text("Parametri aggiuntivi");
     doc.moveDown(0.4);
     additionalParameters.forEach((t) => {
-      doc.fontSize(11).text(`${t.name}: ${t.score} (${t.range})`);
+      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)} - ${valueDirectionLabel(t.score)}`);
     });
   }
 
@@ -1729,17 +1798,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.addPage();
     drawLogo(doc);
 
-    doc.fontSize(16).fillColor("black").text("Relazione estesa");
+    doc.fontSize(16).fillColor("black").text("Approfondimento dei tratti");
     doc.moveDown(0.5);
-    doc.fontSize(11).text(expanded.generalSummary);
-
-    const expandedAdvice = expanded.generalManagementAdvice || managementAdvice;
-    if (expandedAdvice) {
-      doc.moveDown();
-      doc.fontSize(14).text("Consiglio generale di gestione");
-      doc.moveDown(0.2);
-      doc.fontSize(11).text(expandedAdvice);
-    }
 
     doc.moveDown();
 
@@ -1751,11 +1811,11 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
         doc.fontSize(11).text(t.expandedText || "");
         doc.moveDown(0.3);
 
-        doc.fontSize(11).text(`Piano di sviluppo: ${t.improvementPlan || "-"}`);
+        doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
         doc.moveDown(0.3);
 
         doc.fontSize(11).text(
-          `Come valorizzare o sviluppare questa competenza: ${t.skillAction || t.teamLeverage || "-"}`
+          `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
         );
         doc.moveDown();
       });
