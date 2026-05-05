@@ -411,7 +411,7 @@ function calculateRoleFit(dimensions, requestedRole) {
     score,
     label: roleFitLabel(score),
     details: details.sort((a, b) => b.weight - a.weight),
-    note: "La compatibilità con il ruolo è una lettura orientativa basata sui trait e sui parametri aggiuntivi, non modifica i punteggi di base e non sostituisce il colloquio valutativo."
+    note: "La compatibilità con il ruolo è una lettura orientativa basata sui tratti e sui parametri aggiuntivi, non modifica i punteggi di base e non sostituisce il colloquio valutativo."
   };
 }
 
@@ -749,7 +749,7 @@ function buildAiTraitsForPrompt(traits) {
     })
     .map((trait) => ({
       name: normalizeTraitName(trait.name),
-      category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Trait",
+      category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
       score: trait.score,
       range: trait.range,
       questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
@@ -815,7 +815,7 @@ CONTESTO
 - Attendibilità: ${reliabilityLabel} (${reliabilityScore})
 - Eventuali segnali attendibilità: ${(reliabilityFlags || []).join("; ") || "nessun segnale rilevante"}
 
-TRAIT E PARAMETRI VALUTATI
+TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
 ISTRUZIONI GENERALI
@@ -856,7 +856,7 @@ IMPORTANTE
 - Non forzare una skill debole come se fosse un punto di forza.
 - Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
-- Usa esclusivamente i nomi di trait e parametri aggiuntivi ricevuti nel JSON.
+- Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacità o tratto.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
 - Non scrivere mai REPEAT_PLACEHOLDER o testi provvisori.
@@ -977,83 +977,193 @@ function startExpandedReportJob({
     });
 }
 
-function drawDimensionHistogram(doc, dimensions, { title, subtitle, compact = false }) {
-  if (!Array.isArray(dimensions) || dimensions.length === 0) return;
+function chartScore(score) {
+  const safeScore = Math.max(-30, Math.min(30, Number(score || 0)));
+  return Math.round((safeScore / 30) * 100);
+}
 
-  const pageWidth = doc.page.width;
-  const marginLeft = doc.page.margins.left;
-  const marginRight = doc.page.margins.right;
-  const usableWidth = pageWidth - marginLeft - marginRight;
+function drawChartTitle(doc, title, subtitle) {
+  doc.fontSize(16).fillColor("#222222").text(title, { width: 500, lineBreak: false });
+  if (subtitle) {
+    doc.moveDown(0.2);
+    doc.fontSize(8.5).fillColor("#666666").text(subtitle, { width: 500 });
+  }
+  doc.fillColor("black");
+}
 
-  const labelWidth = compact ? 158 : 170;
-  const scoreWidth = 35;
-  const gap = compact ? 9 : 12;
-  const trackWidth = usableWidth - labelWidth - scoreWidth - gap * 2;
-  const trackX = marginLeft + labelWidth + gap;
-  const scoreX = trackX + trackWidth + gap;
-  const centerX = trackX + trackWidth / 2;
+function drawTraitsVerticalChart(doc, traits) {
+  if (!Array.isArray(traits) || traits.length === 0) return;
 
-  doc.moveDown(compact ? 0.25 : 0.5);
-  doc.fontSize(compact ? 14 : 17).fillColor(HISTOGRAM_COLORS.text).text(title);
-  doc.moveDown(0.15);
-  doc.fontSize(compact ? 8 : 9).fillColor(HISTOGRAM_COLORS.mutedText).text(
-    subtitle || "Scala da -30 a +30. Il centro rappresenta il punto neutro."
+  drawChartTitle(
+    doc,
+    "Tratti",
+    "Scala da -100 a +100. I valori positivi indicano una maggiore presenza del tratto, quelli negativi aree da presidiare."
   );
-  doc.moveDown(compact ? 0.45 : 0.9);
 
-  const startY = doc.y;
-  const rowHeight = compact ? 18 : 27;
-  const barHeight = compact ? 8 : 11;
+  const marginLeft = doc.page.margins.left;
+  const pageBottom = doc.page.height - doc.page.margins.bottom;
+  const chartTop = doc.y + 14;
+  const chartHeight = 205;
+  const labelHeight = 82;
+  const chartBottom = chartTop + chartHeight;
+  const chartWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const axisX = marginLeft + 28;
+  const plotWidth = chartWidth - 38;
+  const zeroY = chartTop + chartHeight / 2;
+  const valueToY = (value) => zeroY - (value / 100) * (chartHeight / 2);
+  const rowStep = chartHeight / 20;
 
-  doc.fontSize(8).fillColor(HISTOGRAM_COLORS.mutedText);
-  doc.text("-30", trackX, startY, { width: 30, align: "left" });
-  doc.text("0", centerX - 8, startY, { width: 16, align: "center" });
-  doc.text("+30", trackX + trackWidth - 30, startY, { width: 30, align: "right" });
+  doc.save();
 
-  let y = startY + (compact ? 13 : 18);
-
-  dimensions.forEach((dimension) => {
-    if (y > doc.page.height - doc.page.margins.bottom - 28) {
-      doc.addPage();
-      drawLogo(doc);
-      y = doc.y;
-    }
-
-    const rawScore = Number(dimension.score || 0);
-    const safeScore = Math.max(-30, Math.min(30, rawScore));
-    const halfTrack = trackWidth / 2;
-    const barWidth = Math.abs(safeScore) / 30 * halfTrack;
-    const barX = safeScore >= 0 ? centerX : centerX - barWidth;
-
-    doc.fontSize(compact ? 8 : 9).fillColor(HISTOGRAM_COLORS.text).text(dimension.name || "Voce", marginLeft, y - 2, {
-      width: labelWidth
-    });
-
+  // Griglia -100 / +100 come reference.
+  for (let value = -100; value <= 100; value += 10) {
+    const y = valueToY(value);
     doc
-      .roundedRect(trackX, y, trackWidth, barHeight, 4)
-      .fillAndStroke(HISTOGRAM_COLORS.track, HISTOGRAM_COLORS.trackBorder);
-
-    doc
-      .moveTo(centerX, y - 3)
-      .lineTo(centerX, y + barHeight + 3)
-      .lineWidth(0.7)
-      .strokeColor(HISTOGRAM_COLORS.axis)
+      .moveTo(axisX, y)
+      .lineTo(axisX + plotWidth, y)
+      .lineWidth(value === 0 ? 1.1 : 0.45)
+      .strokeColor(value === 0 ? "#9E9E9E" : "#DDDDDD")
       .stroke();
 
-    doc
-      .roundedRect(barX, y, Math.max(barWidth, 1), barHeight, 4)
-      .fill(histogramColor(safeScore));
-
-    doc.fontSize(compact ? 8 : 9).fillColor(HISTOGRAM_COLORS.text).text(String(rawScore), scoreX, y - 2, {
-      width: scoreWidth,
+    doc.fontSize(6.5).fillColor("#555555").text(String(value), marginLeft, y - 3, {
+      width: 22,
       align: "right"
     });
+  }
 
-    y += rowHeight;
+  const count = traits.length;
+  const slot = plotWidth / count;
+  const barWidth = Math.min(28, Math.max(16, slot * 0.72));
+  const palette = ["#4FA0B7", "#4FA0B7", "#4FA0B7", "#F4BA37", "#F4BA37", "#E9502F", "#E9502F", "#E9502F", "#B8C92F", "#B8C92F", "#B8C92F"];
+
+  traits.forEach((trait, index) => {
+    const value = chartScore(trait.score);
+    const x = axisX + slot * index + (slot - barWidth) / 2;
+    const y = value >= 0 ? valueToY(value) : zeroY;
+    const h = Math.max(1, Math.abs(zeroY - valueToY(value)));
+    const color = palette[index % palette.length];
+
+    doc.rect(x, y, barWidth, h).fillOpacity(0.88).fill(color).fillOpacity(1);
+
+    // Valore sopra/sotto la barra.
+    const valueY = value >= 0 ? y - 13 : y + h + 3;
+    doc.fontSize(7.5).fillColor(color).text(String(value), x - 5, valueY, {
+      width: barWidth + 10,
+      align: "center"
+    });
+
+    // Label verticale, come reference.
+    doc.save();
+    doc.rotate(-90, { origin: [x + barWidth / 2, chartBottom + labelHeight - 2] });
+    doc.fontSize(6.9).fillColor("#333333").text(trait.name, x + barWidth / 2, chartBottom + labelHeight - 2, {
+      width: labelHeight,
+      align: "right",
+      lineBreak: false
+    });
+    doc.restore();
   });
 
-  doc.y = y + (compact ? 8 : 4);
+  doc.restore();
+  doc.y = chartBottom + labelHeight + 14;
   doc.fillColor("black");
+}
+
+function drawAdditionalParameterBars(doc, parameters) {
+  if (!Array.isArray(parameters) || parameters.length === 0) return;
+
+  drawChartTitle(
+    doc,
+    "Parametri aggiuntivi",
+    "Scala da -100 a +100. Barre orizzontali di supporto alla lettura consulenziale del profilo."
+  );
+
+  const marginLeft = doc.page.margins.left;
+  const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+  const columnGap = 34;
+  const columnWidth = (usableWidth - columnGap) / 2;
+  const labelHeight = 18;
+  const trackHeight = 12;
+  const rowHeight = 44;
+  const trackColor = "#E9E9E9";
+  const barColor = "#2E5F9E";
+  const axisColor = "#8A8A8A";
+  const startY = doc.y + 12;
+
+  const left = parameters.filter((_, index) => index % 2 === 0);
+  const right = parameters.filter((_, index) => index % 2 === 1);
+
+  function drawColumn(items, x, y0) {
+    items.forEach((item, row) => {
+      const y = y0 + row * rowHeight;
+      const value = chartScore(item.score);
+      const trackX = x + 16;
+      const trackW = columnWidth - 54;
+      const zeroX = trackX + trackW / 2;
+      const barW = Math.max(2, Math.abs(value) / 100 * (trackW / 2));
+      const barX = value >= 0 ? zeroX : zeroX - barW;
+      const barY = y + labelHeight + 1;
+
+      doc.fontSize(8.5).fillColor("#111111").text(item.name, x, y, {
+        width: columnWidth,
+        lineBreak: false
+      });
+
+      doc.fontSize(6.5).fillColor("#111111").text("-100", x, barY + 2, {
+        width: 24,
+        align: "right"
+      });
+
+      doc.roundedRect(trackX, barY, trackW, trackHeight, 1).fill(trackColor);
+
+      doc
+        .moveTo(zeroX, barY - 1)
+        .lineTo(zeroX, barY + trackHeight + 1)
+        .lineWidth(0.8)
+        .strokeColor(axisColor)
+        .stroke();
+
+      doc.roundedRect(barX, barY, barW, trackHeight, 1).fill(barColor);
+
+      doc.fontSize(6.3).fillColor("#FFFFFF").text(String(value), barX, barY + 2.2, {
+        width: Math.max(barW, 14),
+        align: "center"
+      });
+
+      doc.fontSize(6.5).fillColor("#111111").text("100", trackX + trackW + 7, barY + 2, {
+        width: 24,
+        align: "left"
+      });
+    });
+  }
+
+  drawColumn(left, marginLeft, startY);
+  drawColumn(right, marginLeft + columnWidth + columnGap, startY);
+
+  const rows = Math.max(left.length, right.length);
+  doc.y = startY + rows * rowHeight + 8;
+  doc.fillColor("black");
+}
+
+function getNormalizedAnalysis(payload = {}, requestedRole = "") {
+  const traits = Array.isArray(payload.traits) ? payload.traits : [];
+  const split = splitDimensions(traits);
+  const mainTraits = Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits;
+  const additionalParameters = Array.isArray(payload.additionalParameters)
+    ? payload.additionalParameters
+    : split.additionalParameters;
+  const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
+  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
+
+  return {
+    traits,
+    mainTraits,
+    additionalParameters,
+    roleFit,
+    managementAdvice,
+    topTraits: payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name),
+    weakTraits: payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name),
+    reliabilityFlags: payload.reliabilityFlags || []
+  };
 }
 
 function drawAssessmentHistograms(doc, dimensions) {
@@ -1061,22 +1171,14 @@ function drawAssessmentHistograms(doc, dimensions) {
 
   drawLogo(doc);
   doc.fontSize(20).fillColor("black").text("Performance Assessment Report", { align: "center" });
-  doc.moveDown(0.2);
-  doc.fontSize(9).fillColor("#666").text("Sintesi grafica del profilo", { align: "center" });
-  doc.moveDown(0.7);
+  doc.moveDown(0.15);
+  doc.fontSize(9).fillColor("#666666").text("Sintesi grafica del profilo", { align: "center" });
+  doc.moveDown(0.65);
 
-  drawDimensionHistogram(doc, traits, {
-    title: "Trait",
-    subtitle: "Sintesi dei principali tratti comportamentali rilevati dal questionario.",
-    compact: true
-  });
+  drawTraitsVerticalChart(doc, traits);
 
   if (additionalParameters.length) {
-    drawDimensionHistogram(doc, additionalParameters, {
-      title: "Parametri aggiuntivi",
-      subtitle: "Indicatori di supporto alla lettura consulenziale del profilo.",
-      compact: true
-    });
+    drawAdditionalParameterBars(doc, additionalParameters);
   }
 }
 
@@ -1092,7 +1194,7 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v8-role-fit-age-pdf");
+  res.send("openai-expanded-report-v9-v4-reference-charts");
 });
 
 app.get("/", (_req, res) => {
@@ -1356,6 +1458,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
 
   const submissions = assessments.map((item) => {
     const payload = item.result?.traitsJson || {};
+    const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
     return {
       id: item.id,
@@ -1367,8 +1470,8 @@ app.get("/admin", requireAdmin, async (req, res) => {
       createdAt: item.createdAt,
       avgScore: item.result?.avgScore ?? null,
       orientation: item.result?.orientation ?? "-",
-      topTraits: payload.topTraits || [],
-      roleFit: payload.roleFit || calculateRoleFit(payload.traits || [], item.requestedRole),
+      topTraits: normalized.topTraits || [],
+      roleFit: normalized.roleFit,
       expandedReady: !!item.result?.expandedReportJson,
       expandedGenerating: !!item.result?.isGenerating,
       generationError: item.result?.generationError || null
@@ -1424,7 +1527,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       traits,
       reliabilityScore: assessment.result.reliabilityScore ?? 0,
       reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
-      reliabilityFlags: payload.reliabilityFlags || [],
+      reliabilityFlags: normalized.reliabilityFlags || [],
       roleFit,
       managementAdvice
     });
@@ -1452,6 +1555,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
 
   const submission = {
@@ -1467,7 +1571,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       avgRange: assessment.result?.avgRange ?? "-",
       reliabilityScore: assessment.result?.reliabilityScore ?? "-",
       reliabilityLabel: assessment.result?.reliabilityLabel ?? "-",
-      reliabilityFlags: payload.reliabilityFlags || [],
+      reliabilityFlags: normalized.reliabilityFlags || [],
       answers: assessment.result?.answersJson || {},
       questions: getQuestionTexts(),
       isGenerating: !!assessment.result?.isGenerating,
@@ -1475,17 +1579,14 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       summary: {
         orientation: assessment.result?.orientation ?? "-",
         roleComment: assessment.result?.roleComment ?? "-",
-        topTraits: payload.topTraits || [],
-        weakTraits: payload.weakTraits || [],
-        roleFit: payload.roleFit || calculateRoleFit(payload.traits || [], assessment.requestedRole),
-        managementAdvice: payload.managementAdvice || buildManagementAdvice({
-          traits: payload.traits || [],
-          roleFit: payload.roleFit || calculateRoleFit(payload.traits || [], assessment.requestedRole)
-        })
+        topTraits: normalized.topTraits || [],
+        weakTraits: normalized.weakTraits || [],
+        roleFit: normalized.roleFit,
+        managementAdvice: normalized.managementAdvice
       },
-      traits: payload.traits || [],
-      mainTraits: payload.mainTraits || splitDimensions(payload.traits || []).traits,
-      additionalParameters: payload.additionalParameters || splitDimensions(payload.traits || []).additionalParameters,
+      traits: normalized.traits,
+      mainTraits: normalized.mainTraits,
+      additionalParameters: normalized.additionalParameters,
       expandedReport: expanded
     }
   };
@@ -1513,11 +1614,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
-  const traits = Array.isArray(payload.traits) ? payload.traits : [];
-  const mainTraits = Array.isArray(payload.mainTraits) ? payload.mainTraits : splitDimensions(traits).traits;
-  const additionalParameters = Array.isArray(payload.additionalParameters)
-    ? payload.additionalParameters
-    : splitDimensions(traits).additionalParameters;
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+  const traits = normalized.traits;
+  const mainTraits = normalized.mainTraits;
+  const additionalParameters = normalized.additionalParameters;
   const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
 
   const doc = new PDFDocument({
@@ -1533,8 +1633,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   doc.pipe(res);
 
-  const roleFit = payload.roleFit || calculateRoleFit(traits, assessment.requestedRole);
-  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
+  const roleFit = normalized.roleFit;
+  const managementAdvice = normalized.managementAdvice;
 
   // PAGINA 1: istogrammi principali e parametri aggiuntivi.
   if (traits.length) {
@@ -1579,17 +1679,17 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   doc.text(`Compatibilità con il ruolo: ${roleFit.label} (${roleFit.score}%)`);
   doc.text(`Attendibilità: ${assessment.result?.reliabilityLabel ?? "-"} (${assessment.result?.reliabilityScore ?? "-"})`);
 
-  if (Array.isArray(payload.reliabilityFlags) && payload.reliabilityFlags.length) {
-    doc.text(`Segnali attendibilità: ${payload.reliabilityFlags.join("; ")}`);
+  if (Array.isArray(normalized.reliabilityFlags) && normalized.reliabilityFlags.length) {
+    doc.text(`Segnali attendibilità: ${normalized.reliabilityFlags.join("; ")}`);
   }
 
   doc.moveDown();
   doc.fontSize(14).text("Punti forti emergenti");
-  doc.fontSize(11).text((payload.topTraits || []).join(", ") || "-");
+  doc.fontSize(11).text((normalized.topTraits || []).join(", ") || "-");
 
   doc.moveDown();
   doc.fontSize(14).text("Aree di miglioramento");
-  doc.fontSize(11).text((payload.weakTraits || []).join(", ") || "-");
+  doc.fontSize(11).text((normalized.weakTraits || []).join(", ") || "-");
 
   doc.moveDown();
   doc.fontSize(14).text("Consiglio generale di gestione");
@@ -1599,17 +1699,17 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   doc.fontSize(9).fillColor("#666").text(roleFit.note || "", { align: "left" });
   doc.fillColor("black");
 
-  // PAGINE SUCCESSIVE: dettaglio trait e parametri.
+  // PAGINE SUCCESSIVE: dettaglio tratti e parametri.
   doc.addPage();
   drawLogo(doc);
-  doc.fontSize(16).fillColor("black").text("Dettaglio trait e parametri aggiuntivi");
+  doc.fontSize(16).fillColor("black").text("Dettaglio tratti e parametri aggiuntivi");
   doc.moveDown(0.7);
 
-  doc.fontSize(14).text("Trait");
+  doc.fontSize(14).text("Tratti");
   doc.moveDown(0.4);
 
   if (!mainTraits.length) {
-    doc.fontSize(11).text("Nessun dettaglio trait disponibile.");
+    doc.fontSize(11).text("Nessun dettaglio tratti disponibile.");
   } else {
     mainTraits.forEach((t) => {
       doc.fontSize(11).text(`${t.name}: ${t.score} (${t.range})`);
@@ -1645,7 +1745,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
-        doc.fontSize(14).text(t.name || "Trait");
+        doc.fontSize(14).text(t.name || "Tratto");
         doc.moveDown(0.2);
 
         doc.fontSize(11).text(t.expandedText || "");
