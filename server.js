@@ -975,11 +975,27 @@ function chartScore(score) {
 }
 
 function drawChartTitle(doc, title, subtitle) {
-  doc.fontSize(16).fillColor("#222222").text(title, { width: 500, lineBreak: false });
+  const marginLeft = doc.page.margins.left;
+  const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+
+  // PDFKit mantiene l'ultima posizione X dopo testi ruotati/colonne.
+  // Reset esplicito per evitare titoli tagliati a destra, es. "Parametri a...".
+  doc.x = marginLeft;
+
+  doc.fontSize(16).fillColor("#222222").text(title, marginLeft, doc.y, {
+    width: usableWidth,
+    lineBreak: false
+  });
+
   if (subtitle) {
     doc.moveDown(0.2);
-    doc.fontSize(8.5).fillColor("#666666").text(subtitle, { width: 500 });
+    doc.x = marginLeft;
+    doc.fontSize(8.5).fillColor("#666666").text(subtitle, marginLeft, doc.y, {
+      width: usableWidth
+    });
   }
+
+  doc.x = marginLeft;
   doc.fillColor("black");
 }
 
@@ -1022,7 +1038,19 @@ function drawTraitsVerticalChart(doc, traits) {
   const count = traits.length;
   const slot = plotWidth / count;
   const barWidth = Math.min(28, Math.max(16, slot * 0.72));
-  const palette = ["#4FA0B7", "#2F7EA0", "#73AFC2", "#F4BA37", "#E99E2E", "#E9502F", "#C94129", "#F06F45", "#B8C92F", "#9FAE24", "#CDD94A"];
+  const palette = [
+    "#147FBD", // Zenith blue
+    "#0D1424", // deep navy
+    "#36A3D9", // light blue
+    "#5E6878", // muted slate
+    "#7CB342", // olive green
+    "#F2A33A", // warm amber
+    "#8E5CF7", // violet
+    "#00A6A6", // teal
+    "#D66BA0", // muted rose
+    "#6B8E23", // dark olive
+    "#BFC7D5"  // soft grey blue
+  ];
 
   traits.forEach((trait, index) => {
     const value = chartScore(trait.score);
@@ -1052,13 +1080,15 @@ function drawTraitsVerticalChart(doc, traits) {
   });
 
   doc.restore();
-  doc.y = chartBottom + labelHeight + 14;
+  doc.x = doc.page.margins.left;
+  doc.y = chartBottom + labelHeight + 22;
   doc.fillColor("black");
 }
 
 function drawAdditionalParameterBars(doc, parameters) {
   if (!Array.isArray(parameters) || parameters.length === 0) return;
 
+  doc.x = doc.page.margins.left;
   drawChartTitle(doc, "Parametri aggiuntivi");
 
   const marginLeft = doc.page.margins.left;
@@ -1080,8 +1110,8 @@ function drawAdditionalParameterBars(doc, parameters) {
     items.forEach((item, row) => {
       const y = y0 + row * rowHeight;
       const value = chartScore(item.score);
-      const trackX = x + 16;
-      const trackW = columnWidth - 54;
+      const trackX = x + 38;
+      const trackW = columnWidth - 78;
       const zeroX = trackX + trackW / 2;
       const barW = Math.max(2, Math.abs(value) / 100 * (trackW / 2));
       const barX = value >= 0 ? zeroX : zeroX - barW;
@@ -1093,7 +1123,7 @@ function drawAdditionalParameterBars(doc, parameters) {
       });
 
       doc.fontSize(6.5).fillColor("#111111").text("-100", x, barY + 2, {
-        width: 24,
+        width: 32,
         align: "right"
       });
 
@@ -1114,7 +1144,7 @@ function drawAdditionalParameterBars(doc, parameters) {
       });
 
       doc.fontSize(6.5).fillColor("#111111").text("100", trackX + trackW + 7, barY + 2, {
-        width: 24,
+        width: 28,
         align: "left"
       });
     });
