@@ -273,6 +273,7 @@
       <li><strong>ID:</strong> <%= submission.id %></li>
       <li><strong>Nome:</strong> <%= submission.name %></li>
       <li><strong>Email:</strong> <%= submission.email || "-" %></li>
+      <li><strong>Età:</strong> <%= submission.age || "-" %></li>
       <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
       <li><strong>Ruolo:</strong> <%= submission.role %></li>
       <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
@@ -321,19 +322,20 @@
           <div>
             <div class="histogram-scale-line"></div>
             <div class="histogram-scale-labels">
-              <span>-30</span>
+              <span>-100</span>
               <span>0</span>
-              <span>+30</span>
+              <span>+100</span>
             </div>
           </div>
           <div></div>
         </div>
 
         <% submission.analysis.traits.forEach(function(item) {
-          const rawScore = Number(item.score || 0);
-          const safeScore = Math.max(-30, Math.min(30, rawScore));
-          const width = Math.abs(safeScore) / 30 * 50;
-          const isPositive = safeScore >= 0;
+          const rawSourceScore = Number(item.score || 0);
+          const safeSourceScore = Math.max(-30, Math.min(30, rawSourceScore));
+          const rawScore = Math.round((safeSourceScore / 30) * 100);
+          const width = Math.abs(rawScore) / 100 * 50;
+          const isPositive = rawScore >= 0;
         %>
           <div class="histogram-row">
             <div class="histogram-name"><%= item.name %></div>
@@ -354,7 +356,8 @@
         <% submission.analysis.traits.forEach(function(item) { %>
           <div class="trait">
             <h3><%= item.name %></h3>
-            <p><strong>Indicazione:</strong> <%= item.score %></p>
+            <% const sourceScore = Math.max(-30, Math.min(30, Number(item.score || 0))); %>
+            <p><strong>Indicazione:</strong> <%= Math.round((sourceScore / 30) * 100) %></p>
           </div>
         <% }) %>
       </div>
@@ -398,28 +401,25 @@
     <% } %>
   </div>
 
-  <% if (submission.analysis.expandedReport) { %>
+  <% if (submission.analysis.expandedReport && submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>
     <div class="card">
-      <h2>Relazione generale</h2>
-      <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
+      <h2>Approfondimento dei tratti</h2>
+      <p class="muted">Questa sezione corrisponde all’approfondimento incluso nel PDF.</p>
     </div>
 
-    <% if (submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>
-      <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
-        <div class="card">
-          <h3><%= item.name || "Tratto" %></h3>
+    <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
+      <div class="card">
+        <h3><%= item.name || "Tratto" %></h3>
 
-          <p><strong>Lettura approfondita</strong></p>
-          <p><%= item.expandedText || "-" %></p>
+        <p><%= item.expandedText || "-" %></p>
 
-          <p><strong>Rimedi pratici</strong></p>
-          <p><%= item.improvementPlan || "-" %></p>
+        <p><strong>Rimedi pratici</strong></p>
+        <p><%= item.improvementPlan || "-" %></p>
 
-          <p><strong>Come gestirlo nella pratica</strong></p>
-          <p><%= item.skillAction || item.teamLeverage || "-" %></p>
-        </div>
-      <% }) %>
-    <% } %>
+        <p><strong>Come gestirlo nella pratica</strong></p>
+        <p><%= item.skillAction || item.teamLeverage || "-" %></p>
+      </div>
+    <% }) %>
   <% } %>
 
   <script>

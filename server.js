@@ -1232,7 +1232,7 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v9-v4-reference-charts");
+  res.send("openai-expanded-report-v10-v5-1-no-automatic-labels");
 });
 
 app.get("/", (_req, res) => {
@@ -1546,9 +1546,10 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
     }
 
     const payload = assessment.result.traitsJson || {};
-    const traits = Array.isArray(payload.traits) ? payload.traits : [];
-    const roleFit = payload.roleFit || calculateRoleFit(traits, assessment.requestedRole);
-    const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+    const traits = normalized.traits;
+    const roleFit = normalized.roleFit;
+    const managementAdvice = normalized.managementAdvice;
 
     startExpandedReportJob({
       assessmentId: assessment.id,
@@ -1781,7 +1782,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.fontSize(11).text("Nessun dettaglio tratti disponibile.");
   } else {
     mainTraits.forEach((t) => {
-      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)} - ${valueDirectionLabel(t.score)}`);
+      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)}`);
     });
   }
 
@@ -1790,7 +1791,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.fontSize(14).text("Parametri aggiuntivi");
     doc.moveDown(0.4);
     additionalParameters.forEach((t) => {
-      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)} - ${valueDirectionLabel(t.score)}`);
+      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)}`);
     });
   }
 
