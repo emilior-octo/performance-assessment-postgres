@@ -1578,6 +1578,110 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
   }
 });
 
+
+app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
+  try {
+    const source = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: {
+        result: true,
+        assessmentLink: true
+      }
+    });
+
+    if (!source || !source.result) {
+      return res.status(404).send("Assessment sorgente non trovato");
+    }
+
+    const answers = source.result.answersJson || {};
+    const traits = buildTraitsFromAnswers(answers);
+    const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
+    const avgScore = avg(mainTraits.map((t) => t.score));
+    const avgRange = range(avgScore);
+    const requestedRole = source.requestedRole || source.assessmentLink?.requestedRole || "non_specificato";
+    const summary = buildSummary(traits, requestedRole);
+    const roleFit = calculateRoleFit(traits, requestedRole);
+    const managementAdvice = buildManagementAdvice({ traits, roleFit });
+    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+
+    const copiedName = `${source.respondentName || "Anonimo"} - copia test`;
+    const copiedCompany = source.candidateCompany
+      ? `${source.candidateCompany} [TEST]`
+      : "TEST";
+
+    const duplicated = await prisma.assessment.create({
+      data: {
+        organizationId: source.organizationId,
+        assessmentLinkId: source.assessmentLinkId,
+        respondentName: copiedName,
+        respondentEmail: source.respondentEmail,
+        age: source.age,
+        candidateCompany: copiedCompany,
+        requestedRole
+      }
+    });
+
+    await prisma.assessmentResult.create({
+      data: {
+        assessmentId: duplicated.id,
+        avgScore,
+        avgRange,
+        orientation: summary.orientation,
+        roleComment: summary.roleComment,
+        reliabilityScore,
+        reliabilityLabel,
+        traitsJson: {
+          traits,
+          mainTraits,
+          additionalParameters,
+          roleFit,
+          managementAdvice,
+          topTraits: summary.topTraits,
+          weakTraits: summary.weakTraits,
+          reliabilityFlags,
+          duplicatedFromAssessmentId: source.id,
+          duplicatedAt: new Date().toISOString()
+        },
+        answersJson: answers,
+        expandedReportJson: null,
+        expandedReportGeneratedAt: null,
+        isGenerating: false,
+        generationError: null
+      }
+    });
+
+    if (req.body.generateAi === "yes") {
+      startExpandedReportJob({
+        assessmentId: duplicated.id,
+        companyName: req.session.admin.organizationName,
+        role: requestedRole,
+        avgScore,
+        avgRange,
+        summary: {
+          orientation: summary.orientation,
+          roleComment: summary.roleComment,
+          roleFit,
+          managementAdvice
+        },
+        traits,
+        reliabilityScore,
+        reliabilityLabel,
+        reliabilityFlags,
+        roleFit,
+        managementAdvice
+      });
+    }
+
+    return res.redirect(`/admin/${duplicated.id}`);
+  } catch (error) {
+    console.error("Errore duplicazione assessment test:", error);
+    return res.status(500).send("Errore durante la duplicazione del questionario test.");
+  }
+});
+
 app.get("/admin/:id", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
