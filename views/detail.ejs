@@ -233,10 +233,31 @@
         Apri PDF
       </a>
 
-      <% if (!submission.analysis.expandedReport && !isGenerating) { %>
-        <form method="POST" action="/admin/<%= submission.id %>/generate-expanded-report" id="generate-expanded-form">
-          <button class="btn" type="submit" id="generate-expanded-button">
-            Genera relazione esplosa
+      <% if (!isGenerating) { %>
+        <% if (submission.analysis.expandedReport) { %>
+          <form method="POST" action="/admin/<%= submission.id %>/regenerate-expanded-report" id="regenerate-expanded-form">
+            <button class="btn" type="submit" id="regenerate-expanded-button" onclick="return confirm('Rigenerare la relazione AI? La relazione attuale verrà sostituita.');">
+              Rigenera relazione AI
+            </button>
+          </form>
+        <% } else { %>
+          <form method="POST" action="/admin/<%= submission.id %>/generate-expanded-report" id="generate-expanded-form">
+            <button class="btn" type="submit" id="generate-expanded-button">
+              Genera relazione AI
+            </button>
+          </form>
+        <% } %>
+
+        <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
+          <button class="btn btn-secondary" type="submit">
+            Duplica test veloce
+          </button>
+        </form>
+
+        <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
+          <input type="hidden" name="generateAi" value="yes">
+          <button class="btn btn-secondary" type="submit">
+            Duplica + rigenera relazione
           </button>
         </form>
       <% } %>
@@ -289,17 +310,24 @@
   <% } %>
 
   <script>
-    const form = document.getElementById("generate-expanded-form");
-    const button = document.getElementById("generate-expanded-button");
+    const formsToDisable = [
+      ["generate-expanded-form", "generate-expanded-button", "Generazione in corso..."],
+      ["regenerate-expanded-form", "regenerate-expanded-button", "Rigenerazione in corso..."]
+    ];
 
-    if (form && button) {
-      form.addEventListener("submit", function () {
-        button.disabled = true;
-        button.innerText = "Generazione in corso...";
-        button.style.opacity = "0.7";
-        button.style.cursor = "not-allowed";
-      });
-    }
+    formsToDisable.forEach(function ([formId, buttonId, loadingText]) {
+      const form = document.getElementById(formId);
+      const button = document.getElementById(buttonId);
+
+      if (form && button) {
+        form.addEventListener("submit", function () {
+          button.disabled = true;
+          button.innerText = loadingText;
+          button.style.opacity = "0.7";
+          button.style.cursor = "not-allowed";
+        });
+      }
+    });
   </script>
 </body>
 </html>

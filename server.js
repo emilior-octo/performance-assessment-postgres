@@ -1763,6 +1763,69 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
 });
 
 
+app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: {
+        result: true
+      }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    if (assessment.result.isGenerating) {
+      return res.redirect(`/admin/${assessment.id}`);
+    }
+
+    const payload = assessment.result.traitsJson || {};
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+    const traits = normalized.traits;
+    const roleFit = normalized.roleFit;
+    const managementAdvice = normalized.managementAdvice;
+
+    await prisma.assessmentResult.update({
+      where: { assessmentId: assessment.id },
+      data: {
+        expandedReportJson: null,
+        expandedReportGeneratedAt: null,
+        generationError: null,
+        isGenerating: false
+      }
+    });
+
+    startExpandedReportJob({
+      assessmentId: assessment.id,
+      companyName: req.session.admin.organizationName,
+      role: assessment.requestedRole,
+      avgScore: assessment.result.avgScore,
+      avgRange: assessment.result.avgRange,
+      summary: {
+        orientation: assessment.result.orientation,
+        roleComment: assessment.result.roleComment,
+        roleFit,
+        managementAdvice
+      },
+      traits,
+      reliabilityScore: assessment.result.reliabilityScore ?? 0,
+      reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
+      reliabilityFlags: normalized.reliabilityFlags || [],
+      roleFit,
+      managementAdvice
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore rigenerazione relazione AI:", error);
+    return res.status(500).send("Errore durante la rigenerazione della relazione AI.");
+  }
+});
+
 app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
   try {
     const source = await prisma.assessment.findFirst({
