@@ -213,7 +213,8 @@ const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
   "Affidabilità + autodisciplina": "Affidabilità",
-  "Stress": "Gestione pressioni / Stress"
+  "Stress": "Gestione pressioni / Stress",
+  "Capacità di gestióne finanziaria": "Capacità di gestione finanziaria"
 };
 
 const DIMENSION_DESCRIPTIONS = {
@@ -243,7 +244,11 @@ const DIMENSION_DESCRIPTIONS = {
 
 function displayDimensionName(name) {
   const value = String(name || "").trim();
-  return DISPLAY_LABELS[value] || value;
+  const normalizedValue = value
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione");
+
+  return DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue;
 }
 
 function dimensionDescription(name) {
@@ -901,9 +906,12 @@ TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
 REGOLE DI LETTURA DEI PUNTEGGI
-- Usa il campo writingGuidance solo come guida interna per calibrare tono, rischi e rimedi.
-- Non citare mai nel testo finale le fasce, le soglie numeriche o espressioni come "valore alto", "valore adeguato", "produttività", "difficoltà profonda".
-- Per valori molto alti non celebrare in modo assoluto: descrivi il punto forte con cautela, come comportamento da verificare nella pratica.
+- Usa il campo writingGuidance come regola principale per scrivere ogni tratto.
+- Non citare mai nel testo finale le fasce, le soglie numeriche o formule come "70-100", "31-50", "valore alto", "valore adeguato", "alta produttività", "profonda difficoltà".
+- L'analisi deve essere coerente con la fascia del punteggio: non mischiare nella stessa analisi segnali positivi e negativi opposti.
+- Se il punteggio è alto, eventuali attenzioni devono derivare dall'eccesso o dall'intensità del tratto, non da una sua assenza.
+- Se il punteggio è basso, non descrivere il tratto come stabile o già maturo: evidenzia la difficoltà concreta e l'impatto sul lavoro.
+- Per valori molto alti, non celebrare in modo assoluto: descrivi il tratto come molto marcato e aggiungi prudenza professionale, spiegando che la continuità del comportamento va verificata nei fatti. Non accusare mai la persona di non essere sincera.
 - Se il tratto Responsabilità è in area migliorabile bassa, includi il concetto che la persona può contrariarsi quando l'interlocutore ha un'opinione diversa, anche se non lo manifesta apertamente.
 
 ISTRUZIONI GENERALI
@@ -914,23 +922,25 @@ ISTRUZIONI GENERALI
 5. Non usare formule come “discreto”, “buono”, “ottimo” nel testo finale.
 6. Evita frasi generiche, ripetitive o troppo “da AI”.
 7. Quando possibile, collega le osservazioni al lavoro quotidiano, ai rapporti con colleghi/clienti e alla gestione pratica della persona.
-8. Descrivi rischi e rimedi in modo concreto: cosa può fare il titolare, il responsabile o il referente diretto già da domani.
+8. Non trasformare l'analisi del tratto in una lista di consigli: prima interpreta il comportamento, poi solo nei campi dedicati indica eventuali azioni pratiche coerenti.
 9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
-10. Compila generalManagementAdvice con un consiglio generale molto pratico su come gestire la risorsa esaminata.
+10. Compila generalManagementAdvice con un consiglio generale pratico, ma non contraddittorio rispetto ai tratti emersi.
 
 ISTRUZIONI PER OGNI TRATTO
 Per ogni tratto restituisci:
-- expandedText: spiegazione semplice del tratto, con esempi pratici di come può vedersi nel lavoro. Usa il significato del tratto indicato nel campo description per restare coerente.
-- improvementPlan: rimedi pratici, facili da applicare, senza teoria complessa. Se il valore del tratto è pari o superiore a 40 su scala -100/+100, mantieni il campo breve e non correttivo: questa sezione non verrà mostrata nella relazione finale.
-- skillAction: cosa fare nella gestione quotidiana: come valorizzare il tratto se è forte, oppure come presidiare e migliorare il comportamento se è debole.
+- expandedText: vera analisi comportamentale del tratto, coerente con writingGuidance. Deve spiegare come la persona tende a funzionare, cosa può emergere nel lavoro e quali effetti operativi o relazionali può produrre. NON ripetere la definizione del campo description, perché verrà già mostrata tra parentesi nel report. NON inserire consigli operativi in questo campo.
+- improvementPlan: rimedi pratici solo se il tratto è sotto 40 su scala -100/+100. Se il tratto è pari o superiore a 40, scrivi una frase breve di valorizzazione/consolidamento non correttiva, perché questa sezione non verrà mostrata nella relazione finale.
+- skillAction: indicazione gestionale coerente con la fascia del punteggio: valorizzazione/verifica per punteggi alti, consolidamento per punteggi intermedi, supporto/presidio per punteggi bassi. Non deve contraddire expandedText.
 
 STILE DI SCRITTURA
 - Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
 - Usa parole semplici e frasi brevi.
+- Non iniziare mai un approfondimento con frasi definitorie tipo "Misura...", "Valuta...", "Indica..." se ripetono la descrizione del tratto.
 - Evita formule ripetitive tra i tratti.
+- Evita struttura da checklist dentro expandedText.
 - Dove c’è un rischio, spiega cosa può succedere in azienda.
-- Dove c’è una forza, spiega come usarla nella pratica.
-- Dove serve un rimedio, indica azioni semplici: obiettivi chiari, controllo periodico, affiancamento, priorità scritte, confronto diretto.
+- Dove c’è una forza, spiega come può produrre valore concreto.
+- Dove serve un rimedio, deve essere coerente con il punteggio: obiettivi chiari, controllo periodico, affiancamento, priorità scritte, confronto diretto, senza consigli opposti all'analisi.
 
 IMPORTANTE
 - Non scrivere "uso della forza".
@@ -1083,26 +1093,26 @@ function scoreGuidanceForPrompt(score) {
   const value = chartScore(score);
 
   if (value >= 70) {
-    return "valore molto alto: descrivi alta produttività e forte presenza del tratto, ma mantieni cautela perché punteggi molto elevati possono indicare anche risposta molto controllata o desiderio di apparire nel modo migliore; non esplicitare questa regola nel testo finale";
+    return "70-100: tratto dominante e molto marcato. L'analisi deve descrivere una forte manifestazione del tratto e, con tono prudente, indicare che valori così elevati possono anche riflettere una risposta molto controllata o socialmente desiderabile. Non insinuare falsità o scarsa sincerità; scrivi che la continuità del comportamento va verificata nella pratica. I consigli devono essere di valorizzazione e verifica concreta, non correttivi.";
   }
 
   if (value >= 51) {
-    return "valore alto: descrivi alta produttività e buona espressione pratica del tratto, senza usare etichette tecniche";
+    return "51-69: tratto solido e produttivo. L'analisi deve descrivere una manifestazione stabile, utile nel lavoro quotidiano, senza introdurre criticità opposte al punteggio. I consigli devono valorizzare e consolidare il tratto.";
   }
 
   if (value >= 31) {
-    return "valore adeguato: descrivi una base utilizzabile nel lavoro quotidiano, con qualche presidio operativo";
+    return "31-50: tratto adeguato. L'analisi deve descrivere una base presente ma non dominante, con eventuale discontinuità leggera. I consigli devono aiutare a consolidare il comportamento, senza drammatizzare.";
   }
 
   if (value >= 0) {
-    return "valore migliorabile: descrivi un'area su cui lavorare con rimedi pratici e controlli semplici";
+    return "0-30: tratto migliorabile. L'analisi deve descrivere fragilità o presenza discontinua del tratto, con esempi concreti nel lavoro. I consigli devono essere di supporto, chiarimento e allenamento operativo.";
   }
 
-  if (value >= -29) {
-    return "valore in difficoltà: descrivi una difficoltà visibile nel lavoro quotidiano e indica azioni di supporto concrete";
+  if (value >= -30) {
+    return "-30-0: tratto in difficoltà. L'analisi deve descrivere una difficoltà concreta che può emergere nel lavoro quotidiano, con impatto operativo o relazionale. I consigli devono essere di presidio, affiancamento e controllo semplice.";
   }
 
-  return "valore in profonda difficoltà: descrivi un'area da approfondire con attenzione, senza usare toni clinici o giudicanti";
+  return "-100--31: profonda difficoltà da approfondire. L'analisi deve descrivere una criticità importante da verificare con attenzione, senza toni clinici o giudicanti. I consigli devono essere prudenti, orientati a osservazione, affiancamento e verifica sul campo.";
 }
 
 function shouldAddResponsibilityOpinionNote(normalized) {
@@ -1927,6 +1937,31 @@ function valueDirectionLabel(score) {
   return "area abbastanza equilibrata, da osservare nel lavoro quotidiano";
 }
 
+
+function stripLeadingDefinitionSentence(text, description = "") {
+  let value = String(text || "").trim();
+  if (!value) return value;
+
+  // La spiegazione tecnica del tratto viene già mostrata tra parentesi.
+  // Qui togliamo l'eventuale prima frase definitoria per evitare ripetizioni tipo:
+  // "Misura...", "Valuta...", "Indica...", "Riguarda...".
+  const definitionStartPattern = /^(misura|valuta|indica|rappresenta|riguarda|si riferisce|il tratto misura|questo tratto misura)\b/i;
+  const firstSentenceMatch = value.match(/^(.{1,420}?[.!?])\s+/s);
+  const firstSentence = firstSentenceMatch ? firstSentenceMatch[1].trim() : "";
+
+  if (firstSentence && definitionStartPattern.test(firstSentence)) {
+    value = value.slice(firstSentenceMatch[0].length).trim();
+  }
+
+  // Secondo passaggio: se l'AI ha iniziato ripetendo quasi testualmente la descrizione
+  // ma senza punto dopo la prima frase, tagliamo fino al primo punto utile.
+  if (definitionStartPattern.test(value)) {
+    value = value.replace(/^(.{1,360}?[.!?])\s*/s, "").trim();
+  }
+
+  return value || String(text || "").trim();
+}
+
 function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     return expandedReportJson;
@@ -1942,7 +1977,10 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         const value = chartScore(dimension?.score ?? trait?.score ?? 0);
         const description = dimensionDescription(trait?.name || displayName);
 
-        let expandedText = String(trait.expandedText || "").trim();
+        let expandedText = stripLeadingDefinitionSentence(
+          String(trait.expandedText || "").trim(),
+          description
+        );
 
         if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
           const note = responsibilityOpinionNote();

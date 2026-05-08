@@ -258,179 +258,31 @@
   <% } %>
 
   <% if (submission.analysis.expandedReport) { %>
-    <div class="notice notice-success">
-      <strong>Relazione esplosa disponibile.</strong>
-      Il report AI è stato generato correttamente ed è incluso anche nel PDF.
-    </div>
-  <% } %>
-
-  <h1>Dettaglio Assessment</h1>
-  <p class="muted"><strong>Azienda:</strong> <%= organizationName %></p>
-
-  <div class="card">
-    <h2>Dati compilazione</h2>
-    <ul>
-      <li><strong>ID:</strong> <%= submission.id %></li>
-      <li><strong>Nome:</strong> <%= submission.name %></li>
-      <li><strong>Email:</strong> <%= submission.email || "-" %></li>
-      <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
-      <li><strong>Ruolo:</strong> <%= submission.role %></li>
-      <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>Relazione di sintesi del profilo comportamentale</h2>
-
-    <p><strong>Score medio:</strong> <%= submission.analysis.avgScore %></p>
-    <p><strong>Fascia media:</strong> <%= submission.analysis.avgRange %></p>
-
-    <p>
-      <strong>Indice attendibilità:</strong>
-      <%= submission.analysis.reliabilityLabel %> (<%= submission.analysis.reliabilityScore %>)
-    </p>
-
-    <p>
-      <strong>Lettura sintetica del profilo:</strong>
-      Il profilo evidenzia un <%= submission.analysis.summary.orientation %>, con una combinazione di tratti che suggeriscono specifiche modalità di funzionamento nel contesto lavorativo.
-    </p>
-
-    <p>
-      <strong>Lettura rispetto al ruolo:</strong>
-      <%= submission.analysis.summary.roleComment %>
-      Questa indicazione rappresenta una prima chiave interpretativa e sarà oggetto di approfondimento in fase di restituzione.
-    </p>
-
-    <p>
-      <strong>Punti forti emergenti:</strong>
-      <%= submission.analysis.summary.topTraits.length ? submission.analysis.summary.topTraits.join(", ") : "-" %>
-    </p>
-
-    <p>
-      <strong>Aree di miglioramento:</strong>
-      <%= submission.analysis.summary.weakTraits.length ? submission.analysis.summary.weakTraits.join(", ") : "-" %>
-    </p>
-
-    <p style="margin-top: 16px; font-size: 14px; color: #666;">
-      La presente analisi rappresenta una prima lettura strutturata dei tratti emersi dal questionario e non costituisce una valutazione definitiva. I risultati saranno approfonditi e contestualizzati durante la fase di restituzione e confronto.
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>Analisi per tratto</h2>
-
-    <% if (submission.analysis.traits && submission.analysis.traits.length) { %>
-      <div class="histogram">
-        <h3 class="histogram-title">Distribuzione dei punteggi</h3>
-        <p class="histogram-help">
-          Scala da -30 a +30. Lo zero rappresenta il punto neutro; le barre verso destra indicano punteggi positivi, quelle verso sinistra aree da presidiare.
-        </p>
-
-        <div class="histogram-scale">
-          <div></div>
-          <div>
-            <div class="histogram-scale-line"></div>
-            <div class="histogram-scale-labels">
-              <span>-30</span>
-              <span>0</span>
-              <span>+30</span>
-            </div>
-          </div>
-          <div></div>
-        </div>
-
-        <% submission.analysis.traits.forEach(function(item) {
-          const rawScore = Number(item.score || 0);
-          const safeScore = Math.max(-30, Math.min(30, rawScore));
-          const width = Math.abs(safeScore) / 30 * 50;
-          const isPositive = safeScore >= 0;
-        %>
-          <div class="histogram-row">
-            <div class="histogram-name"><%= item.name %></div>
-
-            <div class="histogram-track">
-              <div
-                class="histogram-bar <%= isPositive ? 'histogram-bar-positive' : 'histogram-bar-negative' %>"
-                style="width: <%= width %>%;"
-              ></div>
-            </div>
-
-            <div class="histogram-score"><%= rawScore %></div>
-          </div>
-        <% }) %>
-      </div>
-
-      <div class="grid">
-        <% submission.analysis.traits.forEach(function(item) { %>
-          <div class="trait">
-            <h3><%= item.name %></h3>
-            <p><strong>Score:</strong> <%= item.score %></p>
-            <p><strong>Fascia:</strong> <%= item.range %></p>
-          </div>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="muted">Nessun dettaglio tratti disponibile.</p>
-    <% } %>
-  </div>
-
-  <div class="card">
-    <h2>Risposte grezze</h2>
-
-    <% if (submission.analysis.answers && Object.keys(submission.analysis.answers).length) { %>
-      <table class="answers-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Domanda</th>
-            <th>Risposta</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <% Object.keys(submission.analysis.questions).forEach(function(key, index) {
-            const answer = submission.analysis.answers[key];
-            let label = "-";
-
-            if (answer === "agree") label = "D’accordo";
-            if (answer === "uncertain") label = "Incerto / parzialmente";
-            if (answer === "disagree") label = "In disaccordo";
-            if (answer === "high") label = "Opzione alta";
-            if (answer === "medium") label = "Opzione intermedia";
-            if (answer === "low") label = "Opzione bassa";
-          %>
-            <tr>
-              <td><%= index + 1 %></td>
-              <td><%= submission.analysis.questions[key] %></td>
-              <td><%= label %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="muted">Risposte grezze non disponibili per questa compilazione.</p>
-    <% } %>
-  </div>
-
-  <% if (submission.analysis.expandedReport) { %>
     <div class="card">
-      <h2>Relazione esplosa</h2>
+      <h2>Relazione generale</h2>
       <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
     </div>
 
     <% if (submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>
+      <div class="card">
+        <h2>Approfondimento dei tratti</h2>
+      </div>
+
       <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
         <div class="card">
-          <h3><%= item.name || "Tratto" %></h3>
+          <h3><%= item.displayName || item.name || "Tratto" %></h3>
 
-          <p><strong>Lettura approfondita</strong></p>
+          <% if (item.description) { %>
+            <p class="muted">(<%= item.description %>)</p>
+          <% } %>
+
           <p><%= item.expandedText || "-" %></p>
 
-          <p><strong>Piano di improvement</strong></p>
-          <p><%= item.improvementPlan || "-" %></p>
+          <% if (item.showRemedies !== false) { %>
+            <p><strong>Rimedi pratici:</strong> <%= item.improvementPlan || "-" %></p>
+          <% } %>
 
-          <p><strong>Come valorizzare o sviluppare questa skill</strong></p>
-          <p><%= item.skillAction || item.teamLeverage || "-" %></p>
+          <p><strong>Come gestirlo nella pratica:</strong> <%= item.skillAction || item.teamLeverage || "-" %></p>
         </div>
       <% }) %>
     <% } %>
