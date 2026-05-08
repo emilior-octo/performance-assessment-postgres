@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <title>Questionario Assessment</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-  <link rel="shortcut icon" href="/favicon.svg" type="image/svg+xml" />
 
   <style>
     * {
@@ -243,25 +241,34 @@
         <section class="card">
           <h2>Domande</h2>
 
-          <% Object.keys(questions).forEach(function(key, index) { %>
+          <%
+            const questionList = Array.isArray(questions)
+              ? questions
+              : Object.keys(questions).map(function(key) {
+                  return { key: key, text: questions[key], responseType: "likert", options: null };
+                });
+          %>
+
+          <% questionList.forEach(function(question, index) {
+              const key = question.key;
+              const opts = Array.isArray(question.options) && question.options.length
+                ? question.options
+                : [
+                    { value: "agree", label: "D’accordo" },
+                    { value: "uncertain", label: "Incerto / parzialmente" },
+                    { value: "disagree", label: "In disaccordo" }
+                  ];
+          %>
             <div class="question">
-              <p class="question-title"><%= index + 1 %>. <%= questions[key] %></p>
+              <p class="question-title"><%= index + 1 %>. <%= question.text %></p>
 
               <div class="options">
-                <label class="option">
-                  <input type="radio" name="<%= key %>" value="agree" required />
-                  <span>D’accordo</span>
-                </label>
-
-                <label class="option">
-                  <input type="radio" name="<%= key %>" value="uncertain" required />
-                  <span>Incerto / parzialmente</span>
-                </label>
-
-                <label class="option">
-                  <input type="radio" name="<%= key %>" value="disagree" required />
-                  <span>In disaccordo</span>
-                </label>
+                <% opts.forEach(function(option) { %>
+                  <label class="option">
+                    <input type="radio" name="<%= key %>" value="<%= option.value %>" required />
+                    <span><%= option.label %></span>
+                  </label>
+                <% }) %>
               </div>
             </div>
           <% }) %>

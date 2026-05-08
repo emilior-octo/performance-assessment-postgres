@@ -95,6 +95,7 @@ const ADDITIONAL_PARAMETER_DIMENSIONS = [
   "Principi",
   "Vendite",
   "Gestione priorità",
+  "Capacità di gestione finanziaria",
   "Attendibilità"
 ];
 
@@ -183,6 +184,7 @@ const DIMENSION_DEFINITIONS = {
   "Autonomia economica e iniziativa": [
     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Capacità di gestione finanziaria", category: DIMENSION_CATEGORY.ADDITIONAL },
     { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Creatività e innovazione": [
@@ -235,6 +237,7 @@ const DIMENSION_DESCRIPTIONS = {
   "Principi": "misura la coerenza con regole, valori aziendali e comportamenti professionali corretti",
   "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
   "Gestione priorità": "misura la capacità di distinguere ciò che è importante da ciò che è solo urgente",
+  "Capacità di gestione finanziaria": "misura la capacità di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
   "Attendibilità": "misura la coerenza tra ciò che una persona dichiara e ciò che tende effettivamente a fare"
 };
 
@@ -309,6 +312,7 @@ const ROLE_FIT_WEIGHTS = {
     "Organizzazione e pianificazione": 1.1,
     "Leadership naturale": 1.35,
     "Management": 1.3,
+    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.2,
     "Principi": 1.05
   },
@@ -340,6 +344,7 @@ const ROLE_FIT_WEIGHTS = {
     "Espansività": 1.15,
     "Automotivazione": 1.15,
     "Comprensione": 1.15,
+    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.25,
     "Vendite": 1.15,
     "Cooperazione": 1.1
@@ -351,6 +356,7 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.1,
     "Gestione priorità": 1.3,
     "Principi": 1.25,
+    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.2,
     "Resistenza al cambiamento": 0.85
   },
@@ -362,6 +368,7 @@ const ROLE_FIT_WEIGHTS = {
     "Dinamismo": 1.1,
     "Gestione priorità": 1.35,
     "Management": 1.15,
+    "Capacità di gestione finanziaria": 1.05,
     "Attendibilità": 1.3,
     "Cooperazione": 1.1
   },
@@ -393,6 +400,7 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.1,
     "Flessibilità comunicativa": 1.05,
     "Gestione priorità": 1.25,
+    "Capacità di gestione finanziaria": 1.0,
     "Attendibilità": 1.35,
     "Principi": 1.1,
     "Cooperazione": 1.05
@@ -410,6 +418,7 @@ const ROLE_FIT_WEIGHTS = {
     "Comprensione": 1.05,
     "Espansività": 1.0,
     "Gestione priorità": 1.1,
+    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.1,
     "Cooperazione": 1.05,
     "Principi": 1.05
@@ -502,18 +511,30 @@ function baseScore(answer) {
   if (answer === "agree") return 30;
   if (answer === "uncertain") return 10;
   if (answer === "disagree") return -30;
+  if (answer === "high") return 30;
+  if (answer === "medium") return 10;
+  if (answer === "low") return -30;
   return 0;
 }
 
-function scoreAnswer(answer, reverse = false) {
-  const value = baseScore(answer);
+function scoreAnswer(answer, reverse = false, question = null) {
+  const customScore = question?.optionScores?.[answer];
+  const value = typeof customScore === "number" ? customScore : baseScore(answer);
   return reverse ? value * -1 : value;
 }
 
-function answerLabel(answer) {
+function answerLabel(answer, question = null) {
+  const option = Array.isArray(question?.options)
+    ? question.options.find((item) => item.value === answer)
+    : null;
+
+  if (option?.label) return option.label;
   if (answer === "agree") return "D’accordo";
   if (answer === "uncertain") return "Incerto / parzialmente";
   if (answer === "disagree") return "In disaccordo";
+  if (answer === "high") return "Alta";
+  if (answer === "medium") return "Intermedia";
+  if (answer === "low") return "Bassa";
   return answer || "-";
 }
 
@@ -533,6 +554,16 @@ function getQuestionTexts() {
   return Object.fromEntries(ZPI_QUESTIONS.map((q) => [q.key, q.text]));
 }
 
+function getQuestionnaireQuestions() {
+  return ZPI_QUESTIONS.map((q) => ({
+    key: q.key,
+    id: q.id,
+    text: q.text,
+    responseType: q.responseType || "likert",
+    options: Array.isArray(q.options) ? q.options : null
+  }));
+}
+
 function collectAnswers(body) {
   return Object.fromEntries(
     ZPI_QUESTIONS.map((q) => [q.key, body[q.key] || null])
@@ -548,7 +579,7 @@ function buildTraitsFromAnswers(answers) {
     if (!answer) return;
 
     const sourceTrait = question.trait || "Comportamento generale";
-    const value = scoreAnswer(answer, question.reverse);
+    const value = scoreAnswer(answer, question.reverse, question);
     const dimensions = normalizeDimensionDefinitions(sourceTrait);
 
     dimensions.forEach((dimension) => {
@@ -890,7 +921,7 @@ ISTRUZIONI GENERALI
 ISTRUZIONI PER OGNI TRATTO
 Per ogni tratto restituisci:
 - expandedText: spiegazione semplice del tratto, con esempi pratici di come può vedersi nel lavoro. Usa il significato del tratto indicato nel campo description per restare coerente.
-- improvementPlan: rimedi pratici, facili da applicare, senza teoria complessa.
+- improvementPlan: rimedi pratici, facili da applicare, senza teoria complessa. Se il valore del tratto è pari o superiore a 40 su scala -100/+100, mantieni il campo breve e non correttivo: questa sezione non verrà mostrata nella relazione finale.
 - skillAction: cosa fare nella gestione quotidiana: come valorizzare il tratto se è forte, oppure come presidiare e migliorare il comportamento se è debole.
 
 STILE DI SCRITTURA
@@ -909,6 +940,7 @@ IMPORTANTE
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 - Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
 - Quando parli di Gestione pressioni / Stress, interpretalo come fonti di preoccupazione, pressione o distrazione presenti nell’ambiente personale o professionale, non come semplice tensione emotiva generica.
+- Quando parli di Capacità di gestione finanziaria, interpretala come capacità pratica di generare reddito autonomo, risparmiare e gestire risorse economiche con continuità e visione futura.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacità o tratto.
 - Non usare espressioni come “KPI”, “stakeholder”, “performance review”, “coaching”, “debriefing”, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
@@ -1033,6 +1065,18 @@ function startExpandedReportJob({
 function chartScore(score) {
   const safeScore = Math.max(-30, Math.min(30, Number(score || 0)));
   return Math.round((safeScore / 30) * 100);
+}
+
+function shouldShowRemediesForChartValue(value) {
+  // Richiesta cliente: da 40 a 100 non mostrare la sezione “Rimedi pratici”.
+  return Number(value || 0) < 40;
+}
+
+function findDimensionByDisplayName(dimensions, name) {
+  const target = displayDimensionName(name);
+  return (Array.isArray(dimensions) ? dimensions : []).find((item) => {
+    return displayDimensionName(item?.name) === target || item?.name === name;
+  }) || null;
 }
 
 function scoreGuidanceForPrompt(score) {
@@ -1437,7 +1481,7 @@ app.get("/zenith-assessment", async (_req, res) => {
     companyName: link.organization.name,
     requestedRole: link.requestedRole,
     roleOptions: ROLE_OPTIONS,
-    questions: getQuestionTexts()
+    questions: getQuestionnaireQuestions()
   });
 });
 
@@ -1460,7 +1504,7 @@ app.get("/q/:token", async (req, res) => {
     companyName: link.organization.name,
     requestedRole: link.requestedRole,
     roleOptions: ROLE_OPTIONS,
-    questions: getQuestionTexts()
+    questions: getQuestionnaireQuestions()
   });
 });
 
@@ -1889,25 +1933,31 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   }
 
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
+  const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
 
   const traits = Array.isArray(expandedReportJson.traits)
     ? expandedReportJson.traits.map((trait) => {
         const displayName = displayDimensionName(trait?.name);
+        const dimension = findDimensionByDisplayName(normalizedDimensions, trait?.name || displayName);
+        const value = chartScore(dimension?.score ?? trait?.score ?? 0);
+        const description = dimensionDescription(trait?.name || displayName);
 
-        if (!shouldAddResponsibilityNote || displayName !== "Responsabilità") {
-          return trait;
-        }
+        let expandedText = String(trait.expandedText || "").trim();
 
-        const note = responsibilityOpinionNote();
-        const currentText = String(trait.expandedText || "").trim();
-
-        if (currentText.includes("opinione diversa") || currentText.includes("interlocutore")) {
-          return trait;
+        if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
+          const note = responsibilityOpinionNote();
+          if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
+            expandedText = expandedText ? `${expandedText} ${note}` : note;
+          }
         }
 
         return {
           ...trait,
-          expandedText: currentText ? `${currentText} ${note}` : note
+          displayName,
+          description,
+          chartScore: value,
+          showRemedies: shouldShowRemediesForChartValue(value),
+          expandedText
         };
       })
     : [];
@@ -2071,8 +2121,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
         doc.fontSize(11).text(t.expandedText || "");
         doc.moveDown(0.3);
 
-        doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
-        doc.moveDown(0.3);
+        if (t.showRemedies !== false) {
+          doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
+          doc.moveDown(0.3);
+        }
 
         doc.fontSize(11).text(
           `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`

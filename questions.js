@@ -35,8 +35,7 @@ export const MISSING_QUESTION_IDS = [
   202,
   217,
   224,
-  231,
-  239
+  238
 ];
 
 export const ZPI_QUESTIONS = [
@@ -271,14 +270,25 @@ export const ZPI_QUESTIONS = [
   {
     "id": 19,
     "key": "q19",
-    "text": "A quale età hai iniziato a generare un reddito autonomo significativo (escludendo paghette o attività domestiche)?",
+    "text": "A quale fascia d’età hai iniziato a generare un reddito autonomo significativo (escludendo paghette o attività domestiche)?",
     "trait": "Autonomia economica e iniziativa",
     "reverse": false,
-    "responseType": "select",
-    "scored": false,
+    "responseType": "single_choice",
+    "scored": true,
+    "options": [
+      { "value": "high", "label": "Ho iniziato tra i 18 e i 20 anni." },
+      { "value": "medium", "label": "Ho iniziato tra i 21 e i 30 anni." },
+      { "value": "low", "label": "Ho iniziato tra i 30 e i 40 anni." }
+    ],
+    "optionScores": {
+      "high": 30,
+      "medium": 10,
+      "low": -30
+    },
     "tags": [
       "factual",
-      "economia"
+      "economia",
+      "gestione_finanziaria"
     ]
   },
   {
@@ -313,11 +323,22 @@ export const ZPI_QUESTIONS = [
     "text": "Quale percentuale del tuo reddito annuo riesci generalmente a risparmiare o accantonare in ottica futura?",
     "trait": "Autonomia economica e iniziativa",
     "reverse": false,
-    "responseType": "select",
-    "scored": false,
+    "responseType": "single_choice",
+    "scored": true,
+    "options": [
+      { "value": "low", "label": "Nulla o quasi nulla." },
+      { "value": "medium", "label": "Tra il 10% e il 25% del mio reddito annuo." },
+      { "value": "high", "label": "Oltre il 25% del mio reddito annuo." }
+    ],
+    "optionScores": {
+      "high": 30,
+      "medium": 10,
+      "low": -30
+    },
     "tags": [
       "factual",
-      "economia"
+      "economia",
+      "gestione_finanziaria"
     ]
   },
   {
@@ -2901,9 +2922,9 @@ export const ZPI_QUESTIONS = [
     ]
   },
   {
-    "id": 238,
-    "key": "q238",
-    "text": "Ti capita di sentirti più giù del solito quando il tempo è brutto o grigio? 239.Credi che un cliente vada sempre stupito, offrendo più di quanto si aspetta?",
+    "id": 231,
+    "key": "q231",
+    "text": "Ti capita di sentirti più giù del solito quando il tempo è brutto o grigio?",
     "trait": "Stabilità emotiva e fiducia",
     "reverse": true,
     "responseType": "likert",
@@ -2911,6 +2932,18 @@ export const ZPI_QUESTIONS = [
     "tags": [
       "rischio",
       "autoefficacia"
+    ]
+  },
+  {
+    "id": 239,
+    "key": "q239",
+    "text": "Credi che un cliente vada sempre stupito, offrendo più di quanto si aspetta?",
+    "trait": "Empatia e collaborazione",
+    "reverse": false,
+    "responseType": "likert",
+    "scored": true,
+    "tags": [
+      "customer_care"
     ]
   },
   {

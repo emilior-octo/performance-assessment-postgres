@@ -2,35 +2,221 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Dettaglio Assessment</title>
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
 
   <style>
-    :root { --zenith: #2F4B7C; --border: #e5e7eb; --muted: #666; --bg: #f7f8fb; }
-    body { font-family: Arial, sans-serif; max-width: 1060px; margin: 40px auto; padding: 0 16px; color: #111827; background: #fff; }
-    h1, h2, h3 { margin-top: 0; }
-    .card { border: 1px solid var(--border); border-radius: 14px; padding: 22px; margin-bottom: 20px; background: #fff; }
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 16px; }
+    .card { border: 1px solid #ddd; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
     .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-    .trait { border: 1px solid #eee; border-radius: 12px; padding: 16px; background: #fcfcfd; }
-    .trait h3 { margin-bottom: 6px; }
-    .description { color: var(--muted); font-size: 13px; line-height: 1.45; margin-top: 0; }
-    .muted { color: var(--muted); }
+    .trait { border: 1px solid #eee; border-radius: 10px; padding: 16px; }
+    .muted { color: #666; }
     .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; }
-    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
-    .btn { display: inline-block; padding: 10px 14px; border: 0; border-radius: 999px; cursor: pointer; text-decoration: none; background: var(--zenith); color: #fff; font-size: 14px; line-height: 1.2; }
-    .btn-secondary { background: #f5f5f5; color: #111; border: 1px solid #ddd; }
-    .notice { padding: 14px 16px; margin: 16px 0 24px; border-radius: 10px; line-height: 1.45; }
-    .notice-warning { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; }
-    .notice-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-    .notice-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
-    .relation { white-space: pre-line; line-height: 1.6; }
-    .split-title { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); }
-    .score { color: var(--zenith); font-weight: 700; }
-    .answers-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .answers-table th, .answers-table td { border-bottom: 1px solid #eee; padding: 10px; vertical-align: top; text-align: left; }
-    .answers-table th { background: #fafafa; }
-    @media (max-width: 760px) { body { margin: 24px auto; } .grid { grid-template-columns: 1fr; } .topbar { align-items: flex-start; flex-direction: column; } .actions { justify-content: flex-start; } }
+    .actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      background: #111;
+      color: #fff;
+      font-size: 14px;
+      line-height: 1.2;
+    }
+
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #111;
+      border: 1px solid #ddd;
+    }
+
+    .notice {
+      padding: 14px 16px;
+      margin: 16px 0 24px;
+      border-radius: 10px;
+      line-height: 1.45;
+    }
+
+    .notice-warning {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+    }
+
+    .notice-success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+    }
+
+    .notice-error {
+      background: #fee2e2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+    }
+
+    .notice strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .histogram {
+      margin: 18px 0 24px;
+      padding: 18px;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      background: #fafafa;
+    }
+
+    .histogram-title {
+      margin: 0 0 6px;
+      font-size: 18px;
+    }
+
+    .histogram-help {
+      margin: 0 0 16px;
+      font-size: 13px;
+      color: #666;
+    }
+
+    .histogram-scale {
+      display: grid;
+      grid-template-columns: 120px 1fr 44px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #777;
+    }
+
+    .histogram-scale-line {
+      position: relative;
+      height: 18px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .histogram-scale-line::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: -1px;
+      width: 1px;
+      background: #aaa;
+    }
+
+    .histogram-scale-labels {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .histogram-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 44px;
+      gap: 12px;
+      align-items: center;
+      margin: 12px 0;
+    }
+
+    .histogram-name {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .histogram-track {
+      position: relative;
+      height: 22px;
+      background: #f1f1f1;
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid #e5e5e5;
+    }
+
+    .histogram-track::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: #999;
+      z-index: 2;
+    }
+
+    .histogram-bar {
+      position: absolute;
+      top: 3px;
+      height: 14px;
+      border-radius: 999px;
+    }
+
+    .histogram-bar-positive {
+      left: 50%;
+      background: #111;
+    }
+
+    .histogram-bar-negative {
+      right: 50%;
+      background: #999;
+    }
+
+    .histogram-score {
+      font-size: 14px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .answers-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    .answers-table th,
+    .answers-table td {
+      border: 1px solid #e5e5e5;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .answers-table th {
+      background: #f7f7f7;
+    }
+
+    form { margin: 0; }
+
+    @media (max-width: 700px) {
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .histogram-scale,
+      .histogram-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .histogram-score {
+        text-align: left;
+      }
+
+      .histogram-name {
+        font-size: 13px;
+      }
+
+      .answers-table {
+        font-size: 13px;
+      }
+    }
   </style>
 
   <% if (isGenerating) { %>
@@ -43,36 +229,39 @@
     <p><a href="/admin">← Torna alla lista</a></p>
 
     <div class="actions">
-      <a class="btn btn-secondary" href="/admin/<%= submission.id %>/pdf" target="_blank">Apri PDF</a>
-
-      <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
-        <input type="hidden" name="generateAi" value="no">
-        <button class="btn btn-secondary" type="submit">Duplica test veloce</button>
-      </form>
-
-      <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
-        <input type="hidden" name="generateAi" value="yes">
-        <button class="btn btn-secondary" type="submit">Duplica + rigenera relazione</button>
-      </form>
+      <a class="btn btn-secondary" href="/admin/<%= submission.id %>/pdf" target="_blank">
+        Apri PDF
+      </a>
 
       <% if (!submission.analysis.expandedReport && !isGenerating) { %>
         <form method="POST" action="/admin/<%= submission.id %>/generate-expanded-report" id="generate-expanded-form">
-          <button class="btn" type="submit" id="generate-expanded-button">Genera relazione</button>
+          <button class="btn" type="submit" id="generate-expanded-button">
+            Genera relazione esplosa
+          </button>
         </form>
       <% } %>
     </div>
   </div>
 
   <% if (isGenerating) { %>
-    <div class="notice notice-warning"><strong>Relazione in generazione.</strong> La pagina si aggiornerà automaticamente.</div>
+    <div class="notice notice-warning">
+      <strong>Relazione in generazione.</strong>
+      Il report esploso è in preparazione. La pagina si aggiornerà automaticamente.
+    </div>
   <% } %>
 
   <% if (submission.analysis.generationError) { %>
-    <div class="notice notice-error"><strong>Generazione non completata.</strong> <%= submission.analysis.generationError %>.</div>
+    <div class="notice notice-error">
+      <strong>Generazione non completata.</strong>
+      <%= submission.analysis.generationError %>. Puoi rilanciare la generazione dal pulsante fallback.
+    </div>
   <% } %>
 
   <% if (submission.analysis.expandedReport) { %>
-    <div class="notice notice-success"><strong>Relazione disponibile.</strong> Il report è stato generato correttamente ed è incluso anche nel PDF.</div>
+    <div class="notice notice-success">
+      <strong>Relazione esplosa disponibile.</strong>
+      Il report AI è stato generato correttamente ed è incluso anche nel PDF.
+    </div>
   <% } %>
 
   <h1>Dettaglio Assessment</h1>
@@ -84,7 +273,6 @@
       <li><strong>ID:</strong> <%= submission.id %></li>
       <li><strong>Nome:</strong> <%= submission.name %></li>
       <li><strong>Email:</strong> <%= submission.email || "-" %></li>
-      <li><strong>Età:</strong> <%= submission.age || "-" %></li>
       <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
       <li><strong>Ruolo:</strong> <%= submission.role %></li>
       <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT") %></li>
@@ -92,71 +280,99 @@
   </div>
 
   <div class="card">
-    <h2>Relazione generale</h2>
-    <div class="relation"><%= submission.analysis.summary.generalRelation || "-" %></div>
+    <h2>Relazione di sintesi del profilo comportamentale</h2>
 
-    <h3 class="split-title">Indicazione pratica per la gestione</h3>
-    <div class="relation"><%= submission.analysis.summary.managementAdvice || "-" %></div>
+    <p><strong>Score medio:</strong> <%= submission.analysis.avgScore %></p>
+    <p><strong>Fascia media:</strong> <%= submission.analysis.avgRange %></p>
 
-    <% if (submission.analysis.reliabilityFlags && submission.analysis.reliabilityFlags.length) { %>
-      <h3 class="split-title">Nota da tenere presente</h3>
-      <p>Alcune risposte mostrano oscillazioni interne. Il risultato va quindi letto con attenzione e verificato nel confronto diretto con la persona.</p>
-    <% } %>
+    <p>
+      <strong>Indice attendibilità:</strong>
+      <%= submission.analysis.reliabilityLabel %> (<%= submission.analysis.reliabilityScore %>)
+    </p>
+
+    <p>
+      <strong>Lettura sintetica del profilo:</strong>
+      Il profilo evidenzia un <%= submission.analysis.summary.orientation %>, con una combinazione di tratti che suggeriscono specifiche modalità di funzionamento nel contesto lavorativo.
+    </p>
+
+    <p>
+      <strong>Lettura rispetto al ruolo:</strong>
+      <%= submission.analysis.summary.roleComment %>
+      Questa indicazione rappresenta una prima chiave interpretativa e sarà oggetto di approfondimento in fase di restituzione.
+    </p>
+
+    <p>
+      <strong>Punti forti emergenti:</strong>
+      <%= submission.analysis.summary.topTraits.length ? submission.analysis.summary.topTraits.join(", ") : "-" %>
+    </p>
+
+    <p>
+      <strong>Aree di miglioramento:</strong>
+      <%= submission.analysis.summary.weakTraits.length ? submission.analysis.summary.weakTraits.join(", ") : "-" %>
+    </p>
+
+    <p style="margin-top: 16px; font-size: 14px; color: #666;">
+      La presente analisi rappresenta una prima lettura strutturata dei tratti emersi dal questionario e non costituisce una valutazione definitiva. I risultati saranno approfonditi e contestualizzati durante la fase di restituzione e confronto.
+    </p>
   </div>
 
   <div class="card">
-    <h2>Dettaglio tratti e parametri aggiuntivi</h2>
+    <h2>Analisi per tratto</h2>
 
-    <h3>Tratti</h3>
-    <% if (submission.analysis.mainTraits && submission.analysis.mainTraits.length) { %>
+    <% if (submission.analysis.traits && submission.analysis.traits.length) { %>
+      <div class="histogram">
+        <h3 class="histogram-title">Distribuzione dei punteggi</h3>
+        <p class="histogram-help">
+          Scala da -30 a +30. Lo zero rappresenta il punto neutro; le barre verso destra indicano punteggi positivi, quelle verso sinistra aree da presidiare.
+        </p>
+
+        <div class="histogram-scale">
+          <div></div>
+          <div>
+            <div class="histogram-scale-line"></div>
+            <div class="histogram-scale-labels">
+              <span>-30</span>
+              <span>0</span>
+              <span>+30</span>
+            </div>
+          </div>
+          <div></div>
+        </div>
+
+        <% submission.analysis.traits.forEach(function(item) {
+          const rawScore = Number(item.score || 0);
+          const safeScore = Math.max(-30, Math.min(30, rawScore));
+          const width = Math.abs(safeScore) / 30 * 50;
+          const isPositive = safeScore >= 0;
+        %>
+          <div class="histogram-row">
+            <div class="histogram-name"><%= item.name %></div>
+
+            <div class="histogram-track">
+              <div
+                class="histogram-bar <%= isPositive ? 'histogram-bar-positive' : 'histogram-bar-negative' %>"
+                style="width: <%= width %>%;"
+              ></div>
+            </div>
+
+            <div class="histogram-score"><%= rawScore %></div>
+          </div>
+        <% }) %>
+      </div>
+
       <div class="grid">
-        <% submission.analysis.mainTraits.forEach(function(item) { %>
+        <% submission.analysis.traits.forEach(function(item) { %>
           <div class="trait">
-            <h3><%= item.displayName || item.name %>: <span class="score"><%= item.chartScore ?? item.score %></span></h3>
-            <% if (item.description) { %><p class="description">(<%= item.description %>)</p><% } %>
+            <h3><%= item.name %></h3>
+            <p><strong>Score:</strong> <%= item.score %></p>
+            <p><strong>Fascia:</strong> <%= item.range %></p>
           </div>
         <% }) %>
       </div>
     <% } else { %>
       <p class="muted">Nessun dettaglio tratti disponibile.</p>
     <% } %>
-
-    <h3 class="split-title">Parametri aggiuntivi</h3>
-    <% if (submission.analysis.additionalParameters && submission.analysis.additionalParameters.length) { %>
-      <div class="grid">
-        <% submission.analysis.additionalParameters.forEach(function(item) { %>
-          <div class="trait">
-            <h3><%= item.displayName || item.name %>: <span class="score"><%= item.chartScore ?? item.score %></span></h3>
-            <% if (item.description) { %><p class="description">(<%= item.description %>)</p><% } %>
-          </div>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="muted">Nessun parametro aggiuntivo disponibile.</p>
-    <% } %>
   </div>
-
-  <% if (submission.analysis.expandedReport && submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>
-    <div class="card">
-      <h2>Approfondimento dei tratti</h2>
-      <p class="muted">Stessa struttura della relazione PDF: spiegazione, rimedi pratici e indicazioni di gestione.</p>
-    </div>
-
-    <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
-      <div class="card">
-        <h3><%= item.displayName || item.name || "Tratto" %></h3>
-        <% if (item.description) { %><p class="description">(<%= item.description %>)</p><% } %>
-
-        <p><%= item.expandedText || "-" %></p>
-
-        <p><strong>Rimedi pratici</strong></p>
-        <p><%= item.improvementPlan || "-" %></p>
-
-        <p><strong>Come gestirlo nella pratica</strong></p>
-        <p><%= item.skillAction || item.teamLeverage || "-" %></p>
-      </div>
-    <% }) %>
-  <% } %>
 
   <div class="card">
     <h2>Risposte grezze</h2>
@@ -164,15 +380,24 @@
     <% if (submission.analysis.answers && Object.keys(submission.analysis.answers).length) { %>
       <table class="answers-table">
         <thead>
-          <tr><th>#</th><th>Domanda</th><th>Risposta</th></tr>
+          <tr>
+            <th>#</th>
+            <th>Domanda</th>
+            <th>Risposta</th>
+          </tr>
         </thead>
+
         <tbody>
           <% Object.keys(submission.analysis.questions).forEach(function(key, index) {
             const answer = submission.analysis.answers[key];
             let label = "-";
+
             if (answer === "agree") label = "D’accordo";
             if (answer === "uncertain") label = "Incerto / parzialmente";
             if (answer === "disagree") label = "In disaccordo";
+            if (answer === "high") label = "Opzione alta";
+            if (answer === "medium") label = "Opzione intermedia";
+            if (answer === "low") label = "Opzione bassa";
           %>
             <tr>
               <td><%= index + 1 %></td>
@@ -187,9 +412,34 @@
     <% } %>
   </div>
 
+  <% if (submission.analysis.expandedReport) { %>
+    <div class="card">
+      <h2>Relazione esplosa</h2>
+      <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
+    </div>
+
+    <% if (submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>
+      <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
+        <div class="card">
+          <h3><%= item.name || "Tratto" %></h3>
+
+          <p><strong>Lettura approfondita</strong></p>
+          <p><%= item.expandedText || "-" %></p>
+
+          <p><strong>Piano di improvement</strong></p>
+          <p><%= item.improvementPlan || "-" %></p>
+
+          <p><strong>Come valorizzare o sviluppare questa skill</strong></p>
+          <p><%= item.skillAction || item.teamLeverage || "-" %></p>
+        </div>
+      <% }) %>
+    <% } %>
+  <% } %>
+
   <script>
     const form = document.getElementById("generate-expanded-form");
     const button = document.getElementById("generate-expanded-button");
+
     if (form && button) {
       form.addEventListener("submit", function () {
         button.disabled = true;
