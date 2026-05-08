@@ -282,6 +282,9 @@
     <div class="card">
       <h2>Relazione generale</h2>
       <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
+      <% if (submission.analysis.summary.roleFit && submission.analysis.summary.roleFit.score !== undefined) { %>
+        <p><strong>Compatibilità con il ruolo ricoperto:</strong> <%= submission.analysis.summary.roleFit.score %>%</p>
+      <% } %>
     </div>
 
     <% if (submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>

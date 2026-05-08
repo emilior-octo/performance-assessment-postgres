@@ -63,7 +63,7 @@ function normalizeRequestedRole(bodyRole, bodyOtherRole, fallbackRole) {
   const role = String(bodyRole || "").trim();
   const other = String(bodyOtherRole || "").trim();
 
-  if (role === "altro") return other || "Altro";
+  if (role === "altro") return other ? `Altro: ${other}` : "Altro";
   return role || fallbackRole || "non_specificato";
 }
 
@@ -294,6 +294,7 @@ function normalizeRoleKey(role) {
 
   const directValues = new Set(ROLE_OPTIONS.map((item) => item.value));
   if (directValues.has(value)) return value;
+  if (value === "altro" || value.startsWith("altro:")) return "altro";
 
   if (/direzione|imprenditore|ceo|founder|titolare/.test(value)) return "direzione";
   if (/manager|responsabile|store manager|coordinatore|coordinator/.test(value)) return "manager";
@@ -411,22 +412,28 @@ const ROLE_FIT_WEIGHTS = {
     "Cooperazione": 1.05
   },
   altro: {
-    "Organizzazione e pianificazione": 1.15,
-    "Automotivazione": 1.15,
-    "Affidabilità + autodisciplina": 1.15,
-    "Sicurezza": 1.05,
-    "Stress": 1.05,
-    "Dinamismo": 1.05,
-    "Flessibilità comunicativa": 1.05,
+    // Fallback prudente per ruoli liberi: profilo equilibrato da impiegato/collaboratore generalista.
+    // Evita interpretazioni troppo specialistiche quando il ruolo non rientra nei preset.
+    "Organizzazione e pianificazione": 1.2,
+    "Affidabilità + autodisciplina": 1.2,
     "Responsabilità": 1.15,
-    "Ascolto attivo": 1.05,
+    "Gestione priorità": 1.15,
+    "Attendibilità": 1.15,
+    "Cooperazione": 1.1,
     "Comprensione": 1.05,
-    "Espansività": 1.0,
-    "Gestione priorità": 1.1,
-    "Capacità di gestione finanziaria": 1.1,
-    "Attendibilità": 1.1,
-    "Cooperazione": 1.05,
-    "Principi": 1.05
+    "Ascolto attivo": 1.05,
+    "Sicurezza": 1.0,
+    "Stress": 1.0,
+    "Automotivazione": 1.0,
+    "Dinamismo": 1.0,
+    "Flessibilità comunicativa": 1.0,
+    "Principi": 1.0,
+    "Capacità di gestione finanziaria": 0.95,
+    "Espansività": 0.9,
+    "Vendite": 0.85,
+    "Leadership naturale": 0.85,
+    "Management": 0.85,
+    "Resistenza al cambiamento": 0.85
   }
 };
 
@@ -897,7 +904,7 @@ CONTESTO
 - Ruolo target: ${role}
 - Orientamento prevalente: ${summary.orientation}
 - Lettura rispetto al ruolo: ${summary.roleComment}
-- Compatibilità con il ruolo: ${roleFit?.label || "Non disponibile"}
+- Compatibilità con il ruolo ricoperto: ${roleFit?.label || "Non disponibile"}
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
 - Attendibilità generale: ${reliabilityLabel}
 - Eventuali segnali attendibilità: ${(reliabilityFlags || []).join("; ") || "nessun segnale rilevante"}
@@ -2077,8 +2084,11 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
   const role = assessment.requestedRole || "ruolo indicato";
+  const roleFitText = normalized?.roleFit?.score != null
+    ? `Compatibilità con il ruolo ricoperto: ${normalized.roleFit.score}%. `
+    : "";
 
-  return `La persona è stata valutata in riferimento al ruolo di ${role}. Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.\n\nLe aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.\n\nQuesta valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
+  return `${roleFitText}La persona è stata valutata in riferimento al ruolo di ${role}. Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.\n\nLe aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.\n\nQuesta valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
@@ -2178,20 +2188,18 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
   writeParagraphs(doc, generalRelation);
 
+  if (roleFit?.score != null) {
+    doc.moveDown(0.1);
+    doc.fontSize(12).fillColor("black").text(`Compatibilità con il ruolo ricoperto: ${roleFit.score}%`, {
+      align: "left"
+    });
+    doc.moveDown(0.6);
+  }
+
   doc.moveDown(0.2);
   doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
   doc.moveDown(0.2);
   writeParagraphs(doc, managementAdvice || "Gestire la risorsa con obiettivi chiari, priorità scritte e momenti di confronto periodici.");
-
-  if (Array.isArray(normalized.reliabilityFlags) && normalized.reliabilityFlags.length) {
-    doc.moveDown(0.2);
-    doc.fontSize(12).fillColor("#A33A2F").text("Nota da tenere presente");
-    doc.moveDown(0.2);
-    doc.fontSize(10).fillColor("black").text(
-      "Alcune risposte mostrano oscillazioni interne. Il risultato va quindi letto con attenzione e verificato nel confronto diretto con la persona.",
-      { lineGap: 2 }
-    );
-  }
 
   doc.fillColor("black");
 

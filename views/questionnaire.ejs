@@ -219,8 +219,6 @@
       </header>
 
       <form method="POST" action="/q/<%= token %>" id="assessment-form">
-        <input type="hidden" name="requestedRole" value="<%= requestedRole %>" />
-
         <section class="card">
           <h2>Dati compilazione</h2>
 
@@ -235,6 +233,19 @@
 
           <label for="candidateCompany">Azienda / Cliente di riferimento</label>
           <input id="candidateCompany" type="text" name="candidateCompany" placeholder="Es. Zenith 360" />
+
+          <label for="requestedRole">Ruolo ricoperto / ruolo di riferimento</label>
+          <select id="requestedRole" name="requestedRole" required>
+            <option value="" disabled selected>Seleziona un ruolo</option>
+            <% (roleOptions || []).forEach(function(role) { %>
+              <option value="<%= role.value %>" <%= requestedRole === role.value ? "selected" : "" %>><%= role.label %></option>
+            <% }) %>
+          </select>
+
+          <div id="requestedRoleOtherWrap" style="display: none;">
+            <label for="requestedRoleOther">Specifica altro ruolo</label>
+            <input id="requestedRoleOther" type="text" name="requestedRoleOther" placeholder="Es. Buyer, responsabile acquisti, tecnico, impiegato..." />
+          </div>
 
           <p class="muted">
             I dati saranno utilizzati esclusivamente per associare correttamente la compilazione al percorso di assessment.
@@ -299,5 +310,26 @@
       });
     }
   </script>
+
+  <script>
+    const requestedRoleSelect = document.getElementById("requestedRole");
+    const requestedRoleOtherWrap = document.getElementById("requestedRoleOtherWrap");
+    const requestedRoleOtherInput = document.getElementById("requestedRoleOther");
+
+    function syncOtherRoleField() {
+      const isOther = requestedRoleSelect && requestedRoleSelect.value === "altro";
+      if (requestedRoleOtherWrap) requestedRoleOtherWrap.style.display = isOther ? "block" : "none";
+      if (requestedRoleOtherInput) {
+        requestedRoleOtherInput.required = isOther;
+        if (!isOther) requestedRoleOtherInput.value = "";
+      }
+    }
+
+    if (requestedRoleSelect) {
+      requestedRoleSelect.addEventListener("change", syncOtherRoleField);
+      syncOtherRoleField();
+    }
+  </script>
+
 </body>
 </html>
