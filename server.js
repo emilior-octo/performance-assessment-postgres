@@ -207,6 +207,57 @@ const HISTOGRAM_COLORS = {
   strong: "#3F8F68"
 };
 
+const ZENITH_INDIGO = "#2F4B7C";
+
+const DISPLAY_LABELS = {
+  "Affidabilità + autodisciplina": "Affidabilità",
+  "Stress": "Gestione pressioni / Stress"
+};
+
+const DIMENSION_DESCRIPTIONS = {
+  "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",
+  "Automotivazione": "misura il livello di motivazione interiore e fiducia nelle proprie capacità",
+  "Affidabilità + autodisciplina": "misura la capacità di agire con costanza e senso del dovere anche nelle situazioni più complesse",
+  "Affidabilità": "misura la capacità di agire con costanza e senso del dovere anche nelle situazioni più complesse",
+  "Sicurezza": "misura la sicurezza nelle proprie convinzioni e valutazioni, mantenendo coerenza e fermezza nel confronto con gli altri",
+  "Stress": "misura eventuali fonti di preoccupazione, pressione e distrazione presenti nell’ambiente personale o professionale",
+  "Gestione pressioni / Stress": "misura eventuali fonti di preoccupazione, pressione e distrazione presenti nell’ambiente personale o professionale",
+  "Dinamismo": "misura energia e prontezza nell’agire, oltre alla predisposizione verso attività operative e movimentate",
+  "Flessibilità comunicativa": "misura determinazione, assertività, orientamento al risultato e capacità di comunicare con decisione",
+  "Responsabilità": "misura proattività, iniziativa e capacità di affrontare i problemi con orientamento alla soluzione",
+  "Ascolto attivo": "misura la capacità di comprendere il punto di vista degli altri, cogliendo bisogni ed esigenze anche non espresse",
+  "Comprensione": "misura la capacità di entrare in sintonia con stati d’animo, bisogni e difficoltà delle altre persone",
+  "Espansività": "misura la capacità di approcciare gli altri con spontaneità e apertura, creando fin da subito un clima positivo",
+  "Resistenza al cambiamento": "misura la disponibilità ad accettare cambiamenti, nuove procedure e nuove modalità di lavoro",
+  "Leadership naturale": "misura la tendenza a coinvolgere, guidare e diventare punto di riferimento per gli altri",
+  "Management": "misura la capacità di organizzare persone, attività e responsabilità in modo concreto",
+  "Cooperazione": "misura la capacità di collaborare, condividere informazioni e lavorare con continuità insieme agli altri",
+  "Principi": "misura la coerenza con regole, valori aziendali e comportamenti professionali corretti",
+  "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
+  "Gestione priorità": "misura la capacità di distinguere ciò che è importante da ciò che è solo urgente",
+  "Attendibilità": "misura la coerenza tra ciò che una persona dichiara e ciò che tende effettivamente a fare"
+};
+
+function displayDimensionName(name) {
+  const value = String(name || "").trim();
+  return DISPLAY_LABELS[value] || value;
+}
+
+function dimensionDescription(name) {
+  const displayName = displayDimensionName(name);
+  return DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "";
+}
+
+function withDisplayMeta(item) {
+  const displayName = displayDimensionName(item?.name);
+  return {
+    ...item,
+    displayName,
+    description: dimensionDescription(item?.name),
+    chartScore: chartScore(item?.score)
+  };
+}
+
 function normalizeDimensionDefinitions(originalTrait) {
   return DIMENSION_DEFINITIONS[originalTrait] || [
     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
@@ -724,7 +775,8 @@ function cleanExpandedReport(expandedReportJson) {
         .filter((trait) => isValidExpandedTrait(trait, seenNames))
         .map((trait) => ({
           ...trait,
-          name: normalizeTraitName(trait.name)
+          name: displayDimensionName(normalizeTraitName(trait.name)),
+          description: dimensionDescription(trait.name)
         }))
     : [];
 
@@ -747,7 +799,8 @@ function buildAiTraitsForPrompt(traits) {
       return true;
     })
     .map((trait) => ({
-      name: normalizeTraitName(trait.name),
+      name: displayDimensionName(normalizeTraitName(trait.name)),
+      description: dimensionDescription(trait.name),
       category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
       score: trait.score,
       range: trait.range,
@@ -829,7 +882,7 @@ ISTRUZIONI GENERALI
 
 ISTRUZIONI PER OGNI TRATTO
 Per ogni tratto restituisci:
-- expandedText: spiegazione semplice del tratto, con esempi pratici di come può vedersi nel lavoro.
+- expandedText: spiegazione semplice del tratto, con esempi pratici di come può vedersi nel lavoro. Usa il significato del tratto indicato nel campo description per restare coerente.
 - improvementPlan: rimedi pratici, facili da applicare, senza teoria complessa.
 - skillAction: cosa fare nella gestione quotidiana: come valorizzare il tratto se è forte, oppure come presidiare e migliorare il comportamento se è debole.
 
@@ -848,6 +901,7 @@ IMPORTANTE
 - Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 - Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
+- Quando parli di Gestione pressioni / Stress, interpretalo come fonti di preoccupazione, pressione o distrazione presenti nell’ambiente personale o professionale, non come semplice tensione emotiva generica.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacità o tratto.
 - Non usare espressioni come “KPI”, “stakeholder”, “performance review”, “coaching”, “debriefing”, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
@@ -1057,9 +1111,9 @@ function drawTraitsVerticalChart(doc, traits) {
     const x = axisX + slot * index + (slot - barWidth) / 2;
     const y = value >= 0 ? valueToY(value) : zeroY;
     const h = Math.max(1, Math.abs(zeroY - valueToY(value)));
-    const color = palette[index % palette.length];
+    const color = ZENITH_INDIGO;
 
-    doc.rect(x, y, barWidth, h).fillOpacity(0.88).fill(color).fillOpacity(1);
+    doc.rect(x, y, barWidth, h).fillOpacity(0.9).fill(color).fillOpacity(1);
 
     // Valore sopra/sotto la barra.
     const valueY = value >= 0 ? y - 13 : y + h + 3;
@@ -1071,7 +1125,7 @@ function drawTraitsVerticalChart(doc, traits) {
     // Label verticale, come reference.
     doc.save();
     doc.rotate(-90, { origin: [x + barWidth / 2, chartBottom + labelHeight - 2] });
-    doc.fontSize(6.9).fillColor("#333333").text(trait.name, x + barWidth / 2, chartBottom + labelHeight - 2, {
+    doc.fontSize(6.9).fillColor("#333333").text(displayDimensionName(trait.name), x + barWidth / 2, chartBottom + labelHeight - 2, {
       width: labelHeight,
       align: "right",
       lineBreak: false
@@ -1099,7 +1153,7 @@ function drawAdditionalParameterBars(doc, parameters) {
   const trackHeight = 12;
   const rowHeight = 44;
   const trackColor = "#E9E9E9";
-  const barColor = "#2E5F9E";
+  const barColor = ZENITH_INDIGO;
   const axisColor = "#8A8A8A";
   const startY = doc.y + 12;
 
@@ -1117,7 +1171,7 @@ function drawAdditionalParameterBars(doc, parameters) {
       const barX = value >= 0 ? zeroX : zeroX - barW;
       const barY = y + labelHeight + 1;
 
-      doc.fontSize(8.5).fillColor("#111111").text(item.name, x, y, {
+      doc.fontSize(8.5).fillColor("#111111").text(displayDimensionName(item.name), x, y, {
         width: columnWidth,
         lineBreak: false
       });
@@ -1206,7 +1260,7 @@ function mergeDimensionList(list = []) {
 
 function normalizeNameList(list = []) {
   return (Array.isArray(list) ? list : [])
-    .map((name) => normalizeDimensionNameForDisplay(name))
+    .map((name) => displayDimensionName(normalizeDimensionNameForDisplay(name)))
     .filter(Boolean)
     .filter((name, index, arr) => arr.indexOf(name) === index);
 }
@@ -1758,9 +1812,9 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
         managementAdvice: normalized.managementAdvice,
         generalRelation: buildPlainGeneralRelation({ assessment, normalized, expanded })
       },
-      traits: normalized.traits,
-      mainTraits: normalized.mainTraits,
-      additionalParameters: normalized.additionalParameters,
+      traits: normalized.traits.map(withDisplayMeta),
+      mainTraits: normalized.mainTraits.map(withDisplayMeta),
+      additionalParameters: normalized.additionalParameters.map(withDisplayMeta),
       expandedReport: expanded
     }
   };
@@ -1916,7 +1970,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.fontSize(11).text("Nessun dettaglio tratti disponibile.");
   } else {
     mainTraits.forEach((t) => {
-      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)}`);
+      doc.fontSize(11).text(`${displayDimensionName(t.name)}: ${chartScore(t.score)}`);
     });
   }
 
@@ -1925,7 +1979,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.fontSize(14).text("Parametri aggiuntivi");
     doc.moveDown(0.4);
     additionalParameters.forEach((t) => {
-      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)}`);
+      doc.fontSize(11).text(`${displayDimensionName(t.name)}: ${chartScore(t.score)}`);
     });
   }
 
@@ -1940,7 +1994,14 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
-        doc.fontSize(14).text(t.name || "Tratto");
+        const displayName = displayDimensionName(t.name || "Tratto");
+        const description = dimensionDescription(t.name);
+        doc.fontSize(14).text(displayName);
+        if (description) {
+          doc.moveDown(0.1);
+          doc.fontSize(9).fillColor("#666666").text(`(${description})`);
+          doc.fillColor("black");
+        }
         doc.moveDown(0.2);
 
         doc.fontSize(11).text(t.expandedText || "");
