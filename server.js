@@ -803,7 +803,8 @@ function buildAiTraitsForPrompt(traits) {
       description: dimensionDescription(trait.name),
       category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
       score: trait.score,
-      range: trait.range,
+      chartScore: chartScore(trait.score),
+      writingGuidance: scoreGuidanceForPrompt(trait.score),
       questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
     }));
 }
@@ -867,6 +868,12 @@ CONTESTO
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
+
+REGOLE DI LETTURA DEI PUNTEGGI
+- Usa il campo writingGuidance solo come guida interna per calibrare tono, rischi e rimedi.
+- Non citare mai nel testo finale le fasce, le soglie numeriche o espressioni come "valore alto", "valore adeguato", "produttività", "difficoltà profonda".
+- Per valori molto alti non celebrare in modo assoluto: descrivi il punto forte con cautela, come comportamento da verificare nella pratica.
+- Se il tratto Responsabilità è in area migliorabile bassa, includi il concetto che la persona può contrariarsi quando l'interlocutore ha un'opinione diversa, anche se non lo manifesta apertamente.
 
 ISTRUZIONI GENERALI
 1. Scrivi in modo semplice, diretto e utile per un imprenditore o responsabile di PMI.
@@ -1026,6 +1033,45 @@ function startExpandedReportJob({
 function chartScore(score) {
   const safeScore = Math.max(-30, Math.min(30, Number(score || 0)));
   return Math.round((safeScore / 30) * 100);
+}
+
+function scoreGuidanceForPrompt(score) {
+  const value = chartScore(score);
+
+  if (value >= 70) {
+    return "valore molto alto: descrivi alta produttività e forte presenza del tratto, ma mantieni cautela perché punteggi molto elevati possono indicare anche risposta molto controllata o desiderio di apparire nel modo migliore; non esplicitare questa regola nel testo finale";
+  }
+
+  if (value >= 51) {
+    return "valore alto: descrivi alta produttività e buona espressione pratica del tratto, senza usare etichette tecniche";
+  }
+
+  if (value >= 31) {
+    return "valore adeguato: descrivi una base utilizzabile nel lavoro quotidiano, con qualche presidio operativo";
+  }
+
+  if (value >= 0) {
+    return "valore migliorabile: descrivi un'area su cui lavorare con rimedi pratici e controlli semplici";
+  }
+
+  if (value >= -29) {
+    return "valore in difficoltà: descrivi una difficoltà visibile nel lavoro quotidiano e indica azioni di supporto concrete";
+  }
+
+  return "valore in profonda difficoltà: descrivi un'area da approfondire con attenzione, senza usare toni clinici o giudicanti";
+}
+
+function shouldAddResponsibilityOpinionNote(normalized) {
+  const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
+  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "Responsabilità" || item?.name === "Responsabilità");
+  if (!responsibility) return false;
+
+  const value = chartScore(responsibility.score);
+  return value >= 0 && value <= 20;
+}
+
+function responsibilityOpinionNote() {
+  return "La persona tende a contrariarsi, anche non manifestandolo, quando il suo interlocutore ha un'opinione diversa.";
 }
 
 function drawChartTitle(doc, title, subtitle) {
@@ -1316,7 +1362,7 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v10-v5-1-no-automatic-labels");
+  res.send("openai-expanded-report-v11-final-client-rules");
 });
 
 app.get("/", (_req, res) => {
@@ -1783,7 +1829,10 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
 
   const payload = assessment.result?.traitsJson || {};
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
-  const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
+  const expanded = applyClientOutputRulesToExpandedReport(
+    cleanExpandedReport(assessment.result?.expandedReportJson || null),
+    normalized
+  );
 
   const submission = {
     id: assessment.id,
@@ -1832,6 +1881,41 @@ function valueDirectionLabel(score) {
   if (value >= 15) return "area che può aiutare la persona nel lavoro";
   if (value <= -15) return "area da seguire con attenzione";
   return "area abbastanza equilibrata, da osservare nel lavoro quotidiano";
+}
+
+function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
+  if (!expandedReportJson || typeof expandedReportJson !== "object") {
+    return expandedReportJson;
+  }
+
+  const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
+
+  const traits = Array.isArray(expandedReportJson.traits)
+    ? expandedReportJson.traits.map((trait) => {
+        const displayName = displayDimensionName(trait?.name);
+
+        if (!shouldAddResponsibilityNote || displayName !== "Responsabilità") {
+          return trait;
+        }
+
+        const note = responsibilityOpinionNote();
+        const currentText = String(trait.expandedText || "").trim();
+
+        if (currentText.includes("opinione diversa") || currentText.includes("interlocutore")) {
+          return trait;
+        }
+
+        return {
+          ...trait,
+          expandedText: currentText ? `${currentText} ${note}` : note
+        };
+      })
+    : [];
+
+  return {
+    ...expandedReportJson,
+    traits
+  };
 }
 
 function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
@@ -1885,7 +1969,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
-  const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
+  const expanded = applyClientOutputRulesToExpandedReport(
+    cleanExpandedReport(assessment.result?.expandedReportJson || null),
+    normalized
+  );
 
   const doc = new PDFDocument({
     margin: 50,
@@ -1957,31 +2044,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   doc.fillColor("black");
 
-  // PAGINE SUCCESSIVE: dettaglio tratti e parametri.
-  doc.addPage();
-  drawLogo(doc);
-  doc.fontSize(16).fillColor("black").text("Dettaglio tratti e parametri aggiuntivi");
-  doc.moveDown(0.7);
-
-  doc.fontSize(14).text("Tratti");
-  doc.moveDown(0.4);
-
-  if (!mainTraits.length) {
-    doc.fontSize(11).text("Nessun dettaglio tratti disponibile.");
-  } else {
-    mainTraits.forEach((t) => {
-      doc.fontSize(11).text(`${displayDimensionName(t.name)}: ${chartScore(t.score)}`);
-    });
-  }
-
-  if (additionalParameters.length) {
-    doc.moveDown();
-    doc.fontSize(14).text("Parametri aggiuntivi");
-    doc.moveDown(0.4);
-    additionalParameters.forEach((t) => {
-      doc.fontSize(11).text(`${displayDimensionName(t.name)}: ${chartScore(t.score)}`);
-    });
-  }
+  // Pagina "Dettaglio tratti e parametri aggiuntivi" rimossa su richiesta cliente.
+  // Il report passa direttamente dalla relazione generale all'approfondimento dei tratti.
 
   if (expanded?.generalSummary) {
     doc.addPage();
