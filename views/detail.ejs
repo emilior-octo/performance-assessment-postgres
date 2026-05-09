@@ -285,6 +285,10 @@
       <% if (submission.analysis.summary.roleFit && submission.analysis.summary.roleFit.score !== undefined) { %>
         <p><strong>Compatibilità con il ruolo ricoperto:</strong> <%= submission.analysis.summary.roleFit.score %>%</p>
       <% } %>
+      <p><strong>Indice di coerenza delle risposte:</strong> <%= submission.analysis.reliabilityScore %>/100 — <%= submission.analysis.reliabilityLabel %></p>
+      <% if (submission.analysis.reliabilityFlags && submission.analysis.reliabilityFlags.length) { %>
+        <p class="muted"><%= submission.analysis.reliabilityFlags.join("; ") %></p>
+      <% } %>
     </div>
 
     <% if (submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>

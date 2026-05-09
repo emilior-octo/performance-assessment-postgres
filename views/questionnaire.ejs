@@ -101,14 +101,87 @@
       margin-bottom: 8px;
     }
 
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px 16px;
+      align-items: start;
+    }
+
+    .field {
+      margin: 0;
+    }
+
+    .field-full {
+      grid-column: 1 / -1;
+    }
+
+    .field label {
+      margin-bottom: 7px;
+      font-size: 13px;
+      color: #243b6b;
+      letter-spacing: 0.01em;
+    }
+
     input[type="text"],
-    input[type="email"] {
+    input[type="email"],
+    input[type="number"],
+    select {
       width: 100%;
-      padding: 13px 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 12px;
+      min-height: 48px;
+      padding: 12px 14px;
+      border: 1px solid #cfd7e6;
+      border-radius: 14px;
       font-size: 16px;
-      margin-bottom: 16px;
+      background: #fff;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+    }
+
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      padding-right: 44px;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #263c7a 50%),
+        linear-gradient(135deg, #263c7a 50%, transparent 50%),
+        linear-gradient(to right, #eef3ff, #eef3ff);
+      background-position:
+        calc(100% - 24px) 20px,
+        calc(100% - 17px) 20px,
+        calc(100% - 46px) 0;
+      background-size: 7px 7px, 7px 7px, 1px 100%;
+      background-repeat: no-repeat;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: #263c7a;
+      box-shadow: 0 0 0 4px rgba(38, 60, 122, 0.12);
+      background-color: #fbfdff;
+    }
+
+    .meta-card {
+      border-color: #d9e3f3;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      box-shadow: 0 12px 30px rgba(38, 60, 122, 0.06);
+    }
+
+    .meta-card h2 {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #111827;
+    }
+
+    .meta-card h2::before {
+      content: "";
+      width: 9px;
+      height: 24px;
+      border-radius: 999px;
+      background: #263c7a;
+      display: inline-block;
     }
 
     .question {
@@ -184,6 +257,11 @@
         padding: 18px;
       }
 
+      .form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+
       .options {
         grid-template-columns: 1fr;
       }
@@ -219,35 +297,47 @@
       </header>
 
       <form method="POST" action="/q/<%= token %>" id="assessment-form">
-        <section class="card">
+        <section class="card meta-card">
           <h2>Dati compilazione</h2>
 
-          <label for="respondentName">Nome e cognome</label>
-          <input id="respondentName" type="text" name="respondentName" required />
+          <div class="form-grid">
+            <div class="field">
+              <label for="respondentName">Nome e cognome</label>
+              <input id="respondentName" type="text" name="respondentName" required />
+            </div>
 
-          <label for="respondentEmail">Email</label>
-          <input id="respondentEmail" type="email" name="respondentEmail" />
+            <div class="field">
+              <label for="respondentEmail">Email</label>
+              <input id="respondentEmail" type="email" name="respondentEmail" />
+            </div>
 
-          <label for="age">Età</label>
-          <input id="age" type="number" name="age" min="16" max="100" placeholder="Es. 41" />
+            <div class="field">
+              <label for="age">Età</label>
+              <input id="age" type="number" name="age" min="16" max="100" placeholder="Es. 41" />
+            </div>
 
-          <label for="candidateCompany">Azienda / Cliente di riferimento</label>
-          <input id="candidateCompany" type="text" name="candidateCompany" placeholder="Es. Zenith 360" />
+            <div class="field">
+              <label for="candidateCompany">Azienda / Cliente di riferimento</label>
+              <input id="candidateCompany" type="text" name="candidateCompany" placeholder="Es. Zenith 360" />
+            </div>
 
-          <label for="requestedRole">Ruolo ricoperto / ruolo di riferimento</label>
-          <select id="requestedRole" name="requestedRole" required>
-            <option value="" disabled selected>Seleziona un ruolo</option>
-            <% (roleOptions || []).forEach(function(role) { %>
-              <option value="<%= role.value %>" <%= requestedRole === role.value ? "selected" : "" %>><%= role.label %></option>
-            <% }) %>
-          </select>
+            <div class="field field-full">
+              <label for="requestedRole">Ruolo ricoperto / ruolo di riferimento</label>
+              <select id="requestedRole" name="requestedRole" required>
+                <option value="" disabled selected>Seleziona un ruolo</option>
+                <% (roleOptions || []).forEach(function(role) { %>
+                  <option value="<%= role.value %>" <%= requestedRole === role.value ? "selected" : "" %>><%= role.label %></option>
+                <% }) %>
+              </select>
+            </div>
 
-          <div id="requestedRoleOtherWrap" style="display: none;">
-            <label for="requestedRoleOther">Specifica altro ruolo</label>
-            <input id="requestedRoleOther" type="text" name="requestedRoleOther" placeholder="Es. Buyer, responsabile acquisti, tecnico, impiegato..." />
+            <div class="field field-full" id="requestedRoleOtherWrap" style="display: none;">
+              <label for="requestedRoleOther">Specifica altro ruolo</label>
+              <input id="requestedRoleOther" type="text" name="requestedRoleOther" placeholder="Es. buyer, responsabile acquisti, tecnico, impiegato..." />
+            </div>
           </div>
 
-          <p class="muted">
+          <p class="muted" style="margin-top: 16px; margin-bottom: 0;">
             I dati saranno utilizzati esclusivamente per associare correttamente la compilazione al percorso di assessment.
           </p>
         </section>

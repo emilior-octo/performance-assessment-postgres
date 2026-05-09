@@ -695,6 +695,35 @@ function buildSummary(traits, role) {
   };
 }
 
+function reliabilityBand(score) {
+  const value = Number(score || 0);
+  if (value >= 50) return "coerente";
+  if (value >= 30) return "da_approfondire";
+  return "prudente";
+}
+
+function reliabilityLabelFromScore(score) {
+  const band = reliabilityBand(score);
+  if (band === "coerente") return "Indice di coerenza delle risposte adeguato";
+  if (band === "da_approfondire") return "Indice di coerenza delle risposte da approfondire";
+  return "Indice di coerenza delle risposte basso";
+}
+
+function reliabilityPromptGuidance(score, flags = []) {
+  const band = reliabilityBand(score);
+  const flagText = Array.isArray(flags) && flags.length ? ` Segnali da considerare: ${flags.join("; ")}.` : "";
+
+  if (band === "coerente") {
+    return `Le risposte risultano abbastanza coerenti: puoi scrivere una lettura diretta, sempre evitando giudizi assoluti.${flagText}`;
+  }
+
+  if (band === "da_approfondire") {
+    return `Le risposte presentano alcune oscillazioni: usa formule prudenti come "può emergere", "sembra indicare", "andrebbe verificato". Evita affermazioni definitive e collega le conclusioni al colloquio o all'osservazione sul lavoro.${flagText}`;
+  }
+
+  return `Le risposte hanno un indice di coerenza basso: l'intera relazione deve essere letta come ipotesi da verificare. Non scrivere conclusioni nette. Non dare indicazioni troppo prescrittive. Per ogni tratto, privilegia formulazioni esplorative e invita a verificare il comportamento con esempi concreti, colloquio e osservazione diretta.${flagText}`;
+}
+
 function buildReliability(answers, traits) {
   const scoredQuestions = getScoredQuestions();
   const answered = scoredQuestions.filter((q) => answers[q.key]);
@@ -703,7 +732,7 @@ function buildReliability(answers, traits) {
   if (!total) {
     return {
       reliabilityScore: 0,
-      reliabilityLabel: "Attendibilità da verificare",
+      reliabilityLabel: reliabilityLabelFromScore(0),
       reliabilityFlags: ["Nessuna risposta valutabile"]
     };
   }
@@ -725,17 +754,17 @@ function buildReliability(answers, traits) {
   const uncertainRatio = counts.uncertain / total;
 
   if (agreeRatio >= 0.85) {
-    penalty += 20;
+    penalty += 25;
     flags.push("Elevata concentrazione di risposte positive");
   }
 
   if (disagreeRatio >= 0.85) {
-    penalty += 20;
+    penalty += 25;
     flags.push("Elevata concentrazione di risposte negative");
   }
 
   if (uncertainRatio <= 0.03 && total >= 80) {
-    penalty += 10;
+    penalty += 12;
     flags.push("Uso molto basso delle risposte intermedie");
   }
 
@@ -749,20 +778,15 @@ function buildReliability(answers, traits) {
   });
 
   if (extremeTraits.length >= 3) {
-    penalty += 15;
+    penalty += 18;
     flags.push("Sono presenti oscillazioni interne significative su più tratti");
   }
 
   const reliabilityScore = Math.max(0, Math.round(100 - penalty));
 
-  let reliabilityLabel = "Alta affidabilità";
-  if (reliabilityScore < 80) reliabilityLabel = "Buona affidabilità";
-  if (reliabilityScore < 60) reliabilityLabel = "Attendibilità da verificare";
-  if (reliabilityScore < 40) reliabilityLabel = "Bassa attendibilità";
-
   return {
     reliabilityScore,
-    reliabilityLabel,
+    reliabilityLabel: reliabilityLabelFromScore(reliabilityScore),
     reliabilityFlags: flags
   };
 }
@@ -894,6 +918,7 @@ async function generateExpandedReportPayload({
   };
 
   const traitsForPrompt = buildAiTraitsForPrompt(traits);
+  const reliabilityGuidance = reliabilityPromptGuidance(reliabilityScore, reliabilityFlags);
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -906,16 +931,24 @@ CONTESTO
 - Lettura rispetto al ruolo: ${summary.roleComment}
 - Compatibilità con il ruolo ricoperto: ${roleFit?.label || "Non disponibile"}
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
-- Attendibilità generale: ${reliabilityLabel}
-- Eventuali segnali attendibilità: ${(reliabilityFlags || []).join("; ") || "nessun segnale rilevante"}
+- Indice di coerenza delle risposte: ${reliabilityLabel} (${reliabilityScore}/100)
+- Filtro di lettura da applicare a tutta la relazione: ${reliabilityGuidance}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
+
+PRINCIPI DI LETTURA
+- Non descrivere la persona come se fosse definita una volta per tutte: descrivi il suo funzionamento comportamentale attuale nel lavoro.
+- Il report non misura il valore della persona, ma il modo in cui tende ad agire, reagire, organizzarsi e relazionarsi nel contesto lavorativo.
+- Un tratto alto non è automaticamente positivo e un tratto basso non è automaticamente negativo: il valore dipende dal ruolo, dal contesto e dal livello di consapevolezza.
+- Integra, quando utile, i concetti di conoscenza pratica, comportamento e controllo: cosa sa fare concretamente, come tende ad agire/reagire, quanto riesce a governare il tratto in modo utile.
+- Se l'indice di coerenza delle risposte è basso o da approfondire, riduci il grado di certezza dell'intera relazione e usa un tono esplorativo.
 
 REGOLE DI LETTURA DEI PUNTEGGI
 - Usa il campo writingGuidance come regola principale per scrivere ogni tratto.
 - Non citare mai nel testo finale le fasce, le soglie numeriche o formule come "70-100", "31-50", "valore alto", "valore adeguato", "alta produttività", "profonda difficoltà".
 - L'analisi deve essere coerente con la fascia del punteggio: non mischiare nella stessa analisi segnali positivi e negativi opposti.
+- Applica sempre il filtro dell'indice di coerenza delle risposte: con coerenza bassa scrivi come ipotesi da verificare, con coerenza media scrivi come tendenza possibile, con coerenza adeguata puoi essere più diretto ma mai assoluto.
 - Se il punteggio è alto, eventuali attenzioni devono derivare dall'eccesso o dall'intensità del tratto, non da una sua assenza.
 - Se il punteggio è basso, non descrivere il tratto come stabile o già maturo: evidenzia la difficoltà concreta e l'impatto sul lavoro.
 - Per valori molto alti, non celebrare in modo assoluto: descrivi il tratto come molto marcato e aggiungi prudenza professionale, spiegando che la continuità del comportamento va verificata nei fatti. Non accusare mai la persona di non essere sincera.
@@ -932,6 +965,7 @@ ISTRUZIONI GENERALI
 8. Non trasformare l'analisi del tratto in una lista di consigli: prima interpreta il comportamento, poi solo nei campi dedicati indica eventuali azioni pratiche coerenti.
 9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
 10. Compila generalManagementAdvice con un consiglio generale pratico, ma non contraddittorio rispetto ai tratti emersi.
+11. Nella relazione generale cita in modo naturale la compatibilità con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata.
 
 ISTRUZIONI PER OGNI TRATTO
 Per ogni tratto restituisci:
@@ -2087,8 +2121,11 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
   const roleFitText = normalized?.roleFit?.score != null
     ? `Compatibilità con il ruolo ricoperto: ${normalized.roleFit.score}%. `
     : "";
+  const reliabilityText = assessment.result?.reliabilityScore != null
+    ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
+    : "";
 
-  return `${roleFitText}La persona è stata valutata in riferimento al ruolo di ${role}. Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.\n\nLe aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.\n\nQuesta valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
+  return `${roleFitText}${reliabilityText}La persona è stata valutata in riferimento al ruolo di ${role}. Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.\n\nLe aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.\n\nQuesta valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
