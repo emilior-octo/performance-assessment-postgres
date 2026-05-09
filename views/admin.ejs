@@ -257,20 +257,23 @@
     </div>
   </div>
 
-  <div class="card qr-card">
-    <div class="qr-preview">
-      <img src="<%= qrCodeUrl %>" alt="QR code ZPI™ – Zenith Performance Index" />
-    </div>
-    <div>
-      <h2 style="margin: 0 0 6px; font-size: 18px;">QR code questionario</h2>
-      <p class="muted">Link diretto al questionario ZPI™ – Zenith Performance Index, utile per proiezione in sala o condivisione ai partecipanti.</p>
-      <div class="link-copy"><%= assessmentUrl %></div>
-      <div class="qr-actions">
-        <a class="btn" href="<%= qrDownloadUrl %>">Scarica QR code</a>
-        <a class="btn btn-secondary" href="<%= assessmentUrl %>" target="_blank">Apri questionario</a>
+  <% const qrCards = Array.isArray(typeof adminAssessmentCards !== "undefined" ? adminAssessmentCards : null) ? adminAssessmentCards : [{ title: "ZPI™ – Zenith Performance Index", url: assessmentUrl, qrCodeUrl, qrDownloadUrl }]; %>
+  <% qrCards.forEach(function(card) { %>
+    <div class="card qr-card">
+      <div class="qr-preview">
+        <img src="<%= card.qrCodeUrl %>" alt="QR code <%= card.title %>" />
+      </div>
+      <div>
+        <h2 style="margin: 0 0 6px; font-size: 18px;">QR code <%= card.title %></h2>
+        <p class="muted">Link diretto al questionario, utile per proiezione in sala o condivisione ai partecipanti.</p>
+        <div class="link-copy"><%= card.url %></div>
+        <div class="qr-actions">
+          <a class="btn" href="<%= card.qrDownloadUrl %>">Scarica QR code</a>
+          <a class="btn btn-secondary" href="<%= card.url %>" target="_blank">Apri questionario</a>
+        </div>
       </div>
     </div>
-  </div>
+  <% }) %>
 
   <div class="card">
     <form class="filters" method="GET" action="/admin">
@@ -301,6 +304,7 @@
     <table>
       <thead>
         <tr>
+          <th>Questionario</th>
           <th>Nome</th>
           <th>Email</th>
           <th>Azienda risorsa</th>
@@ -317,6 +321,7 @@
       <tbody>
         <% submissions.forEach(function(item) { %>
           <tr>
+            <td><%= item.assessmentTitle || "ZPI™ – Zenith Performance Index" %></td>
             <td><%= item.name %></td>
             <td><%= item.email || "-" %></td>
             <td><%= item.candidateCompany || "-" %></td>

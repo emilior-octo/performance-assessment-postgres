@@ -8,6 +8,7 @@ import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
 import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
+import { SPORT_QUESTIONS, getSportScoredQuestions } from "./sport-questions.js";
 
 const prisma = new PrismaClient();
 
@@ -45,6 +46,56 @@ app.use((req, res, next) => {
   res.locals.currentAdmin = req.session?.admin || null;
   next();
 });
+
+
+const ASSESSMENT_TYPES = {
+  zpi_hr: {
+    key: "zpi_hr",
+    title: "ZPI™ – Zenith Performance Index",
+    shortTitle: "ZPI™",
+    publicPath: "/zenith-assessment",
+    qrDownloadPath: "/admin/qr/zenith/download",
+    tokenEnv: "ZENITH_ASSESSMENT_TOKEN",
+    defaultTokenSuffix: "manager-001",
+    questions: ZPI_QUESTIONS,
+    getScoredQuestions,
+    active: true
+  },
+  sport_performance: {
+    key: "sport_performance",
+    title: "Human & Sport Performance",
+    shortTitle: "Sport Performance",
+    publicPath: "/human-sport-performance",
+    qrDownloadPath: "/admin/qr/sport/download",
+    tokenEnv: "SPORT_ASSESSMENT_TOKEN",
+    defaultTokenSuffix: "sport-performance-001",
+    questions: SPORT_QUESTIONS,
+    getScoredQuestions: getSportScoredQuestions,
+    active: true
+  }
+};
+
+function getAssessmentConfig(type = "zpi_hr") {
+  return ASSESSMENT_TYPES[type] || ASSESSMENT_TYPES.zpi_hr;
+}
+
+function inferAssessmentTypeFromToken(token = "") {
+  const value = String(token || "").toLowerCase();
+  if (value.includes("sport") || value.includes("human")) return "sport_performance";
+  return "zpi_hr";
+}
+
+function getLinkAssessmentType(link) {
+  return link?.assessmentType || inferAssessmentTypeFromToken(link?.token);
+}
+
+function getAssessmentPublicUrl(type, publicBaseUrl) {
+  return `${publicBaseUrl}${getAssessmentConfig(type).publicPath}`;
+}
+
+function buildQrCodeUrl(url, size = 220, margin = 14) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=${margin}&data=${encodeURIComponent(url)}`;
+}
 
 const ROLE_OPTIONS = [
   { value: "direzione", label: "Direzione / Imprenditore" },
@@ -268,7 +319,7 @@ function withDisplayMeta(item) {
 
 function normalizeDimensionDefinitions(originalTrait) {
   return DIMENSION_DEFINITIONS[originalTrait] || [
-    { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
+    { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
   ];
 }
 
@@ -562,12 +613,14 @@ function avg(arr) {
   return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
 }
 
-function getQuestionTexts() {
-  return Object.fromEntries(ZPI_QUESTIONS.map((q) => [q.key, q.text]));
+function getQuestionTexts(assessmentType = "zpi_hr") {
+  const config = getAssessmentConfig(assessmentType);
+  return Object.fromEntries(config.questions.map((q) => [q.key, q.text]));
 }
 
-function getQuestionnaireQuestions() {
-  return ZPI_QUESTIONS.map((q) => ({
+function getQuestionnaireQuestions(assessmentType = "zpi_hr") {
+  const config = getAssessmentConfig(assessmentType);
+  return config.questions.map((q) => ({
     key: q.key,
     id: q.id,
     text: q.text,
@@ -576,16 +629,18 @@ function getQuestionnaireQuestions() {
   }));
 }
 
-function collectAnswers(body) {
+function collectAnswers(body, assessmentType = "zpi_hr") {
+  const config = getAssessmentConfig(assessmentType);
   return Object.fromEntries(
-    ZPI_QUESTIONS.map((q) => [q.key, body[q.key] || null])
+    config.questions.map((q) => [q.key, body[q.key] || null])
   );
 }
 
-function buildTraitsFromAnswers(answers) {
+function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
   const groups = new Map();
+  const config = getAssessmentConfig(assessmentType);
 
-  getScoredQuestions().forEach((question) => {
+  config.getScoredQuestions().forEach((question) => {
     const answer = answers[question.key];
 
     if (!answer) return;
@@ -1429,7 +1484,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   };
 }
 
-function drawAssessmentHistograms(doc, dimensions) {
+function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
   const { traits, additionalParameters } = splitDimensions(dimensions);
 
   drawLogo(doc);
@@ -1457,20 +1512,21 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v11-final-client-rules");
+  res.send("openai-expanded-report-v17-multi-assessment");
 });
 
 app.get("/", (_req, res) => {
   res.redirect("/questionnaires");
 });
 
-function getZenithAssessmentToken() {
+function getAssessmentToken(type = "zpi_hr") {
   const companySlug = process.env.COMPANY_SLUG || "demo-company";
-  return process.env.ZENITH_ASSESSMENT_TOKEN || `${companySlug}-manager-001`;
+  const config = getAssessmentConfig(type);
+  return process.env[config.tokenEnv] || `${companySlug}-${config.defaultTokenSuffix}`;
 }
 
-async function findZenithAssessmentLink() {
-  const token = getZenithAssessmentToken();
+async function findAssessmentLinkByType(type = "zpi_hr") {
+  const token = getAssessmentToken(type);
 
   const directLink = await prisma.assessmentLink.findUnique({
     where: { token },
@@ -1480,71 +1536,98 @@ async function findZenithAssessmentLink() {
   if (directLink?.isActive) return directLink;
 
   return prisma.assessmentLink.findFirst({
+    where: { isActive: true, assessmentType: type },
+    include: { organization: true },
+    orderBy: { createdAt: "asc" }
+  }).catch(() => prisma.assessmentLink.findFirst({
     where: { isActive: true },
     include: { organization: true },
     orderBy: { createdAt: "asc" }
-  });
+  }));
 }
 
 app.get("/questionnaires", async (_req, res) => {
   const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
-  const assessmentPath = "/zenith-assessment";
-  const assessmentUrl = `${publicBaseUrl}${assessmentPath}`;
   const adminUrl = "/admin";
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=14&data=${encodeURIComponent(assessmentUrl)}`;
+
+  const zpiUrl = getAssessmentPublicUrl("zpi_hr", publicBaseUrl);
+  const sportUrl = getAssessmentPublicUrl("sport_performance", publicBaseUrl);
+  const qrCodeUrl = buildQrCodeUrl(zpiUrl);
 
   res.render("questionnaire-welcome", {
     companyName: process.env.COMPANY_NAME || "Zenith",
     publicBaseUrl,
-    assessmentUrl,
+    assessmentUrl: zpiUrl,
     adminUrl,
     qrCodeUrl,
     products: [
       {
         eyebrow: "Questionario attivo",
-        title: "ZPI™ – Zenith Performance Index",
+        title: getAssessmentConfig("zpi_hr").title,
         description: "Questionario comportamentale per aziende, team HR e percorsi di valutazione interna.",
         cta: "Apri questionario",
-        url: assessmentUrl,
+        url: zpiUrl,
         status: "active"
       },
       {
-        eyebrow: "Prossimo percorso",
-        title: "Human & Sport Performance",
+        eyebrow: "Questionario attivo",
+        title: getAssessmentConfig("sport_performance").title,
         description: "Questionario dedicato ad aziende sportive, organizzazioni, staff tecnici e contesti di performance sportiva.",
-        cta: "Disponibile a breve",
-        url: null,
-        status: "coming_soon"
+        cta: "Apri questionario",
+        url: sportUrl,
+        status: "active"
       }
     ]
   });
 });
 
 app.get("/zenith-assessment", async (_req, res) => {
-  const link = await findZenithAssessmentLink();
+  const link = await findAssessmentLinkByType("zpi_hr");
 
   if (!link || !link.isActive) {
-    return res.status(404).send("Questionario Zenith non disponibile o non attivo.");
+    return res.status(404).send("Questionario ZPI non disponibile o non attivo.");
   }
+
+  const assessmentType = "zpi_hr";
+  const config = getAssessmentConfig(assessmentType);
 
   res.render("questionnaire", {
     token: link.token,
     companyName: link.organization.name,
+    assessmentType,
+    assessmentTitle: config.title,
     requestedRole: link.requestedRole,
     roleOptions: ROLE_OPTIONS,
-    questions: getQuestionnaireQuestions()
+    questions: getQuestionnaireQuestions(assessmentType)
   });
 });
 
-app.get("/human-sport-performance", (_req, res) => {
-  res.status(503).send("Human & Sport Performance - Work in progress");
+app.get("/human-sport-performance", async (_req, res) => {
+  const link = await findAssessmentLinkByType("sport_performance");
+
+  if (!link || !link.isActive) {
+    return res.status(404).send("Questionario Human & Sport Performance non disponibile o non attivo.");
+  }
+
+  const assessmentType = "sport_performance";
+  const config = getAssessmentConfig(assessmentType);
+
+  res.render("questionnaire", {
+    token: link.token,
+    companyName: link.organization.name,
+    assessmentType,
+    assessmentTitle: config.title,
+    requestedRole: link.requestedRole,
+    roleOptions: ROLE_OPTIONS,
+    questions: getQuestionnaireQuestions(assessmentType)
+  });
 });
 
 
 app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
   try {
     const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
-    const assessmentUrl = `${publicBaseUrl}/zenith-assessment`;
+    const assessmentUrl = getAssessmentPublicUrl("zpi_hr", publicBaseUrl);
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=40&data=${encodeURIComponent(assessmentUrl)}`;
 
     const qrResponse = await fetch(qrUrl);
@@ -1556,10 +1639,35 @@ app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
     const buffer = Buffer.from(await qrResponse.arrayBuffer());
 
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Content-Disposition", 'attachment; filename="zenith-assessment-qr.png"');
+    res.setHeader("Content-Disposition", 'attachment; filename="zpi-zenith-performance-index-qr.png"');
     res.send(buffer);
   } catch (error) {
     console.error("Errore download QR Zenith:", error);
+    res.status(500).send("Errore durante la generazione del QR code.");
+  }
+});
+
+
+
+app.get("/admin/qr/sport/download", requireAdmin, async (_req, res) => {
+  try {
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
+    const assessmentUrl = getAssessmentPublicUrl("sport_performance", publicBaseUrl);
+    const qrUrl = buildQrCodeUrl(assessmentUrl, 1200, 40);
+
+    const qrResponse = await fetch(qrUrl);
+
+    if (!qrResponse.ok) {
+      throw new Error(`QR generation failed: ${qrResponse.status}`);
+    }
+
+    const buffer = Buffer.from(await qrResponse.arrayBuffer());
+
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", 'attachment; filename="human-sport-performance-qr.png"');
+    res.send(buffer);
+  } catch (error) {
+    console.error("Errore download QR Sport:", error);
     res.status(500).send("Errore durante la generazione del QR code.");
   }
 });
@@ -1575,12 +1683,17 @@ app.get("/q/:token", async (req, res) => {
     return res.status(404).send("Link questionario non valido o non attivo.");
   }
 
+  const assessmentType = getLinkAssessmentType(link);
+  const config = getAssessmentConfig(assessmentType);
+
   res.render("questionnaire", {
     token: link.token,
     companyName: link.organization.name,
+    assessmentType,
+    assessmentTitle: config.title,
     requestedRole: link.requestedRole,
     roleOptions: ROLE_OPTIONS,
-    questions: getQuestionnaireQuestions()
+    questions: getQuestionnaireQuestions(assessmentType)
   });
 });
 
@@ -1595,8 +1708,9 @@ app.post("/q/:token", async (req, res) => {
       return res.status(404).send("Link questionario non valido o non attivo.");
     }
 
-    const answers = collectAnswers(req.body);
-    const traits = buildTraitsFromAnswers(answers);
+    const assessmentType = getLinkAssessmentType(link);
+    const answers = collectAnswers(req.body, assessmentType);
+    const traits = buildTraitsFromAnswers(answers, assessmentType);
     const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
     const avgScore = avg(mainTraits.map((t) => t.score));
     const avgRange = range(avgScore);
@@ -1614,6 +1728,7 @@ app.post("/q/:token", async (req, res) => {
       data: {
         organizationId: link.organizationId,
         assessmentLinkId: link.id,
+        assessmentType,
         respondentName: req.body.respondentName || "Anonimo",
         respondentEmail: req.body.respondentEmail || null,
         age: req.body.age ? Number(req.body.age) : null,
@@ -1632,6 +1747,8 @@ app.post("/q/:token", async (req, res) => {
         reliabilityScore,
         reliabilityLabel,
         traitsJson: {
+          assessmentType,
+          assessmentTitle: getAssessmentConfig(assessmentType).title,
           traits,
           mainTraits,
           additionalParameters,
@@ -1746,9 +1863,12 @@ app.get("/admin", requireAdmin, async (req, res) => {
 
   const submissions = assessments.map((item) => {
     const payload = item.result?.traitsJson || {};
+    const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
     return {
+      assessmentType,
+      assessmentTitle: payload.assessmentTitle || getAssessmentConfig(assessmentType).title,
       id: item.id,
       name: item.respondentName,
       email: item.respondentEmail,
@@ -1767,15 +1887,24 @@ app.get("/admin", requireAdmin, async (req, res) => {
   });
 
   const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
-  const assessmentUrl = `${publicBaseUrl}/zenith-assessment`;
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=14&data=${encodeURIComponent(assessmentUrl)}`;
+  const adminAssessmentCards = Object.values(ASSESSMENT_TYPES).map((config) => {
+    const url = getAssessmentPublicUrl(config.key, publicBaseUrl);
+    return {
+      key: config.key,
+      title: config.title,
+      url,
+      qrCodeUrl: buildQrCodeUrl(url),
+      qrDownloadUrl: config.qrDownloadPath
+    };
+  });
 
   res.render("admin", {
     submissions,
     organizationName: req.session.admin.organizationName,
-    assessmentUrl,
-    qrCodeUrl,
-    qrDownloadUrl: "/admin/qr/zenith/download",
+    assessmentUrl: adminAssessmentCards[0]?.url,
+    qrCodeUrl: adminAssessmentCards[0]?.qrCodeUrl,
+    qrDownloadUrl: adminAssessmentCards[0]?.qrDownloadUrl,
+    adminAssessmentCards,
     homeUrl: "/questionnaires",
     filters: {
       company: companyFilter
@@ -1917,8 +2046,10 @@ app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
       return res.status(404).send("Assessment sorgente non trovato");
     }
 
+    const sourcePayload = source.result.traitsJson || {};
+    const assessmentType = sourcePayload.assessmentType || source.assessmentType || getLinkAssessmentType(source.assessmentLink);
     const answers = source.result.answersJson || {};
-    const traits = buildTraitsFromAnswers(answers);
+    const traits = buildTraitsFromAnswers(answers, assessmentType);
     const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
     const avgScore = avg(mainTraits.map((t) => t.score));
     const avgRange = range(avgScore);
@@ -1937,6 +2068,7 @@ app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
       data: {
         organizationId: source.organizationId,
         assessmentLinkId: source.assessmentLinkId,
+        assessmentType,
         respondentName: copiedName,
         respondentEmail: source.respondentEmail,
         age: source.age,
@@ -1955,6 +2087,8 @@ app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
         reliabilityScore,
         reliabilityLabel,
         traitsJson: {
+          assessmentType,
+          assessmentTitle: getAssessmentConfig(assessmentType).title,
           traits,
           mainTraits,
           additionalParameters,
@@ -2019,6 +2153,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
+  const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
@@ -2032,6 +2167,8 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     age: assessment.age,
     candidateCompany: assessment.candidateCompany,
     role: assessment.requestedRole,
+    assessmentType,
+    assessmentTitle: payload.assessmentTitle || getAssessmentConfig(assessmentType).title,
     createdAt: assessment.createdAt,
     analysis: {
       avgScore: assessment.result?.avgScore ?? "-",
@@ -2040,7 +2177,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       reliabilityLabel: assessment.result?.reliabilityLabel ?? "-",
       reliabilityFlags: normalized.reliabilityFlags || [],
       answers: assessment.result?.answersJson || {},
-      questions: getQuestionTexts(),
+      questions: getQuestionTexts(assessmentType),
       isGenerating: !!assessment.result?.isGenerating,
       generationError: assessment.result?.generationError || null,
       summary: {
@@ -2196,6 +2333,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
+  const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
+  const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
@@ -2223,7 +2362,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   // PAGINA 1: istogrammi principali e parametri aggiuntivi.
   if (traits.length) {
-    drawAssessmentHistograms(doc, traits);
+    drawAssessmentHistograms(doc, traits, assessmentTitle);
   } else {
     drawLogo(doc);
     doc.fontSize(20).fillColor("black").text("ZPI™ – Zenith Performance Index", { align: "center" });

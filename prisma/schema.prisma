@@ -34,6 +34,7 @@ model AssessmentLink {
   token          String       @unique
   label          String
   requestedRole  String
+  assessmentType String       @default("zpi_hr")
   isActive       Boolean      @default(true)
   createdAt      DateTime     @default(now())
 
@@ -45,6 +46,7 @@ model Assessment {
   id               String            @id @default(cuid())
   organizationId   String
   assessmentLinkId String
+  assessmentType   String            @default("zpi_hr")
   respondentName   String
   respondentEmail  String?
   age              Int?
