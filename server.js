@@ -647,7 +647,9 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
 
     const sourceTrait = question.trait || "Comportamento generale";
     const value = scoreAnswer(answer, question.reverse, question);
-    const dimensions = normalizeDimensionDefinitions(sourceTrait);
+    const dimensions = assessmentType === "sport_performance"
+      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
+      : normalizeDimensionDefinitions(sourceTrait);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -942,7 +944,9 @@ async function generateExpandedReportPayload({
   reliabilityLabel,
   reliabilityFlags,
   roleFit,
-  managementAdvice
+  managementAdvice,
+  assessmentTitle = "ZPI™ – Zenith Performance Index",
+  assessmentType = "zpi_hr"
 }) {
   if (!openai) {
     throw new Error("OPENAI_API_KEY non configurata.");
@@ -977,10 +981,12 @@ async function generateExpandedReportPayload({
 
   const input = `
 Sei un consulente organizzativo senior.
-Genera una relazione professionale in italiano per un assessment comportamentale in ambito aziendale.
+Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario è sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
 
 CONTESTO
-- Azienda: ${companyName}
+- Questionario: ${assessmentTitle}
+- Tipo assessment: ${assessmentType}
+- Organizzazione / società: ${companyName}
 - Ruolo target: ${role}
 - Orientamento prevalente: ${summary.orientation}
 - Lettura rispetto al ruolo: ${summary.roleComment}
@@ -1094,7 +1100,9 @@ function startExpandedReportJob({
   reliabilityLabel,
   reliabilityFlags,
   roleFit,
-  managementAdvice
+  managementAdvice,
+  assessmentTitle = "ZPI™ – Zenith Performance Index",
+  assessmentType = "zpi_hr"
 }) {
   if (!assessmentId) {
     console.error("[EXPANDED] missing assessmentId, job skipped");
@@ -1125,7 +1133,9 @@ function startExpandedReportJob({
         reliabilityLabel,
         reliabilityFlags,
         roleFit,
-        managementAdvice
+        managementAdvice,
+        assessmentTitle,
+        assessmentType
       });
     })
     .then(async (expandedReportJson) => {
@@ -1488,7 +1498,7 @@ function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performanc
   const { traits, additionalParameters } = splitDimensions(dimensions);
 
   drawLogo(doc);
-  doc.fontSize(20).fillColor("black").text("ZPI™ – Zenith Performance Index", { align: "center" });
+  doc.fontSize(20).fillColor("black").text(assessmentTitle || "Performance Assessment Report", { align: "center" });
   doc.moveDown(0.15);
   doc.fontSize(9).fillColor("#666666").text("Sintesi grafica del profilo", { align: "center" });
   doc.moveDown(0.65);
@@ -1781,7 +1791,9 @@ app.post("/q/:token", async (req, res) => {
       reliabilityLabel,
       reliabilityFlags,
       roleFit,
-      managementAdvice
+      managementAdvice,
+      assessmentTitle: getAssessmentConfig(assessmentType).title,
+      assessmentType
     });
 
     res.redirect("/thank-you");
@@ -1933,6 +1945,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
     }
 
     const payload = assessment.result.traitsJson || {};
+    const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
@@ -1955,7 +1968,9 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
       reliabilityFlags: normalized.reliabilityFlags || [],
       roleFit,
-      managementAdvice
+      managementAdvice,
+      assessmentTitle: getAssessmentConfig(assessmentType).title,
+      assessmentType
     });
 
     return res.redirect(`/admin/${assessment.id}`);
@@ -1987,6 +2002,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res)
     }
 
     const payload = assessment.result.traitsJson || {};
+    const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
@@ -2019,7 +2035,9 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res)
       reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
       reliabilityFlags: normalized.reliabilityFlags || [],
       roleFit,
-      managementAdvice
+      managementAdvice,
+      assessmentTitle: getAssessmentConfig(assessmentType).title,
+      assessmentType
     });
 
     return res.redirect(`/admin/${assessment.id}`);
@@ -2126,7 +2144,9 @@ app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
         reliabilityLabel,
         reliabilityFlags,
         roleFit,
-        managementAdvice
+        managementAdvice,
+        assessmentTitle: getAssessmentConfig(assessmentType).title,
+        assessmentType
       });
     }
 
@@ -2365,7 +2385,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     drawAssessmentHistograms(doc, traits, assessmentTitle);
   } else {
     drawLogo(doc);
-    doc.fontSize(20).fillColor("black").text("ZPI™ – Zenith Performance Index", { align: "center" });
+    doc.fontSize(20).fillColor("black").text(assessmentTitle || "Performance Assessment Report", { align: "center" });
     doc.moveDown();
     doc.fontSize(11).text("Nessun dato grafico disponibile.");
   }
