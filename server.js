@@ -541,9 +541,9 @@ function answerLabel(answer, question = null) {
     : null;
 
   if (option?.label) return option.label;
-  if (answer === "agree") return "D’accordo";
-  if (answer === "uncertain") return "Incerto / parzialmente";
-  if (answer === "disagree") return "In disaccordo";
+  if (answer === "agree") return "Sono d’accordo";
+  if (answer === "uncertain") return "Incerto";
+  if (answer === "disagree") return "Non sono d’accordo";
   if (answer === "high") return "Alta";
   if (answer === "medium") return "Intermedia";
   if (answer === "low") return "Bassa";
@@ -1433,7 +1433,7 @@ function drawAssessmentHistograms(doc, dimensions) {
   const { traits, additionalParameters } = splitDimensions(dimensions);
 
   drawLogo(doc);
-  doc.fontSize(20).fillColor("black").text("Performance Assessment Report", { align: "center" });
+  doc.fontSize(20).fillColor("black").text("ZPI™ – Zenith Performance Index", { align: "center" });
   doc.moveDown(0.15);
   doc.fontSize(9).fillColor("#666666").text("Sintesi grafica del profilo", { align: "center" });
   doc.moveDown(0.65);
@@ -1502,8 +1502,8 @@ app.get("/questionnaires", async (_req, res) => {
     products: [
       {
         eyebrow: "Questionario attivo",
-        title: "Zenith Assessment",
-        description: "Assessment comportamentale per aziende, team HR e percorsi di valutazione interna.",
+        title: "ZPI™ – Zenith Performance Index",
+        description: "Questionario comportamentale per aziende, team HR e percorsi di valutazione interna.",
         cta: "Apri questionario",
         url: assessmentUrl,
         status: "active"
@@ -1539,6 +1539,31 @@ app.get("/zenith-assessment", async (_req, res) => {
 app.get("/human-sport-performance", (_req, res) => {
   res.status(503).send("Human & Sport Performance - Work in progress");
 });
+
+
+app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
+  try {
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
+    const assessmentUrl = `${publicBaseUrl}/zenith-assessment`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=40&data=${encodeURIComponent(assessmentUrl)}`;
+
+    const qrResponse = await fetch(qrUrl);
+
+    if (!qrResponse.ok) {
+      throw new Error(`QR generation failed: ${qrResponse.status}`);
+    }
+
+    const buffer = Buffer.from(await qrResponse.arrayBuffer());
+
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", 'attachment; filename="zenith-assessment-qr.png"');
+    res.send(buffer);
+  } catch (error) {
+    console.error("Errore download QR Zenith:", error);
+    res.status(500).send("Errore durante la generazione del QR code.");
+  }
+});
+
 
 app.get("/q/:token", async (req, res) => {
   const link = await prisma.assessmentLink.findUnique({
@@ -1741,9 +1766,17 @@ app.get("/admin", requireAdmin, async (req, res) => {
     };
   });
 
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
+  const assessmentUrl = `${publicBaseUrl}/zenith-assessment`;
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=14&data=${encodeURIComponent(assessmentUrl)}`;
+
   res.render("admin", {
     submissions,
     organizationName: req.session.admin.organizationName,
+    assessmentUrl,
+    qrCodeUrl,
+    qrDownloadUrl: "/admin/qr/zenith/download",
+    homeUrl: "/questionnaires",
     filters: {
       company: companyFilter
     }
@@ -2193,7 +2226,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     drawAssessmentHistograms(doc, traits);
   } else {
     drawLogo(doc);
-    doc.fontSize(20).fillColor("black").text("Performance Assessment Report", { align: "center" });
+    doc.fontSize(20).fillColor("black").text("ZPI™ – Zenith Performance Index", { align: "center" });
     doc.moveDown();
     doc.fontSize(11).text("Nessun dato grafico disponibile.");
   }
