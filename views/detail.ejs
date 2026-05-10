@@ -310,7 +310,9 @@
             <p><strong>Rimedi pratici:</strong> <%= item.improvementPlan || "-" %></p>
           <% } %>
 
-          <p><strong>Come gestirlo nella pratica:</strong> <%= item.skillAction || item.teamLeverage || "-" %></p>
+          <% if (item.showSkillAction !== false) { %>
+            <p><strong>Come gestirlo nella pratica:</strong> <%= item.skillAction || item.teamLeverage || "-" %></p>
+          <% } %>
         </div>
       <% }) %>
     <% } %>
