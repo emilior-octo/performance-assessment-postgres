@@ -471,7 +471,7 @@ export const ZPI_QUESTIONS = [
   {
     "id": 33,
     "key": "q33",
-    "text": "Hai raggiunto l’indipendenza economica prima dei 26 anni oppure ritieni di essere economicamente indipendente attualmente?",
+    "text": "Hai raggiunto l’indipendenza economica prima dei 26 anni?",
     "trait": "Autonomia economica e iniziativa",
     "reverse": false,
     "responseType": "likert",

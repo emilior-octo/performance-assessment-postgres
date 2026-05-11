@@ -99,6 +99,11 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 app.use(express.static(path.join(__dirname, "public")));
 
+app.get("/favicon.ico", (_req, res) => {
+  res.type("image/svg+xml");
+  res.sendFile(path.join(__dirname, "public", "favicon.svg"));
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "change-me-now",
@@ -174,6 +179,10 @@ const ROLE_OPTIONS = [
   { value: "sales", label: "Sales / Commerciale" },
   { value: "marketing", label: "Marketing / Comunicazione" },
   { value: "amministrativo", label: "Amministrazione / Finance" },
+  { value: "segreteria", label: "Segreteria" },
+  { value: "segreteria_direzione", label: "Segreteria direzione" },
+  { value: "impiegato_amministrativo", label: "Impiegato amministrativo" },
+  { value: "responsabile_amministrativo", label: "Responsabile amministrativo" },
   { value: "operations", label: "Operations / Produzione / Logistica" },
   { value: "customer_service", label: "Customer service / Post-vendita" },
   { value: "hr", label: "HR / People" },
@@ -460,6 +469,10 @@ function normalizeRoleKey(role) {
   if (/manager|responsabile|store manager|coordinatore|coordinator/.test(value)) return "manager";
   if (/sales|commerciale|vendit|account/.test(value)) return "sales";
   if (/marketing|comunicazione|communication|brand/.test(value)) return "marketing";
+  if (/responsabile amministrativo|responsabile amministrazione/.test(value)) return "responsabile_amministrativo";
+  if (/impiegato amministrativo|impiegata amministrativa/.test(value)) return "impiegato_amministrativo";
+  if (/segreteria direzione|segretaria direzione|assistant direzione|assistente direzione/.test(value)) return "segreteria_direzione";
+  if (/segreteria|segretaria|front office|back office/.test(value)) return "segreteria";
   if (/amministr|finance|contabil|accounting/.test(value)) return "amministrativo";
   if (/operations|produzione|logistica|supply/.test(value)) return "operations";
   if (/customer|post.?vendita|assistenza|support/.test(value)) return "customer_service";
@@ -595,6 +608,51 @@ const ROLE_FIT_WEIGHTS = {
     "Management": 0.85,
     "Resistenza al cambiamento": 0.85
   }
+};
+
+
+ROLE_FIT_WEIGHTS.segreteria = {
+  "Organizzazione e pianificazione": 1.35,
+  "Affidabilità + autodisciplina": 1.35,
+  "Responsabilità": 1.15,
+  "Ascolto attivo": 1.2,
+  "Comprensione": 1.15,
+  "Flessibilità comunicativa": 1.1,
+  "Gestione priorità": 1.3,
+  "Cooperazione": 1.2,
+  "Principi": 1.2,
+  "Attendibilità": 1.15,
+  "Stress": 1.05
+};
+
+ROLE_FIT_WEIGHTS.segreteria_direzione = {
+  "Organizzazione e pianificazione": 1.4,
+  "Affidabilità + autodisciplina": 1.35,
+  "Responsabilità": 1.25,
+  "Sicurezza": 1.1,
+  "Ascolto attivo": 1.15,
+  "Comprensione": 1.1,
+  "Flessibilità comunicativa": 1.15,
+  "Gestione priorità": 1.35,
+  "Cooperazione": 1.15,
+  "Principi": 1.2,
+  "Attendibilità": 1.2,
+  "Management": 1.05
+};
+
+ROLE_FIT_WEIGHTS.impiegato_amministrativo = {
+  ...ROLE_FIT_WEIGHTS.amministrativo,
+  "Gestione priorità": 1.35,
+  "Cooperazione": 1.1
+};
+
+ROLE_FIT_WEIGHTS.responsabile_amministrativo = {
+  ...ROLE_FIT_WEIGHTS.amministrativo,
+  "Responsabilità": 1.35,
+  "Management": 1.25,
+  "Leadership naturale": 1.1,
+  "Gestione priorità": 1.35,
+  "Attendibilità": 1.3
 };
 
 function scoreToPercent(score) {

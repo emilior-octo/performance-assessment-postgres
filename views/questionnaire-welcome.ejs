@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ZPI™ – Zenith Performance Index</title>
+  <title>Zenith Assessment Hub</title>
   <style>
     :root {
       --blue: #147fbd;
@@ -312,6 +312,8 @@
       .mini-qr { width: 100%; justify-content: flex-start; }
     }
   </style>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="shortcut icon" href="/favicon.svg">
 </head>
 <body>
   <main class="page">
@@ -323,7 +325,7 @@
 
     <section class="content">
       <p class="eyebrow">Area risorse</p>
-      <h1>ZPI™ – Zenith Performance Index</h1>
+      <h1>Zenith Assessment Hub</h1>
       <p class="intro">
         Area interna per l’accesso ai questionari Zenith e alla dashboard amministrativa.
         Usa il link o il QR code per avviare la compilazione in sala.
@@ -332,13 +334,13 @@
       <div class="main-actions">
         <article class="card">
           <p class="eyebrow">Questionario attivo</p>
-          <h2 class="card-title">ZPI™ – Zenith Performance Index</h2>
+          <h2 class="card-title">Zenith Assessment</h2>
           <p>
             Questionario comportamentale per la lettura strutturata del profilo,
             dei tratti principali, dei parametri aggiuntivi e della compatibilità con il ruolo.
           </p>
           <div class="button-row">
-            <a class="btn btn-primary" href="<%= assessmentUrl %>">Vai al questionario ZPI™ – Zenith Performance Index</a>
+            <a class="btn btn-primary" href="<%= assessmentUrl %>">Vai al questionario Zenith Assessment</a>
             <a class="btn btn-secondary" href="<%= adminUrl %>">Area Admin</a>
           </div>
         </article>
@@ -346,7 +348,7 @@
         <aside class="qr-card">
           <p class="eyebrow">QR code sala</p>
           <p>Proietta o condividi questo codice per far accedere direttamente al questionario.</p>
-          <img src="<%= qrCodeUrl %>" alt="QR code questionario ZPI™ – Zenith Performance Index" />
+          <img src="<%= qrCodeUrl %>" alt="QR code questionario Zenith Assessment" />
           <a class="qr-link" href="<%= assessmentUrl %>"><%= assessmentUrl %></a>
         </aside>
       </div>
