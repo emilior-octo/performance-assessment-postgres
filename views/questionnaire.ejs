@@ -247,6 +247,106 @@
       line-height: 1.5;
     }
 
+
+
+    .validation-banner {
+      display: none;
+      margin-bottom: 16px;
+      padding: 14px 16px;
+      border: 1px solid #fecaca;
+      background: #fff1f2;
+      color: #991b1b;
+      border-radius: 14px;
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .validation-banner.is-visible {
+      display: block;
+    }
+
+    .progress-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      margin: 0 0 18px;
+      border: 1px solid #d9e3f3;
+      border-radius: 14px;
+      background: #f8fbff;
+      color: #243b6b;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .progress-box strong {
+      color: #263c7a;
+    }
+
+    .progress-track {
+      flex: 1;
+      min-width: 120px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e5e7eb;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: #263c7a;
+      transition: width 0.2s ease;
+    }
+
+    .question {
+      scroll-margin-top: 24px;
+      border-radius: 14px;
+      transition: background-color 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .question.is-missing {
+      padding-left: 14px;
+      padding-right: 14px;
+      background: #fff7ed;
+      box-shadow: inset 0 0 0 2px #fb923c;
+    }
+
+    .question.is-missing .question-title::after {
+      content: "Risposta obbligatoria";
+      display: inline-block;
+      margin-left: 8px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #ffedd5;
+      color: #9a3412;
+      font-size: 12px;
+      font-weight: 800;
+      vertical-align: middle;
+    }
+
+    .field.is-missing input,
+    .field.is-missing select {
+      border-color: #fb923c;
+      box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.18);
+      background: #fff7ed;
+    }
+
+    .field-error {
+      display: none;
+      margin-top: 6px;
+      color: #9a3412;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .field.is-missing .field-error {
+      display: block;
+    }
+
     @media (max-width: 720px) {
       .page {
         padding: 16px;
@@ -264,6 +364,15 @@
 
       .options {
         grid-template-columns: 1fr;
+      }
+
+      .progress-box {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .progress-track {
+        width: 100%;
       }
 
       .actions {
@@ -296,7 +405,11 @@
         </div>
       </header>
 
-      <form method="POST" action="/q/<%= token %>" id="assessment-form">
+      <form method="POST" action="/q/<%= token %>" id="assessment-form" novalidate>
+        <div id="validation-banner" class="validation-banner" role="alert" aria-live="assertive">
+          Completa tutte le domande obbligatorie prima di continuare. Ti abbiamo portato al primo punto da completare.
+        </div>
+
         <section class="card meta-card">
           <h2>Dati compilazione</h2>
 
@@ -304,6 +417,7 @@
             <div class="field">
               <label for="respondentName">Nome e cognome</label>
               <input id="respondentName" type="text" name="respondentName" required />
+              <span class="field-error">Campo obbligatorio.</span>
             </div>
 
             <div class="field">
@@ -329,11 +443,13 @@
                   <option value="<%= role.value %>" <%= requestedRole === role.value ? "selected" : "" %>><%= role.label %></option>
                 <% }) %>
               </select>
+              <span class="field-error">Seleziona un ruolo.</span>
             </div>
 
             <div class="field field-full" id="requestedRoleOtherWrap" style="display: none;">
               <label for="requestedRoleOther">Specifica altro ruolo</label>
               <input id="requestedRoleOther" type="text" name="requestedRoleOther" placeholder="Es. buyer, responsabile acquisti, tecnico, impiegato..." />
+              <span class="field-error">Specifica il ruolo.</span>
             </div>
           </div>
 
@@ -344,6 +460,11 @@
 
         <section class="card">
           <h2>Domande</h2>
+
+          <div class="progress-box" aria-live="polite">
+            <span><strong id="answered-count">0</strong> / <strong id="total-count">0</strong> domande completate</span>
+            <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="progress-bar"></div></div>
+          </div>
 
           <%
             const questionList = Array.isArray(questions)
@@ -363,7 +484,7 @@
                     { value: "disagree", label: "Non sono d’accordo" }
                   ];
           %>
-            <div class="question">
+            <div class="question" data-question-key="<%= key %>" data-question-number="<%= index + 1 %>">
               <p class="question-title"><%= index + 1 %>. <%= question.text %></p>
 
               <div class="options">
@@ -390,13 +511,133 @@
   <script>
     const form = document.getElementById("assessment-form");
     const button = document.getElementById("submit-button");
+    const validationBanner = document.getElementById("validation-banner");
+    const answeredCount = document.getElementById("answered-count");
+    const totalCount = document.getElementById("total-count");
+    const progressBar = document.getElementById("progress-bar");
+    const questionsNodes = Array.from(document.querySelectorAll(".question[data-question-key]"));
+
+    function clearValidationState() {
+      document.querySelectorAll(".is-missing").forEach(function (node) {
+        node.classList.remove("is-missing");
+      });
+
+      if (validationBanner) {
+        validationBanner.classList.remove("is-visible");
+      }
+    }
+
+    function getFirstMissingField() {
+      const requiredFields = Array.from(form.querySelectorAll("input[required]:not([type='radio']), select[required], textarea[required]"));
+
+      for (const field of requiredFields) {
+        const isHidden = field.offsetParent === null;
+        if (isHidden) continue;
+
+        if (!String(field.value || "").trim()) {
+          const wrapper = field.closest(".field") || field;
+          wrapper.classList.add("is-missing");
+          return field;
+        }
+      }
+
+      return null;
+    }
+
+    function getFirstMissingQuestion() {
+      for (const question of questionsNodes) {
+        const key = question.getAttribute("data-question-key");
+        if (!key) continue;
+
+        const checked = form.querySelector(`input[type="radio"][name="${CSS.escape(key)}"]:checked`);
+        if (!checked) {
+          question.classList.add("is-missing");
+          return question;
+        }
+      }
+
+      return null;
+    }
+
+    function scrollToMissing(target) {
+      if (!target) return;
+
+      const scrollTarget = target.classList && target.classList.contains("question")
+        ? target
+        : (target.closest(".field") || target);
+
+      scrollTarget.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      window.setTimeout(function () {
+        const focusable = scrollTarget.querySelector("input, select, textarea, button") || target;
+        if (focusable && typeof focusable.focus === "function") {
+          focusable.focus({ preventScroll: true });
+        }
+      }, 350);
+    }
+
+    function updateProgress() {
+      const total = questionsNodes.length;
+      const completed = questionsNodes.filter(function (question) {
+        const key = question.getAttribute("data-question-key");
+        return !!form.querySelector(`input[type="radio"][name="${CSS.escape(key)}"]:checked`);
+      }).length;
+
+      if (answeredCount) answeredCount.textContent = String(completed);
+      if (totalCount) totalCount.textContent = String(total);
+      if (progressBar) progressBar.style.width = total ? `${Math.round((completed / total) * 100)}%` : "0%";
+    }
 
     if (form && button) {
-      form.addEventListener("submit", function () {
+      updateProgress();
+
+      form.addEventListener("change", function (event) {
+        const target = event.target;
+
+        if (target && target.type === "radio") {
+          const question = target.closest(".question");
+          if (question) question.classList.remove("is-missing");
+          updateProgress();
+        }
+
+        if (target && target.matches("input, select, textarea")) {
+          const field = target.closest(".field");
+          if (field && String(target.value || "").trim()) field.classList.remove("is-missing");
+        }
+      });
+
+      form.addEventListener("input", function (event) {
+        const target = event.target;
+        if (target && target.matches("input, textarea")) {
+          const field = target.closest(".field");
+          if (field && String(target.value || "").trim()) field.classList.remove("is-missing");
+        }
+      });
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        clearValidationState();
+
+        const firstMissingField = getFirstMissingField();
+        const firstMissingQuestion = getFirstMissingQuestion();
+        const firstMissing = firstMissingField || firstMissingQuestion;
+
+        if (firstMissing) {
+          if (validationBanner) {
+            validationBanner.classList.add("is-visible");
+          }
+
+          scrollToMissing(firstMissing);
+          updateProgress();
+          return;
+        }
+
         button.disabled = true;
         button.innerText = "Invio in corso...";
         button.style.opacity = "0.7";
         button.style.cursor = "not-allowed";
+
+        HTMLFormElement.prototype.submit.call(form);
       });
     }
   </script>
