@@ -2739,6 +2739,15 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
           expandedText = stripLeadingTruthfulnessStatus(expandedText);
 
+          // Evita incoerenze verbali tipo:
+          // "Attendibilità FORZATA..." + "l'indice resta adeguato".
+          // La lettura deve rimanere prudente e utilizzabile, non "adeguata" in senso pieno.
+          expandedText = expandedText
+            .replace(/L[’']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
+            .replace(/L[’']indice di coerenza delle risposte è adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
+            .replace(/l[’']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.")
+            .replace(/l[’']indice di coerenza delle risposte è adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.");
+
           if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
             expandedText = expandedText
               ? `${statusText} ${theoreticalNote} ${expandedText}`
