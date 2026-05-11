@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <title>Dettaglio Assessment</title>
+  <title>Dettaglio ZPI™ – Zenith Performance Index</title>
 
   <style>
     body { font-family: Arial, sans-serif; max-width: 1000px; margin: 40px auto; padding: 0 16px; }
@@ -233,10 +233,31 @@
         Apri PDF
       </a>
 
-      <% if (!submission.analysis.expandedReport && !isGenerating) { %>
-        <form method="POST" action="/admin/<%= submission.id %>/generate-expanded-report" id="generate-expanded-form">
-          <button class="btn" type="submit" id="generate-expanded-button">
-            Genera relazione esplosa
+      <% if (!isGenerating) { %>
+        <% if (submission.analysis.expandedReport) { %>
+          <form method="POST" action="/admin/<%= submission.id %>/regenerate-expanded-report" id="regenerate-expanded-form">
+            <button class="btn" type="submit" id="regenerate-expanded-button" onclick="return confirm('Rigenerare la relazione AI? La relazione attuale verrà sostituita.');">
+              Rigenera relazione AI
+            </button>
+          </form>
+        <% } else { %>
+          <form method="POST" action="/admin/<%= submission.id %>/generate-expanded-report" id="generate-expanded-form">
+            <button class="btn" type="submit" id="generate-expanded-button">
+              Genera relazione AI
+            </button>
+          </form>
+        <% } %>
+
+        <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
+          <button class="btn btn-secondary" type="submit">
+            Duplica test veloce
+          </button>
+        </form>
+
+        <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
+          <input type="hidden" name="generateAi" value="yes">
+          <button class="btn btn-secondary" type="submit">
+            Duplica + rigenera relazione
           </button>
         </form>
       <% } %>
@@ -258,182 +279,64 @@
   <% } %>
 
   <% if (submission.analysis.expandedReport) { %>
-    <div class="notice notice-success">
-      <strong>Relazione generale disponibile.</strong>
-      Il report è stato generato correttamente ed è incluso anche nel PDF.
-    </div>
-  <% } %>
-
-  <h1>Dettaglio Assessment</h1>
-  <p class="muted"><strong>Azienda:</strong> <%= organizationName %></p>
-
-  <div class="card">
-    <h2>Dati compilazione</h2>
-    <ul>
-      <li><strong>ID:</strong> <%= submission.id %></li>
-      <li><strong>Nome:</strong> <%= submission.name %></li>
-      <li><strong>Email:</strong> <%= submission.email || "-" %></li>
-      <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
-      <li><strong>Ruolo:</strong> <%= submission.role %></li>
-      <li><strong>Data:</strong> <%= submission.createdAtFormatted || new Date(submission.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" }) %></li>
-    </ul>
-  </div>
-
-  <div class="card">
-    <h2>Relazione generale</h2>
-
-    <% const generalRelation = submission.analysis.summary.generalRelation || (submission.analysis.expandedReport && submission.analysis.expandedReport.generalSummary) || "-"; %>
-    <% String(generalRelation).split(/\n\s*\n/g).forEach(function(paragraph) { %>
-      <% if (paragraph.trim()) { %>
-        <p><%= paragraph.trim() %></p>
-      <% } %>
-    <% }) %>
-
-    <p>
-      <strong>Indicazione pratica per la gestione:</strong><br>
-      <%= submission.analysis.summary.managementAdvice || "-" %>
-    </p>
-
-    <% if (submission.analysis.reliabilityFlags && submission.analysis.reliabilityFlags.length) { %>
-      <p style="margin-top: 16px; color: #8a2f25;">
-        <strong>Nota da tenere presente:</strong>
-        alcune risposte mostrano oscillazioni interne. Il risultato va quindi letto con attenzione e verificato nel confronto diretto con la persona.
-      </p>
-    <% } %>
-
-    <p style="margin-top: 16px; font-size: 14px; color: #666;">
-      Questa valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione.
-    </p>
-  </div>
-
-  <div class="card">
-    <h2>Analisi per tratti e parametri</h2>
-
-    <% if (submission.analysis.traits && submission.analysis.traits.length) { %>
-      <div class="histogram">
-        <h3 class="histogram-title">Distribuzione dei punteggi</h3>
-        <p class="histogram-help">
-          Lettura grafica dei tratti e dei parametri rilevati.
-        </p>
-
-        <div class="histogram-scale">
-          <div></div>
-          <div>
-            <div class="histogram-scale-line"></div>
-            <div class="histogram-scale-labels">
-              <span>-30</span>
-              <span>0</span>
-              <span>+30</span>
-            </div>
-          </div>
-          <div></div>
-        </div>
-
-        <% submission.analysis.traits.forEach(function(item) {
-          const rawScore = Number(item.score || 0);
-          const safeScore = Math.max(-30, Math.min(30, rawScore));
-          const width = Math.abs(safeScore) / 30 * 50;
-          const isPositive = safeScore >= 0;
-        %>
-          <div class="histogram-row">
-            <div class="histogram-name"><%= item.name %></div>
-
-            <div class="histogram-track">
-              <div
-                class="histogram-bar <%= isPositive ? 'histogram-bar-positive' : 'histogram-bar-negative' %>"
-                style="width: <%= width %>%;"
-              ></div>
-            </div>
-
-            <div class="histogram-score"><%= rawScore %></div>
-          </div>
-        <% }) %>
-      </div>
-
-      <div class="grid">
-        <% submission.analysis.traits.forEach(function(item) { %>
-          <div class="trait">
-            <h3><%= item.name %></h3>
-            <p><strong>Indicazione:</strong> <%= item.score %></p>
-          </div>
-        <% }) %>
-      </div>
-    <% } else { %>
-      <p class="muted">Nessun dettaglio tratti disponibile.</p>
-    <% } %>
-  </div>
-
-  <div class="card">
-    <h2>Risposte grezze</h2>
-
-    <% if (submission.analysis.answers && Object.keys(submission.analysis.answers).length) { %>
-      <table class="answers-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Domanda</th>
-            <th>Risposta</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          <% Object.keys(submission.analysis.questions).forEach(function(key, index) {
-            const answer = submission.analysis.answers[key];
-            let label = "-";
-
-            if (answer === "agree") label = "D’accordo";
-            if (answer === "uncertain") label = "Incerto / parzialmente";
-            if (answer === "disagree") label = "In disaccordo";
-          %>
-            <tr>
-              <td><%= index + 1 %></td>
-              <td><%= submission.analysis.questions[key] %></td>
-              <td><%= label %></td>
-            </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    <% } else { %>
-      <p class="muted">Risposte grezze non disponibili per questa compilazione.</p>
-    <% } %>
-  </div>
-
-  <% if (submission.analysis.expandedReport) { %>
     <div class="card">
       <h2>Relazione generale</h2>
       <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
+      <% if (submission.analysis.summary.roleFit && submission.analysis.summary.roleFit.score !== undefined) { %>
+        <p><strong>Compatibilità con il ruolo ricoperto:</strong> <%= submission.analysis.summary.roleFit.score %>%</p>
+      <% } %>
+      <p><strong>Indice di coerenza delle risposte:</strong> <%= submission.analysis.reliabilityScore %>/100 — <%= submission.analysis.reliabilityLabel %></p>
+      <% if (submission.analysis.reliabilityFlags && submission.analysis.reliabilityFlags.length) { %>
+        <p class="muted"><%= submission.analysis.reliabilityFlags.join("; ") %></p>
+      <% } %>
     </div>
 
     <% if (submission.analysis.expandedReport.traits && submission.analysis.expandedReport.traits.length) { %>
+      <div class="card">
+        <h2>Approfondimento dei tratti</h2>
+      </div>
+
       <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
         <div class="card">
-          <h3><%= item.name || "Tratto" %></h3>
+          <h3><%= item.displayName || item.name || "Tratto" %></h3>
 
-          <p><strong>Lettura approfondita</strong></p>
+          <% if (item.description) { %>
+            <p class="muted">(<%= item.description %>)</p>
+          <% } %>
+
           <p><%= item.expandedText || "-" %></p>
 
-          <p><strong>Rimedi pratici</strong></p>
-          <p><%= item.improvementPlan || "-" %></p>
+          <% if (item.showRemedies !== false) { %>
+            <p><strong>Rimedi pratici:</strong> <%= item.improvementPlan || "-" %></p>
+          <% } %>
 
-          <p><strong>Come gestirlo nella pratica</strong></p>
-          <p><%= item.skillAction || item.teamLeverage || "-" %></p>
+          <% if (item.showSkillAction !== false) { %>
+            <p><strong>Come gestirlo nella pratica:</strong> <%= item.skillAction || item.teamLeverage || "-" %></p>
+          <% } %>
         </div>
       <% }) %>
     <% } %>
   <% } %>
 
   <script>
-    const form = document.getElementById("generate-expanded-form");
-    const button = document.getElementById("generate-expanded-button");
+    const formsToDisable = [
+      ["generate-expanded-form", "generate-expanded-button", "Generazione in corso..."],
+      ["regenerate-expanded-form", "regenerate-expanded-button", "Rigenerazione in corso..."]
+    ];
 
-    if (form && button) {
-      form.addEventListener("submit", function () {
-        button.disabled = true;
-        button.innerText = "Generazione in corso...";
-        button.style.opacity = "0.7";
-        button.style.cursor = "not-allowed";
-      });
-    }
+    formsToDisable.forEach(function ([formId, buttonId, loadingText]) {
+      const form = document.getElementById(formId);
+      const button = document.getElementById(buttonId);
+
+      if (form && button) {
+        form.addEventListener("submit", function () {
+          button.disabled = true;
+          button.innerText = loadingText;
+          button.style.opacity = "0.7";
+          button.style.cursor = "not-allowed";
+        });
+      }
+    });
   </script>
 </body>
 </html>
