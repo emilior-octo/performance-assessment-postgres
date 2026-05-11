@@ -11,14 +11,6 @@ import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
 
 const prisma = new PrismaClient();
 
-function formatDateTimeRome(date) {
-  if (!date) return "-";
-
-  return new Date(date).toLocaleString("it-IT", {
-    timeZone: "Europe/Rome"
-  });
-}
-
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -27,6 +19,18 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
+
+function formatDateTimeRome(date) {
+  if (!date) return "-";
+
+  return new Date(date).toLocaleString("it-IT", {
+    timeZone: "Europe/Rome"
+  });
+}
+
+function buildAdminQrCodeUrl(url, size = 220, margin = 14) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=${margin}&data=${encodeURIComponent(url)}`;
+}
 
 app.set("trust proxy", 1);
 app.set("view engine", "ejs");
@@ -1323,6 +1327,50 @@ app.get("/human-sport-performance", (_req, res) => {
   res.status(503).send("Human & Sport Performance - Work in progress");
 });
 
+app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
+  try {
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
+    const assessmentUrl = `${publicBaseUrl}/zenith-assessment`;
+    const qrUrl = buildAdminQrCodeUrl(assessmentUrl, 1200, 40);
+    const qrResponse = await fetch(qrUrl);
+
+    if (!qrResponse.ok) {
+      throw new Error(`QR generation failed: ${qrResponse.status}`);
+    }
+
+    const buffer = Buffer.from(await qrResponse.arrayBuffer());
+
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", 'attachment; filename="zpi-zenith-performance-index-qr.png"');
+    res.send(buffer);
+  } catch (error) {
+    console.error("Errore download QR Zenith:", error);
+    res.status(500).send("Errore durante la generazione del QR code.");
+  }
+});
+
+app.get("/admin/qr/sport/download", requireAdmin, async (_req, res) => {
+  try {
+    const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
+    const assessmentUrl = `${publicBaseUrl}/human-sport-performance`;
+    const qrUrl = buildAdminQrCodeUrl(assessmentUrl, 1200, 40);
+    const qrResponse = await fetch(qrUrl);
+
+    if (!qrResponse.ok) {
+      throw new Error(`QR generation failed: ${qrResponse.status}`);
+    }
+
+    const buffer = Buffer.from(await qrResponse.arrayBuffer());
+
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Content-Disposition", 'attachment; filename="human-sport-performance-qr.png"');
+    res.send(buffer);
+  } catch (error) {
+    console.error("Errore download QR Sport:", error);
+    res.status(500).send("Errore durante la generazione del QR code.");
+  }
+});
+
 app.get("/q/:token", async (req, res) => {
   const link = await prisma.assessmentLink.findUnique({
     where: { token: req.params.token },
@@ -1496,7 +1544,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
     };
   }
 
-  if (assessmentTypeFilter && ASSESSMENT_TYPES[assessmentTypeFilter]) {
+  if (assessmentTypeFilter) {
     where.assessmentType = assessmentTypeFilter;
   }
 
@@ -1504,11 +1552,11 @@ app.get("/admin", requireAdmin, async (req, res) => {
     where.createdAt = {};
 
     if (fromDate) {
-      where.createdAt.gte = europeRomeDateTimeToUtc(fromDate, "00:00:00");
+      where.createdAt.gte = new Date(`${fromDate}T00:00:00+01:00`);
     }
 
     if (toDate) {
-      where.createdAt.lte = europeRomeDateTimeToUtc(toDate, "23:59:59.999");
+      where.createdAt.lte = new Date(`${toDate}T23:59:59+01:00`);
     }
   }
 
@@ -1529,7 +1577,11 @@ app.get("/admin", requireAdmin, async (req, res) => {
 
     return {
       assessmentType,
-      assessmentTitle: payload.assessmentTitle || getAssessmentConfig(assessmentType).title,
+      assessmentTitle:
+        payload.assessmentTitle ||
+        (assessmentType === "sport_performance"
+          ? "Human & Sport Performance"
+          : "ZPI™ – Zenith Performance Index"),
       id: item.id,
       name: item.respondentName,
       email: item.respondentEmail,
@@ -1549,23 +1601,32 @@ app.get("/admin", requireAdmin, async (req, res) => {
   });
 
   const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
-  const adminAssessmentCards = Object.values(ASSESSMENT_TYPES).map((config) => {
-    const url = getAssessmentPublicUrl(config.key, publicBaseUrl);
-    return {
-      key: config.key,
-      title: config.title,
-      url,
-      qrCodeUrl: buildQrCodeUrl(url),
-      qrDownloadUrl: config.qrDownloadPath
-    };
-  });
+  const zpiUrl = `${publicBaseUrl}/zenith-assessment`;
+  const sportUrl = `${publicBaseUrl}/human-sport-performance`;
+
+  const adminAssessmentCards = [
+    {
+      key: "zpi_hr",
+      title: "ZPI™ – Zenith Performance Index",
+      url: zpiUrl,
+      qrCodeUrl: buildAdminQrCodeUrl(zpiUrl),
+      qrDownloadUrl: "/admin/qr/zenith/download"
+    },
+    {
+      key: "sport_performance",
+      title: "Human & Sport Performance",
+      url: sportUrl,
+      qrCodeUrl: buildAdminQrCodeUrl(sportUrl),
+      qrDownloadUrl: "/admin/qr/sport/download"
+    }
+  ];
 
   res.render("admin", {
     submissions,
     organizationName: req.session.admin.organizationName,
-    assessmentUrl: adminAssessmentCards[0]?.url,
-    qrCodeUrl: adminAssessmentCards[0]?.qrCodeUrl,
-    qrDownloadUrl: adminAssessmentCards[0]?.qrDownloadUrl,
+    assessmentUrl: zpiUrl,
+    qrCodeUrl: buildAdminQrCodeUrl(zpiUrl),
+    qrDownloadUrl: "/admin/qr/zenith/download",
     adminAssessmentCards,
     homeUrl: "/questionnaires",
     filters: {
@@ -1656,6 +1717,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     candidateCompany: assessment.candidateCompany,
     role: assessment.requestedRole,
     createdAt: assessment.createdAt,
+    createdAtFormatted: formatDateTimeRome(assessment.createdAt),
     analysis: {
       avgScore: assessment.result?.avgScore ?? "-",
       avgRange: assessment.result?.avgRange ?? "-",

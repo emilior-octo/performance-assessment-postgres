@@ -298,7 +298,7 @@
         </select>
       </div>
 
-      <div class="field">
+      <div class="field" style="min-width: 170px;">
         <label for="fromDate">Dal</label>
         <input
           id="fromDate"
@@ -308,7 +308,7 @@
         />
       </div>
 
-      <div class="field">
+      <div class="field" style="min-width: 170px;">
         <label for="toDate">Al</label>
         <input
           id="toDate"
@@ -356,7 +356,7 @@
             <td><%= item.email || "-" %></td>
             <td><%= item.candidateCompany || "-" %></td>
             <td><%= item.role %></td>
-            <td><%= (item.createdAtFormatted || new Date(item.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" })) %></td>
+            <td><%= item.createdAtFormatted || new Date(item.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" }) %></td>
             <td><%= item.avgScore ?? "-" %></td>
             <td><%= item.orientation %></td>
             <td><%= item.topTraits && item.topTraits.length ? item.topTraits.join(", ") : "-" %></td>

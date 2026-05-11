@@ -275,7 +275,7 @@
       <li><strong>Email:</strong> <%= submission.email || "-" %></li>
       <li><strong>Azienda risorsa:</strong> <%= submission.candidateCompany || "-" %></li>
       <li><strong>Ruolo:</strong> <%= submission.role %></li>
-      <li><strong>Data:</strong> <%= new Date(submission.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" }) %></li>
+      <li><strong>Data:</strong> <%= submission.createdAtFormatted || new Date(submission.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" }) %></li>
     </ul>
   </div>
 
