@@ -11,6 +11,14 @@ import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
 
 const prisma = new PrismaClient();
 
+function formatDateTimeRome(date) {
+  if (!date) return "-";
+
+  return new Date(date).toLocaleString("it-IT", {
+    timeZone: "Europe/Rome"
+  });
+}
+
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
