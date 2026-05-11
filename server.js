@@ -372,7 +372,7 @@ const DIMENSION_DESCRIPTIONS = {
   "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo",
   "Affidabilità + autodisciplina": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
   "Affidabilità": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
-  "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni, procedure e valutazioni",
+  "Sicurezza": "misura la struttura delle convinzioni della persona: quanto è certa delle proprie idee, quanto le difende, quanto è disposta a metterle in discussione e quanto il suo punto di vista è concreto o teorico",
   "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",
   "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",
   "Dinamismo": "misura il livello di energia, movimento e prontezza nell’iniziare le attività",
@@ -396,7 +396,7 @@ const ZPI_EVO_TRAIT_GUIDE = {
   "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico è alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro può non essere organizzato con continuità" }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
   "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacità" }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma può non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltà" }, { min: -100, text: "crede poco in se stessa e può aver rinunciato a scopi o obiettivi importanti" }] },
   "Affidabilità": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dà peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "può non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attività non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuità" }] },
-  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini; può essere rigida" }, { min: 50, text: "molto coerente, non è facile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma può mettersi in discussione se comprende alternative migliori" }, { min: -20, text: "flessibile e aperta al cambiamento, ma può cercare conferme esterne" }, { min: -100, text: "creativa ma incostante, con rischio di incoerenza e dispersione" }] },
+  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "convinzioni molto radicate: può avere una visione d'insieme forte, ma rischia di diventare teorica o rigida se non verifica le idee nell'azione" }, { min: 50, text: "convinzioni strutturate e stabili: tende a sostituire se stessa con dati e criteri, ma può essere poco facile farle cambiare idea" }, { min: 10, text: "mantiene un punto di vista abbastanza stabile, pur potendo metterlo in discussione davanti a dati o alternative migliori" }, { min: -20, text: "può mettere facilmente in discussione le proprie idee e cercare riferimenti esterni, con rischio di influenzabilità" }, { min: -100, text: "convinzioni poco stabili: può essere vittima di ciò che non conosce, cercando sicurezza fuori da sé" }] },
   "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma può accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "può esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
   "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciò che deve fare" }, { min: 50, text: "attiva, preferisce attività dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, può preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, può fare fatica ad avviare nuove attività" }, { min: -100, text: "bassa energia di azione e difficoltà a mettersi in moto" }] },
   "Flessibilità comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertività" }, { min: 20, text: "può manifestare lentezza produttiva o difficoltà a incidere" }, { min: -100, text: "tende ad aggirare i problemi e può perdere focus sui risultati" }] },
@@ -1072,7 +1072,7 @@ function buildReliability(answers, traits) {
 
   let reliabilityScore = Math.max(0, Math.round(100 - penalty));
 
-  // Regola cliente: se almeno 11 tratti/parametri dell'istogramma sono >=70,
+  // Regola cliente: se almeno 11 tratti/parametri dell'istogramma sono >=60,
   // il profilo va registrato come "teorico" e l'attendibilità non deve risultare pienamente coerente.
   if (theoreticalSignal.isTheoretical) {
     reliabilityScore = Math.min(reliabilityScore, 45);
@@ -1225,6 +1225,12 @@ async function generateExpandedReportPayload({
   const traitsForPrompt = buildAiTraitsForPrompt(traits);
   const reliabilityGuidance = reliabilityPromptGuidance(reliabilityScore, reliabilityFlags);
   const theoreticalProfileNote = theoreticalProfileNoteFromFlags(reliabilityFlags);
+  const convictionChange = convictionChangePattern(traits);
+  const securityTheory = theoreticalSecuritySignal(traits, reliabilityFlags);
+  const convictionChangeNote = convictionChange
+    ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
+    : "";
+  const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1242,11 +1248,18 @@ CONTESTO
 - Indice di coerenza delle risposte: ${reliabilityLabel} (${reliabilityScore}/100)
 - Filtro di lettura da applicare a tutta la relazione: ${reliabilityGuidance}
 ${theoreticalProfileNote ? `- Nota attendibilità: ${theoreticalProfileNote}` : ""}
+${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
+${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
 MAPPATURA EVO E PARAMETRIZZAZIONE
+- Sicurezza deve essere interpretata come Convinzioni: non è semplice autostima, ma modo in cui la persona costruisce, difende o mette in discussione le proprie idee.
+- Se Sicurezza è alta, valuta il rischio di rigidità, punto di osservazione troppo distante o sicurezza teorica, soprattutto se è presente Profilo teorico.
+- Se Sicurezza è bassa, valuta il rischio di influenzabilità, ricerca di conferme esterne o instabilità decisionale.
+- Resistenza al cambiamento è un sotto-tratto delle Convinzioni/Sicurezza relativo all'approccio specifico al cambiamento.
+- Quando sono presenti le note Sicurezza/Convinzioni o Lettura Sicurezza/Resistenza, usale per arricchire il tratto Sicurezza, il tratto Resistenza al cambiamento e la relazione generale, senza inventare diagnosi.
 - Per i tratti ZPI usa il campo evoGuide come riferimento principale: contiene il parametro EVO equivalente e la lettura corretta del punteggio.
 - Non inventare significati diversi da quelli indicati in evoGuide.
 - Se evoGuide è presente, l'analisi deve rispettare quella descrizione e può ampliarla in modo consulenziale, senza contraddirla.
@@ -1482,6 +1495,77 @@ function scoreGuidanceForPrompt(score) {
   return "-100--31: profonda difficoltà da approfondire. L'analisi deve descrivere una criticità importante da verificare con attenzione, senza toni clinici o giudicanti. I consigli devono essere prudenti, orientati a osservazione, affiancamento e verifica sul campo.";
 }
 
+function dimensionByName(dimensions, name) {
+  const target = displayDimensionName(name);
+  return (Array.isArray(dimensions) ? dimensions : []).find((item) => {
+    return displayDimensionName(item?.name) === target || item?.name === name;
+  }) || null;
+}
+
+function convictionChangePattern(dimensions = []) {
+  const sicurezza = dimensionByName(dimensions, "Sicurezza");
+  const resistance = dimensionByName(dimensions, "Resistenza al cambiamento");
+
+  if (!sicurezza || !resistance) {
+    return null;
+  }
+
+  const sicurezzaValue = chartScore(sicurezza.score);
+  const resistanceValue = chartScore(resistance.score);
+
+  const sicurezzaAlta = sicurezzaValue >= 50;
+  const sicurezzaBassa = sicurezzaValue <= 0;
+  const resistenzaAlta = resistanceValue >= 40;
+  const resistenzaBassa = resistanceValue <= -20;
+
+  let label = "Sicurezza e cambiamento da leggere in colloquio";
+  let interpretation = "Il rapporto tra convinzioni e cambiamento non è estremo: conviene verificare nel colloquio come la persona reagisce quando deve modificare abitudini, procedure o punti di vista.";
+  let unlockKey = "Usare esempi concreti, piccoli test operativi e confronto sui risultati ottenuti.";
+
+  if (sicurezzaAlta && resistenzaBassa) {
+    label = "Convinzioni alte e bassa resistenza al cambiamento";
+    interpretation = "La persona può avere idee radicate sulla necessità di cambiare come soluzione ai problemi. Può essere strutturata nelle proprie convinzioni, ma disponibile a sperimentare se vede una direzione utile.";
+    unlockKey = "Mettere in azione e far sperimentare in modo pratico, più che spiegare solo in teoria.";
+  } else if (sicurezzaBassa && resistenzaAlta) {
+    label = "Convinzioni basse e alta resistenza al cambiamento";
+    interpretation = "La persona può mettere in discussione le proprie idee, ma vivere il cambiamento con timore operativo. Può accogliere nuove idee e poi frenare quando deve uscire dalla propria zona di comfort.";
+    unlockKey = "Dare dati nuovi, formazione e affiancamento graduale, procedendo per piccoli passaggi.";
+  } else if (sicurezzaAlta && resistenzaAlta) {
+    label = "Convinzioni alte e alta resistenza al cambiamento";
+    interpretation = "La persona può essere molto ancorata al proprio modello mentale e percepire il cambiamento come una fonte di potenziali problemi o perdita di controllo.";
+    unlockKey = "Gestire con numeri, dati concreti, aspettative chiare e fermezza professionale.";
+  } else if (sicurezzaBassa && resistenzaBassa) {
+    label = "Convinzioni basse e bassa resistenza al cambiamento";
+    interpretation = "La persona può essere aperta al cambiamento e disponibile a modificare le proprie idee, ma va monitorato il rischio di cambiare troppo spesso direzione o adattarsi eccessivamente.";
+    unlockKey = "Gestire con pro e contro a 360 gradi, priorità scritte e criteri chiari di scelta.";
+  }
+
+  return {
+    label,
+    sicurezzaScore: sicurezzaValue,
+    resistanceScore: resistanceValue,
+    interpretation,
+    unlockKey
+  };
+}
+
+function theoreticalSecuritySignal(dimensions = [], reliabilityFlags = []) {
+  const sicurezza = dimensionByName(dimensions, "Sicurezza");
+  if (!sicurezza) return null;
+
+  const sicurezzaValue = chartScore(sicurezza.score);
+  const isTheoreticalProfile = hasTheoreticalProfileFlag(reliabilityFlags);
+
+  if (sicurezzaValue >= 50 && isTheoreticalProfile) {
+    return {
+      label: "Sicurezza teorica",
+      text: "La Sicurezza appare alta dentro un profilo teorico: la persona può appoggiarsi a ciò che conosce o ritiene corretto, ma la concretezza va verificata nei risultati e nell'azione pratica."
+    };
+  }
+
+  return null;
+}
+
 function shouldAddResponsibilityOpinionNote(normalized) {
   const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "Responsabilità" || item?.name === "Responsabilità");
@@ -1498,7 +1582,15 @@ function responsibilityOpinionNote() {
 function stripLeadingTruthfulnessStatus(text) {
   let value = String(text || "").trim();
 
-  const truthfulnessPattern = /^Attendibilità\s+(SÌ|SI|FORZATA|NO)\s*:\s*[^.]+\.(?:\s*[^.]+\.)?/i;
+  // Evita duplicazioni tipo:
+  // "Attendibilità Sì: ... Attendibilità Sì. Le risposte ..."
+  // L'AI può usare due formati:
+  // - Attendibilità SÌ: testo...
+  // - Attendibilità Sì. Le risposte...
+  // Noi aggiungiamo già il prefisso ufficiale da codice, quindi rimuoviamo
+  // qualunque prefisso Attendibilità generato dall'AI all'inizio del testo.
+  const truthfulnessPattern =
+    /^Attendibilità\s+(SÌ|SI|Sì|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilità\s+(SÌ|SI|Sì|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -1765,6 +1857,8 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const reliabilityFlags = theoreticalFlag && !hasTheoreticalProfileFlag(existingReliabilityFlags)
     ? [...existingReliabilityFlags, theoreticalFlag]
     : existingReliabilityFlags;
+  const convictionChange = convictionChangePattern(traits);
+  const securityTheory = theoreticalSecuritySignal(traits, reliabilityFlags);
 
   return {
     traits,
@@ -1774,7 +1868,9 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     managementAdvice,
     topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
     weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
-    reliabilityFlags
+    reliabilityFlags,
+    convictionChange,
+    securityTheory
   };
 }
 
@@ -2652,6 +2748,22 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
           }
         }
 
+        if (displayName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
+          expandedText = expandedText
+            ? `${expandedText} ${normalized.securityTheory.text}`
+            : normalized.securityTheory.text;
+        }
+
+        if (
+          (displayName === "Sicurezza" || displayName === "Resistenza al cambiamento") &&
+          normalized?.convictionChange &&
+          !expandedText.includes(normalized.convictionChange.label)
+        ) {
+          expandedText = expandedText
+            ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
+            : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
+        }
+
         if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
           const note = responsibilityOpinionNote();
           if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
@@ -2693,8 +2805,12 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
     : "";
   const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
   const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
+  const securityTheoryText = normalized?.securityTheory ? `${normalized.securityTheory.text} ` : "";
+  const convictionChangeText = normalized?.convictionChange
+    ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
+    : "";
 
-  return `${roleFitText}${reliabilityText}${theoreticalText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
+  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
 
 Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.
 

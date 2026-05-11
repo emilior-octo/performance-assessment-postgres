@@ -347,6 +347,66 @@
       display: block;
     }
 
+
+    .instructions-card {
+      border: 1px solid #e5e7eb;
+      background: #fafafa;
+    }
+
+    .instructions-card h2 {
+      margin-bottom: 18px;
+    }
+
+    .instructions-box {
+      color: #2b2b2b;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .instructions-box p {
+      margin: 0 0 14px;
+    }
+
+    .privacy-box {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 14px;
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+    }
+
+    .privacy-checkbox {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #dbe4ee;
+      cursor: pointer;
+    }
+
+    .privacy-checkbox input {
+      margin-top: 3px;
+      transform: scale(1.15);
+      cursor: pointer;
+    }
+
+    .privacy-checkbox span {
+      font-size: 14px;
+      line-height: 1.5;
+      color: #1f2937;
+      font-weight: 600;
+    }
+
+    .privacy-checkbox.is-missing {
+      border-color: #fb923c;
+      background: #fff7ed;
+      box-shadow: 0 0 0 4px rgba(251, 146, 60, 0.12);
+    }
+
+
     @media (max-width: 720px) {
       .page {
         padding: 16px;
@@ -460,6 +520,78 @@
           </p>
         </section>
 
+        <section class="card instructions-card">
+          <h2>Istruzioni per la compilazione</h2>
+
+          <div class="instructions-box">
+            <p>
+              Per ogni domanda scegli una sola risposta, in modo spontaneo e sincero.
+            </p>
+
+            <p>
+              Non esistono risposte giuste o sbagliate: ciò che conta è descrivere come sei davvero oggi,
+              senza pensare a come “dovresti” essere.
+            </p>
+
+            <p>
+              Il sistema analizza la coerenza delle risposte per garantire risultati più affidabili.
+              In caso di troppe incongruenze, potrebbe essere richiesta una nuova compilazione.
+            </p>
+
+            <p>
+              Questa valutazione ha finalità esclusivamente attitudinali e informative:
+              non rappresenta un test medico o psicologico.
+            </p>
+
+            <p>
+              Grazie per la collaborazione e buona compilazione.
+            </p>
+
+            <div class="privacy-box">
+              <p style="margin-top:0;">
+                <strong>Informativa privacy – Regolamento (UE) 2016/679 (GDPR)</strong>
+              </p>
+
+              <p>
+                Ai sensi del Regolamento (UE) 2016/679 (GDPR), i dati personali forniti saranno trattati
+                da Zenith360 esclusivamente per finalità legate alla valutazione attitudinale,
+                all’analisi dei risultati e alla gestione dei servizi offerti.
+              </p>
+
+              <p>
+                I dati saranno trattati in modo sicuro, riservato e accessibile solo a personale autorizzato
+                o a soggetti incaricati nel rispetto della normativa vigente.
+              </p>
+
+              <p>
+                L’utente potrà in qualsiasi momento esercitare i propri diritti, tra cui accesso,
+                modifica, aggiornamento o cancellazione dei dati personali,
+                secondo quanto previsto dal GDPR.
+              </p>
+
+              <p style="margin-bottom:0;">
+                La compilazione del questionario implica la presa visione della presente informativa.
+              </p>
+
+              <label class="privacy-checkbox" id="privacy-checkbox-wrapper">
+                <input
+                  type="checkbox"
+                  id="privacyConsent"
+                  name="privacyConsent"
+                  required
+                />
+                <span>
+                  Dichiaro di aver letto e compreso l’informativa privacy
+                </span>
+              </label>
+
+              <span class="field-error" id="privacy-error">
+                Devi accettare l’informativa privacy per continuare.
+              </span>
+            </div>
+          </div>
+        </section>
+
         <section class="card">
           <h2>Domande</h2>
 
@@ -524,6 +656,11 @@
         node.classList.remove("is-missing");
       });
 
+      const privacyWrapper = document.getElementById("privacy-checkbox-wrapper");
+      if (privacyWrapper) {
+        privacyWrapper.classList.remove("is-missing");
+      }
+
       if (validationBanner) {
         validationBanner.classList.remove("is-visible");
       }
@@ -535,6 +672,20 @@
       for (const field of requiredFields) {
         const isHidden = field.offsetParent === null;
         if (isHidden) continue;
+
+        if (field.type === "checkbox") {
+          if (!field.checked) {
+            const wrapper =
+              field.closest(".privacy-checkbox") ||
+              field.closest(".field") ||
+              field;
+
+            wrapper.classList.add("is-missing");
+            return field;
+          }
+
+          continue;
+        }
 
         if (!String(field.value || "").trim()) {
           const wrapper = field.closest(".field") || field;
@@ -600,6 +751,14 @@
           const question = target.closest(".question");
           if (question) question.classList.remove("is-missing");
           updateProgress();
+        }
+
+        if (target && target.id === "privacyConsent") {
+          const wrapper = document.getElementById("privacy-checkbox-wrapper");
+
+          if (wrapper && target.checked) {
+            wrapper.classList.remove("is-missing");
+          }
         }
 
         if (target && target.matches("input, select, textarea")) {
