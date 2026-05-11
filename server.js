@@ -8,7 +8,6 @@ import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
 import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
-import { SPORT_QUESTIONS, getSportScoredQuestions } from "./sport-questions.js";
 
 const prisma = new PrismaClient();
 
@@ -47,56 +46,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
-const ASSESSMENT_TYPES = {
-  zpi_hr: {
-    key: "zpi_hr",
-    title: "ZPI™ – Zenith Performance Index",
-    shortTitle: "ZPI™",
-    publicPath: "/zenith-assessment",
-    qrDownloadPath: "/admin/qr/zenith/download",
-    tokenEnv: "ZENITH_ASSESSMENT_TOKEN",
-    defaultTokenSuffix: "manager-001",
-    questions: ZPI_QUESTIONS,
-    getScoredQuestions,
-    active: true
-  },
-  sport_performance: {
-    key: "sport_performance",
-    title: "Human & Sport Performance",
-    shortTitle: "Sport Performance",
-    publicPath: "/human-sport-performance",
-    qrDownloadPath: "/admin/qr/sport/download",
-    tokenEnv: "SPORT_ASSESSMENT_TOKEN",
-    defaultTokenSuffix: "sport-performance-001",
-    questions: SPORT_QUESTIONS,
-    getScoredQuestions: getSportScoredQuestions,
-    active: true
-  }
-};
-
-function getAssessmentConfig(type = "zpi_hr") {
-  return ASSESSMENT_TYPES[type] || ASSESSMENT_TYPES.zpi_hr;
-}
-
-function inferAssessmentTypeFromToken(token = "") {
-  const value = String(token || "").toLowerCase();
-  if (value.includes("sport") || value.includes("human")) return "sport_performance";
-  return "zpi_hr";
-}
-
-function getLinkAssessmentType(link) {
-  return link?.assessmentType || inferAssessmentTypeFromToken(link?.token);
-}
-
-function getAssessmentPublicUrl(type, publicBaseUrl) {
-  return `${publicBaseUrl}${getAssessmentConfig(type).publicPath}`;
-}
-
-function buildQrCodeUrl(url, size = 220, margin = 14) {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=${margin}&data=${encodeURIComponent(url)}`;
-}
-
 const ROLE_OPTIONS = [
   { value: "direzione", label: "Direzione / Imprenditore" },
   { value: "manager", label: "Manager / Responsabile di funzione" },
@@ -114,7 +63,7 @@ function normalizeRequestedRole(bodyRole, bodyOtherRole, fallbackRole) {
   const role = String(bodyRole || "").trim();
   const other = String(bodyOtherRole || "").trim();
 
-  if (role === "altro") return other ? `Altro: ${other}` : "Altro";
+  if (role === "altro") return other || "Altro";
   return role || fallbackRole || "non_specificato";
 }
 
@@ -146,7 +95,6 @@ const ADDITIONAL_PARAMETER_DIMENSIONS = [
   "Principi",
   "Vendite",
   "Gestione priorità",
-  "Capacità di gestione finanziaria",
   "Attendibilità"
 ];
 
@@ -235,7 +183,6 @@ const DIMENSION_DEFINITIONS = {
   "Autonomia economica e iniziativa": [
     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "Capacità di gestione finanziaria", category: DIMENSION_CATEGORY.ADDITIONAL },
     { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Creatività e innovazione": [
@@ -260,104 +207,9 @@ const HISTOGRAM_COLORS = {
   strong: "#3F8F68"
 };
 
-const ZENITH_INDIGO = "#2F4B7C";
-
-const DISPLAY_LABELS = {
-  "Affidabilità + autodisciplina": "Affidabilità",
-  "Stress": "Gestione pressioni / Stress",
-  "Capacità di gestióne finanziaria": "Capacità di gestione finanziaria"
-};
-
-const DIMENSION_DESCRIPTIONS = {
-  "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",
-  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo",
-  "Affidabilità + autodisciplina": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
-  "Affidabilità": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
-  "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni, procedure e valutazioni",
-  "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",
-  "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",
-  "Dinamismo": "misura il livello di energia, movimento e prontezza nell’iniziare le attività",
-  "Flessibilità comunicativa": "misura determinazione, assertività, focus sul risultato e capacità di comunicare con decisione",
-  "Responsabilità": "misura proattività, centralità e capacità di assumersi responsabilità senza subire gli eventi",
-  "Ascolto attivo": "misura la capacità di comprendere punti di vista diversi senza filtrarli attraverso pregiudizi",
-  "Comprensione": "misura la capacità di comprendere gli altri da un punto di vista emotivo e relazionale",
-  "Espansività": "misura la qualità del primo approccio e la disponibilità a relazionarsi con apertura",
-  "Resistenza al cambiamento": "misura la disponibilità ad accettare cambiamenti, nuove procedure e nuove modalità di lavoro",
-  "Leadership naturale": "misura la tendenza a coinvolgere, guidare e diventare punto di riferimento per gli altri",
-  "Management": "misura la capacità di organizzare persone, attività e responsabilità in modo concreto",
-  "Cooperazione": "misura la capacità di collaborare, condividere informazioni e lavorare con continuità insieme agli altri",
-  "Principi": "misura la coerenza con regole, valori aziendali e comportamenti professionali corretti",
-  "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
-  "Gestione priorità": "misura la capacità di distinguere ciò che è importante da ciò che è solo urgente",
-  "Capacità di gestione finanziaria": "misura la capacità di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
-  "Attendibilità": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
-};
-
-const ZPI_EVO_TRAIT_GUIDE = {
-  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico è alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro può non essere organizzato con continuità" }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
-  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacità" }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma può non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltà" }, { min: -100, text: "crede poco in se stessa e può aver rinunciato a scopi o obiettivi importanti" }] },
-  "Affidabilità": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dà peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "può non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attività non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuità" }] },
-  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini; può essere rigida" }, { min: 50, text: "molto coerente, non è facile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma può mettersi in discussione se comprende alternative migliori" }, { min: -20, text: "flessibile e aperta al cambiamento, ma può cercare conferme esterne" }, { min: -100, text: "creativa ma incostante, con rischio di incoerenza e dispersione" }] },
-  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma può accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "può esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
-  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciò che deve fare" }, { min: 50, text: "attiva, preferisce attività dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, può preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, può fare fatica ad avviare nuove attività" }, { min: -100, text: "bassa energia di azione e difficoltà a mettersi in moto" }] },
-  "Flessibilità comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertività" }, { min: 20, text: "può manifestare lentezza produttiva o difficoltà a incidere" }, { min: -100, text: "tende ad aggirare i problemi e può perdere focus sui risultati" }] },
-  "Responsabilità": { evo: "Centralità", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilità soprattutto per ciò che dipende direttamente da lei" }, { min: -10, text: "può iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e può subire le situazioni" }] },
-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da più punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende può iniziare a criticare o valutare parzialmente" }, { min: -100, text: "comunicazione critica e poco motivante, con difficoltà a comprendere punti di vista diversi" }] },
-  "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio e coglie bene stati d’animo e bisogni" }, { min: 20, text: "calorosa, disponibile e attenta agli altri" }, { min: -20, text: "può mostrare freddezza o distacco, soprattutto in situazioni di disaccordo" }, { min: -100, text: "generalmente distaccata e fredda, con rischio di risultare poco sensibile" }] },
-  "Espansività": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata, disinibita e calorosa nell’approccio" }, { min: 40, text: "aperta e cordiale nel primo approccio" }, { min: 20, text: "selettiva e formale, ma capace di approcciare se necessario" }, { min: 0, text: "traspare un po’ di timidezza con persone nuove" }, { min: -40, text: "non fa facilmente il primo passo e può restare sulle sue" }, { min: -100, text: "chiusa, ritirata o impacciata con persone che non conosce" }] }
-};
-
-function evoGuideForDimension(name, score) {
-  const displayName = displayDimensionName(name);
-  const guide = ZPI_EVO_TRAIT_GUIDE[displayName];
-  if (!guide) return null;
-  const value = chartScore(score);
-  const band = guide.bands.find((item) => value >= item.min) || guide.bands[guide.bands.length - 1];
-  return { evoParameter: guide.evo, chartScore: value, interpretation: band.text };
-}
-
-function truthfulnessStatusFromScore(score) {
-  const value = Number(score || 0);
-  if (value >= 50) return { label: "Attendibilità SÌ", text: "le risposte risultano complessivamente coerenti e il profilo può essere letto con buona fiducia, pur restando da confrontare con colloquio e osservazione concreta." };
-  if (value >= 30) return { label: "Attendibilità FORZATA", text: "le risposte appaiono parzialmente controllate o orientate a presentarsi in modo favorevole; il profilo va letto con prudenza e verificato con esempi reali." };
-  return { label: "Attendibilità NO", text: "le risposte non offrono una base sufficientemente coerente; la relazione va considerata indicativa e richiede approfondimento diretto prima di trarre conclusioni operative." };
-}
-
-function stripForbiddenGeneralRelationPhrases(text) {
-  return String(text || "")
-    .replace(/La persona è stata valutata in riferimento al ruolo di\s+[^.]+\.\s*/gi, "")
-    .replace(/La risorsa è stata valutata in riferimento al ruolo di\s+[^.]+\.\s*/gi, "")
-    .trim();
-}
-
-
-function displayDimensionName(name) {
-  const value = String(name || "").trim();
-  const normalizedValue = value
-    .replace(/gestióne/gi, "gestione")
-    .replace(/gestiòne/gi, "gestione");
-
-  return DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue;
-}
-
-function dimensionDescription(name) {
-  const displayName = displayDimensionName(name);
-  return DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "";
-}
-
-function withDisplayMeta(item) {
-  const displayName = displayDimensionName(item?.name);
-  return {
-    ...item,
-    displayName,
-    description: dimensionDescription(item?.name),
-    chartScore: chartScore(item?.score)
-  };
-}
-
 function normalizeDimensionDefinitions(originalTrait) {
   return DIMENSION_DEFINITIONS[originalTrait] || [
-    { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
+    { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
   ];
 }
 
@@ -383,7 +235,6 @@ function normalizeRoleKey(role) {
 
   const directValues = new Set(ROLE_OPTIONS.map((item) => item.value));
   if (directValues.has(value)) return value;
-  if (value === "altro" || value.startsWith("altro:")) return "altro";
 
   if (/direzione|imprenditore|ceo|founder|titolare/.test(value)) return "direzione";
   if (/manager|responsabile|store manager|coordinatore|coordinator/.test(value)) return "manager";
@@ -407,7 +258,6 @@ const ROLE_FIT_WEIGHTS = {
     "Organizzazione e pianificazione": 1.1,
     "Leadership naturale": 1.35,
     "Management": 1.3,
-    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.2,
     "Principi": 1.05
   },
@@ -439,7 +289,6 @@ const ROLE_FIT_WEIGHTS = {
     "Espansività": 1.15,
     "Automotivazione": 1.15,
     "Comprensione": 1.15,
-    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.25,
     "Vendite": 1.15,
     "Cooperazione": 1.1
@@ -451,7 +300,6 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.1,
     "Gestione priorità": 1.3,
     "Principi": 1.25,
-    "Capacità di gestione finanziaria": 1.1,
     "Attendibilità": 1.2,
     "Resistenza al cambiamento": 0.85
   },
@@ -463,7 +311,6 @@ const ROLE_FIT_WEIGHTS = {
     "Dinamismo": 1.1,
     "Gestione priorità": 1.35,
     "Management": 1.15,
-    "Capacità di gestione finanziaria": 1.05,
     "Attendibilità": 1.3,
     "Cooperazione": 1.1
   },
@@ -495,34 +342,26 @@ const ROLE_FIT_WEIGHTS = {
     "Stress": 1.1,
     "Flessibilità comunicativa": 1.05,
     "Gestione priorità": 1.25,
-    "Capacità di gestione finanziaria": 1.0,
     "Attendibilità": 1.35,
     "Principi": 1.1,
     "Cooperazione": 1.05
   },
   altro: {
-    // Fallback prudente per ruoli liberi: profilo equilibrato da impiegato/collaboratore generalista.
-    // Evita interpretazioni troppo specialistiche quando il ruolo non rientra nei preset.
-    "Organizzazione e pianificazione": 1.2,
-    "Affidabilità + autodisciplina": 1.2,
+    "Organizzazione e pianificazione": 1.15,
+    "Automotivazione": 1.15,
+    "Affidabilità + autodisciplina": 1.15,
+    "Sicurezza": 1.05,
+    "Stress": 1.05,
+    "Dinamismo": 1.05,
+    "Flessibilità comunicativa": 1.05,
     "Responsabilità": 1.15,
-    "Gestione priorità": 1.15,
-    "Attendibilità": 1.15,
-    "Cooperazione": 1.1,
-    "Comprensione": 1.05,
     "Ascolto attivo": 1.05,
-    "Sicurezza": 1.0,
-    "Stress": 1.0,
-    "Automotivazione": 1.0,
-    "Dinamismo": 1.0,
-    "Flessibilità comunicativa": 1.0,
-    "Principi": 1.0,
-    "Capacità di gestione finanziaria": 0.95,
-    "Espansività": 0.9,
-    "Vendite": 0.85,
-    "Leadership naturale": 0.85,
-    "Management": 0.85,
-    "Resistenza al cambiamento": 0.85
+    "Comprensione": 1.05,
+    "Espansività": 1.0,
+    "Gestione priorità": 1.1,
+    "Attendibilità": 1.1,
+    "Cooperazione": 1.05,
+    "Principi": 1.05
   }
 };
 
@@ -612,30 +451,18 @@ function baseScore(answer) {
   if (answer === "agree") return 30;
   if (answer === "uncertain") return 10;
   if (answer === "disagree") return -30;
-  if (answer === "high") return 30;
-  if (answer === "medium") return 10;
-  if (answer === "low") return -30;
   return 0;
 }
 
-function scoreAnswer(answer, reverse = false, question = null) {
-  const customScore = question?.optionScores?.[answer];
-  const value = typeof customScore === "number" ? customScore : baseScore(answer);
+function scoreAnswer(answer, reverse = false) {
+  const value = baseScore(answer);
   return reverse ? value * -1 : value;
 }
 
-function answerLabel(answer, question = null) {
-  const option = Array.isArray(question?.options)
-    ? question.options.find((item) => item.value === answer)
-    : null;
-
-  if (option?.label) return option.label;
-  if (answer === "agree") return "Sono d’accordo";
-  if (answer === "uncertain") return "Incerto";
-  if (answer === "disagree") return "Non sono d’accordo";
-  if (answer === "high") return "Alta";
-  if (answer === "medium") return "Intermedia";
-  if (answer === "low") return "Bassa";
+function answerLabel(answer) {
+  if (answer === "agree") return "D’accordo";
+  if (answer === "uncertain") return "Incerto / parzialmente";
+  if (answer === "disagree") return "In disaccordo";
   return answer || "-";
 }
 
@@ -651,43 +478,27 @@ function avg(arr) {
   return arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
 }
 
-function getQuestionTexts(assessmentType = "zpi_hr") {
-  const config = getAssessmentConfig(assessmentType);
-  return Object.fromEntries(config.questions.map((q) => [q.key, q.text]));
+function getQuestionTexts() {
+  return Object.fromEntries(ZPI_QUESTIONS.map((q) => [q.key, q.text]));
 }
 
-function getQuestionnaireQuestions(assessmentType = "zpi_hr") {
-  const config = getAssessmentConfig(assessmentType);
-  return config.questions.map((q) => ({
-    key: q.key,
-    id: q.id,
-    text: q.text,
-    responseType: q.responseType || "likert",
-    options: Array.isArray(q.options) ? q.options : null
-  }));
-}
-
-function collectAnswers(body, assessmentType = "zpi_hr") {
-  const config = getAssessmentConfig(assessmentType);
+function collectAnswers(body) {
   return Object.fromEntries(
-    config.questions.map((q) => [q.key, body[q.key] || null])
+    ZPI_QUESTIONS.map((q) => [q.key, body[q.key] || null])
   );
 }
 
-function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
+function buildTraitsFromAnswers(answers) {
   const groups = new Map();
-  const config = getAssessmentConfig(assessmentType);
 
-  config.getScoredQuestions().forEach((question) => {
+  getScoredQuestions().forEach((question) => {
     const answer = answers[question.key];
 
     if (!answer) return;
 
     const sourceTrait = question.trait || "Comportamento generale";
-    const value = scoreAnswer(answer, question.reverse, question);
-    const dimensions = assessmentType === "sport_performance"
-      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
-      : normalizeDimensionDefinitions(sourceTrait);
+    const value = scoreAnswer(answer, question.reverse);
+    const dimensions = normalizeDimensionDefinitions(sourceTrait);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -790,35 +601,6 @@ function buildSummary(traits, role) {
   };
 }
 
-function reliabilityBand(score) {
-  const value = Number(score || 0);
-  if (value >= 50) return "coerente";
-  if (value >= 30) return "da_approfondire";
-  return "prudente";
-}
-
-function reliabilityLabelFromScore(score) {
-  const band = reliabilityBand(score);
-  if (band === "coerente") return "Indice di coerenza delle risposte adeguato";
-  if (band === "da_approfondire") return "Indice di coerenza delle risposte da approfondire";
-  return "Indice di coerenza delle risposte basso";
-}
-
-function reliabilityPromptGuidance(score, flags = []) {
-  const band = reliabilityBand(score);
-  const flagText = Array.isArray(flags) && flags.length ? ` Segnali da considerare: ${flags.join("; ")}.` : "";
-
-  if (band === "coerente") {
-    return `Le risposte risultano abbastanza coerenti: puoi scrivere una lettura diretta, sempre evitando giudizi assoluti.${flagText}`;
-  }
-
-  if (band === "da_approfondire") {
-    return `Le risposte presentano alcune oscillazioni: usa formule prudenti come "può emergere", "sembra indicare", "andrebbe verificato". Evita affermazioni definitive e collega le conclusioni al colloquio o all'osservazione sul lavoro.${flagText}`;
-  }
-
-  return `Le risposte hanno un indice di coerenza basso: l'intera relazione deve essere letta come ipotesi da verificare. Non scrivere conclusioni nette. Non dare indicazioni troppo prescrittive. Per ogni tratto, privilegia formulazioni esplorative e invita a verificare il comportamento con esempi concreti, colloquio e osservazione diretta.${flagText}`;
-}
-
 function buildReliability(answers, traits) {
   const scoredQuestions = getScoredQuestions();
   const answered = scoredQuestions.filter((q) => answers[q.key]);
@@ -827,7 +609,7 @@ function buildReliability(answers, traits) {
   if (!total) {
     return {
       reliabilityScore: 0,
-      reliabilityLabel: reliabilityLabelFromScore(0),
+      reliabilityLabel: "Attendibilità da verificare",
       reliabilityFlags: ["Nessuna risposta valutabile"]
     };
   }
@@ -849,17 +631,17 @@ function buildReliability(answers, traits) {
   const uncertainRatio = counts.uncertain / total;
 
   if (agreeRatio >= 0.85) {
-    penalty += 25;
+    penalty += 20;
     flags.push("Elevata concentrazione di risposte positive");
   }
 
   if (disagreeRatio >= 0.85) {
-    penalty += 25;
+    penalty += 20;
     flags.push("Elevata concentrazione di risposte negative");
   }
 
   if (uncertainRatio <= 0.03 && total >= 80) {
-    penalty += 12;
+    penalty += 10;
     flags.push("Uso molto basso delle risposte intermedie");
   }
 
@@ -873,15 +655,20 @@ function buildReliability(answers, traits) {
   });
 
   if (extremeTraits.length >= 3) {
-    penalty += 18;
+    penalty += 15;
     flags.push("Sono presenti oscillazioni interne significative su più tratti");
   }
 
   const reliabilityScore = Math.max(0, Math.round(100 - penalty));
 
+  let reliabilityLabel = "Alta affidabilità";
+  if (reliabilityScore < 80) reliabilityLabel = "Buona affidabilità";
+  if (reliabilityScore < 60) reliabilityLabel = "Attendibilità da verificare";
+  if (reliabilityScore < 40) reliabilityLabel = "Bassa attendibilità";
+
   return {
     reliabilityScore,
-    reliabilityLabel: reliabilityLabelFromScore(reliabilityScore),
+    reliabilityLabel,
     reliabilityFlags: flags
   };
 }
@@ -937,8 +724,7 @@ function cleanExpandedReport(expandedReportJson) {
         .filter((trait) => isValidExpandedTrait(trait, seenNames))
         .map((trait) => ({
           ...trait,
-          name: displayDimensionName(normalizeTraitName(trait.name)),
-          description: dimensionDescription(trait.name)
+          name: normalizeTraitName(trait.name)
         }))
     : [];
 
@@ -960,24 +746,13 @@ function buildAiTraitsForPrompt(traits) {
       seenNames.add(name.toLowerCase());
       return true;
     })
-    .map((trait) => {
-      const name = displayDimensionName(normalizeTraitName(trait.name));
-      const value = chartScore(trait.score);
-      const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
-
-      return {
-        name,
-        description: dimensionDescription(trait.name),
-        category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
-        score: trait.score,
-        chartScore: value,
-        evoGuide,
-        truthfulness,
-        writingGuidance: scoreGuidanceForPrompt(trait.score),
-        questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
-      };
-    });
+    .map((trait) => ({
+      name: normalizeTraitName(trait.name),
+      category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
+      score: trait.score,
+      range: trait.range,
+      questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
+    }));
 }
 
 async function generateExpandedReportPayload({
@@ -991,9 +766,7 @@ async function generateExpandedReportPayload({
   reliabilityLabel,
   reliabilityFlags,
   roleFit,
-  managementAdvice,
-  assessmentTitle = "ZPI™ – Zenith Performance Index",
-  assessmentType = "zpi_hr"
+  managementAdvice
 }) {
   if (!openai) {
     throw new Error("OPENAI_API_KEY non configurata.");
@@ -1024,49 +797,23 @@ async function generateExpandedReportPayload({
   };
 
   const traitsForPrompt = buildAiTraitsForPrompt(traits);
-  const reliabilityGuidance = reliabilityPromptGuidance(reliabilityScore, reliabilityFlags);
 
   const input = `
 Sei un consulente organizzativo senior.
-Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario è sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
+Genera una relazione professionale in italiano per un assessment comportamentale in ambito aziendale.
 
 CONTESTO
-- Questionario: ${assessmentTitle}
-- Tipo assessment: ${assessmentType}
-- Organizzazione / società: ${companyName}
+- Azienda: ${companyName}
 - Ruolo target: ${role}
 - Orientamento prevalente: ${summary.orientation}
 - Lettura rispetto al ruolo: ${summary.roleComment}
-- Compatibilità con il ruolo ricoperto: ${roleFit?.label || "Non disponibile"}
+- Compatibilità con il ruolo: ${roleFit?.label || "Non disponibile"}
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
-- Indice di coerenza delle risposte: ${reliabilityLabel} (${reliabilityScore}/100)
-- Filtro di lettura da applicare a tutta la relazione: ${reliabilityGuidance}
+- Attendibilità generale: ${reliabilityLabel}
+- Eventuali segnali attendibilità: ${(reliabilityFlags || []).join("; ") || "nessun segnale rilevante"}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
-
-MAPPATURA EVO E PARAMETRIZZAZIONE
-- Per i tratti ZPI usa il campo evoGuide come riferimento principale: contiene il parametro EVO equivalente e la lettura corretta del punteggio.
-- Non inventare significati diversi da quelli indicati in evoGuide.
-- Se evoGuide è presente, l'analisi deve rispettare quella descrizione e può ampliarla in modo consulenziale, senza contraddirla.
-- Per il tratto Attendibilità devi usare il campo truthfulness e indicare chiaramente una delle tre letture: Attendibilità SÌ, Attendibilità FORZATA, Attendibilità NO. Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
-
-PRINCIPI DI LETTURA
-- Non descrivere la persona come se fosse definita una volta per tutte: descrivi il suo funzionamento comportamentale attuale nel lavoro.
-- Il report non misura il valore della persona, ma il modo in cui tende ad agire, reagire, organizzarsi e relazionarsi nel contesto lavorativo.
-- Un tratto alto non è automaticamente positivo e un tratto basso non è automaticamente negativo: il valore dipende dal ruolo, dal contesto e dal livello di consapevolezza.
-- Integra, quando utile, i concetti di conoscenza pratica, comportamento e controllo: cosa sa fare concretamente, come tende ad agire/reagire, quanto riesce a governare il tratto in modo utile.
-- Se l'indice di coerenza delle risposte è basso o da approfondire, riduci il grado di certezza dell'intera relazione e usa un tono esplorativo.
-
-REGOLE DI LETTURA DEI PUNTEGGI
-- Usa il campo writingGuidance come regola principale per scrivere ogni tratto.
-- Non citare mai nel testo finale le fasce, le soglie numeriche o formule come "70-100", "31-50", "valore alto", "valore adeguato", "alta produttività", "profonda difficoltà".
-- L'analisi deve essere coerente con la fascia del punteggio: non mischiare nella stessa analisi segnali positivi e negativi opposti.
-- Applica sempre il filtro dell'indice di coerenza delle risposte: con coerenza bassa scrivi come ipotesi da verificare, con coerenza media scrivi come tendenza possibile, con coerenza adeguata puoi essere più diretto ma mai assoluto.
-- Se il punteggio è alto, eventuali attenzioni devono derivare dall'eccesso o dall'intensità del tratto, non da una sua assenza.
-- Se il punteggio è basso, non descrivere il tratto come stabile o già maturo: evidenzia la difficoltà concreta e l'impatto sul lavoro.
-- Per valori molto alti, non celebrare in modo assoluto: descrivi il tratto come molto marcato e aggiungi prudenza professionale, spiegando che la continuità del comportamento va verificata nei fatti. Non accusare mai la persona di non essere sincera.
-- Se il tratto Responsabilità è in area migliorabile bassa, includi il concetto che la persona può contrariarsi quando l'interlocutore ha un'opinione diversa, anche se non lo manifesta apertamente.
 
 ISTRUZIONI GENERALI
 1. Scrivi in modo semplice, diretto e utile per un imprenditore o responsabile di PMI.
@@ -1076,27 +823,23 @@ ISTRUZIONI GENERALI
 5. Non usare formule come “discreto”, “buono”, “ottimo” nel testo finale.
 6. Evita frasi generiche, ripetitive o troppo “da AI”.
 7. Quando possibile, collega le osservazioni al lavoro quotidiano, ai rapporti con colleghi/clienti e alla gestione pratica della persona.
-8. Non trasformare l'analisi del tratto in una lista di consigli: prima interpreta il comportamento, poi solo nei campi dedicati indica eventuali azioni pratiche coerenti.
+8. Descrivi rischi e rimedi in modo concreto: cosa può fare il titolare, il responsabile o il referente diretto già da domani.
 9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
-10. Compila generalManagementAdvice con un consiglio generale pratico, ma non contraddittorio rispetto ai tratti emersi.
-11. Nella relazione generale cita in modo naturale la compatibilità con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata.
-12. Non scrivere mai frasi come "La persona è stata valutata in riferimento al ruolo di..." o "La risorsa è stata valutata in riferimento al ruolo di...".
+10. Compila generalManagementAdvice con un consiglio generale molto pratico su come gestire la risorsa esaminata.
 
 ISTRUZIONI PER OGNI TRATTO
 Per ogni tratto restituisci:
-- expandedText: vera analisi comportamentale del tratto, coerente con writingGuidance. Deve spiegare come la persona tende a funzionare, cosa può emergere nel lavoro e quali effetti operativi o relazionali può produrre. NON ripetere la definizione del campo description, perché verrà già mostrata tra parentesi nel report. NON inserire consigli operativi in questo campo.
-- improvementPlan: rimedi pratici solo se il tratto è sotto 40 su scala -100/+100. Se il tratto è pari o superiore a 40, scrivi una frase breve di valorizzazione/consolidamento non correttiva, perché questa sezione non verrà mostrata nella relazione finale.
-- skillAction: indicazione gestionale solo se il tratto è sotto 50 su scala -100/+100. Se il tratto è da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perché questa sezione non verrà mostrata nella relazione finale. Non deve contraddire expandedText.
+- expandedText: spiegazione semplice del tratto, con esempi pratici di come può vedersi nel lavoro.
+- improvementPlan: rimedi pratici, facili da applicare, senza teoria complessa.
+- skillAction: cosa fare nella gestione quotidiana: come valorizzare il tratto se è forte, oppure come presidiare e migliorare il comportamento se è debole.
 
 STILE DI SCRITTURA
 - Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
 - Usa parole semplici e frasi brevi.
-- Non iniziare mai un approfondimento con frasi definitorie tipo "Misura...", "Valuta...", "Indica..." se ripetono la descrizione del tratto.
 - Evita formule ripetitive tra i tratti.
-- Evita struttura da checklist dentro expandedText.
 - Dove c’è un rischio, spiega cosa può succedere in azienda.
-- Dove c’è una forza, spiega come può produrre valore concreto.
-- Dove serve un rimedio, deve essere coerente con il punteggio: obiettivi chiari, controllo periodico, affiancamento, priorità scritte, confronto diretto, senza consigli opposti all'analisi.
+- Dove c’è una forza, spiega come usarla nella pratica.
+- Dove serve un rimedio, indica azioni semplici: obiettivi chiari, controllo periodico, affiancamento, priorità scritte, confronto diretto.
 
 IMPORTANTE
 - Non scrivere "uso della forza".
@@ -1105,8 +848,6 @@ IMPORTANTE
 - Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 - Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
-- Quando parli di Gestione pressioni / Stress, interpretalo come fonti di preoccupazione, pressione o distrazione presenti nell’ambiente personale o professionale, non come semplice tensione emotiva generica.
-- Quando parli di Capacità di gestione finanziaria, interpretala come capacità pratica di generare reddito autonomo, risparmiare e gestire risorse economiche con continuità e visione futura.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacità o tratto.
 - Non usare espressioni come “KPI”, “stakeholder”, “performance review”, “coaching”, “debriefing”, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
@@ -1154,9 +895,7 @@ function startExpandedReportJob({
   reliabilityLabel,
   reliabilityFlags,
   roleFit,
-  managementAdvice,
-  assessmentTitle = "ZPI™ – Zenith Performance Index",
-  assessmentType = "zpi_hr"
+  managementAdvice
 }) {
   if (!assessmentId) {
     console.error("[EXPANDED] missing assessmentId, job skipped");
@@ -1187,9 +926,7 @@ function startExpandedReportJob({
         reliabilityLabel,
         reliabilityFlags,
         roleFit,
-        managementAdvice,
-        assessmentTitle,
-        assessmentType
+        managementAdvice
       });
     })
     .then(async (expandedReportJson) => {
@@ -1237,84 +974,12 @@ function chartScore(score) {
   return Math.round((safeScore / 30) * 100);
 }
 
-function shouldShowRemediesForChartValue(value) {
-  // Richiesta cliente: da 40 a 100 non mostrare la sezione “Rimedi pratici”.
-  return Number(value || 0) < 40;
-}
-
-function shouldShowSkillActionForChartValue(value) {
-  // Richiesta cliente: da 50 a 100 niente indicazione pratica di gestione sul singolo tratto.
-  return Number(value || 0) < 50;
-}
-
-function findDimensionByDisplayName(dimensions, name) {
-  const target = displayDimensionName(name);
-  return (Array.isArray(dimensions) ? dimensions : []).find((item) => {
-    return displayDimensionName(item?.name) === target || item?.name === name;
-  }) || null;
-}
-
-function scoreGuidanceForPrompt(score) {
-  const value = chartScore(score);
-
-  if (value >= 70) {
-    return "70-100: tratto dominante e molto marcato. L'analisi deve descrivere una forte manifestazione del tratto e, con tono prudente, indicare che valori così elevati possono anche riflettere una risposta molto controllata o socialmente desiderabile. Non insinuare falsità o scarsa sincerità; scrivi che la continuità del comportamento va verificata nella pratica. I consigli devono essere di valorizzazione e verifica concreta, non correttivi.";
-  }
-
-  if (value >= 51) {
-    return "51-69: tratto solido e produttivo. L'analisi deve descrivere una manifestazione stabile, utile nel lavoro quotidiano, senza introdurre criticità opposte al punteggio. I consigli devono valorizzare e consolidare il tratto.";
-  }
-
-  if (value >= 31) {
-    return "31-50: tratto adeguato. L'analisi deve descrivere una base presente ma non dominante, con eventuale discontinuità leggera. I consigli devono aiutare a consolidare il comportamento, senza drammatizzare.";
-  }
-
-  if (value >= 0) {
-    return "0-30: tratto migliorabile. L'analisi deve descrivere fragilità o presenza discontinua del tratto, con esempi concreti nel lavoro. I consigli devono essere di supporto, chiarimento e allenamento operativo.";
-  }
-
-  if (value >= -30) {
-    return "-30-0: tratto in difficoltà. L'analisi deve descrivere una difficoltà concreta che può emergere nel lavoro quotidiano, con impatto operativo o relazionale. I consigli devono essere di presidio, affiancamento e controllo semplice.";
-  }
-
-  return "-100--31: profonda difficoltà da approfondire. L'analisi deve descrivere una criticità importante da verificare con attenzione, senza toni clinici o giudicanti. I consigli devono essere prudenti, orientati a osservazione, affiancamento e verifica sul campo.";
-}
-
-function shouldAddResponsibilityOpinionNote(normalized) {
-  const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
-  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "Responsabilità" || item?.name === "Responsabilità");
-  if (!responsibility) return false;
-
-  const value = chartScore(responsibility.score);
-  return value >= 0 && value <= 20;
-}
-
-function responsibilityOpinionNote() {
-  return "La persona tende a contrariarsi, anche non manifestandolo, quando il suo interlocutore ha un'opinione diversa.";
-}
-
 function drawChartTitle(doc, title, subtitle) {
-  const marginLeft = doc.page.margins.left;
-  const usableWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
-
-  // PDFKit mantiene l'ultima posizione X dopo testi ruotati/colonne.
-  // Reset esplicito per evitare titoli tagliati a destra, es. "Parametri a...".
-  doc.x = marginLeft;
-
-  doc.fontSize(16).fillColor("#222222").text(title, marginLeft, doc.y, {
-    width: usableWidth,
-    lineBreak: false
-  });
-
+  doc.fontSize(16).fillColor("#222222").text(title, { width: 500, lineBreak: false });
   if (subtitle) {
     doc.moveDown(0.2);
-    doc.x = marginLeft;
-    doc.fontSize(8.5).fillColor("#666666").text(subtitle, marginLeft, doc.y, {
-      width: usableWidth
-    });
+    doc.fontSize(8.5).fillColor("#666666").text(subtitle, { width: 500 });
   }
-
-  doc.x = marginLeft;
   doc.fillColor("black");
 }
 
@@ -1357,28 +1022,16 @@ function drawTraitsVerticalChart(doc, traits) {
   const count = traits.length;
   const slot = plotWidth / count;
   const barWidth = Math.min(28, Math.max(16, slot * 0.72));
-  const palette = [
-    "#147FBD", // Zenith blue
-    "#0D1424", // deep navy
-    "#36A3D9", // light blue
-    "#5E6878", // muted slate
-    "#7CB342", // olive green
-    "#F2A33A", // warm amber
-    "#8E5CF7", // violet
-    "#00A6A6", // teal
-    "#D66BA0", // muted rose
-    "#6B8E23", // dark olive
-    "#BFC7D5"  // soft grey blue
-  ];
+  const palette = ["#4FA0B7", "#2F7EA0", "#73AFC2", "#F4BA37", "#E99E2E", "#E9502F", "#C94129", "#F06F45", "#B8C92F", "#9FAE24", "#CDD94A"];
 
   traits.forEach((trait, index) => {
     const value = chartScore(trait.score);
     const x = axisX + slot * index + (slot - barWidth) / 2;
     const y = value >= 0 ? valueToY(value) : zeroY;
     const h = Math.max(1, Math.abs(zeroY - valueToY(value)));
-    const color = ZENITH_INDIGO;
+    const color = palette[index % palette.length];
 
-    doc.rect(x, y, barWidth, h).fillOpacity(0.9).fill(color).fillOpacity(1);
+    doc.rect(x, y, barWidth, h).fillOpacity(0.88).fill(color).fillOpacity(1);
 
     // Valore sopra/sotto la barra.
     const valueY = value >= 0 ? y - 13 : y + h + 3;
@@ -1390,7 +1043,7 @@ function drawTraitsVerticalChart(doc, traits) {
     // Label verticale, come reference.
     doc.save();
     doc.rotate(-90, { origin: [x + barWidth / 2, chartBottom + labelHeight - 2] });
-    doc.fontSize(6.9).fillColor("#333333").text(displayDimensionName(trait.name), x + barWidth / 2, chartBottom + labelHeight - 2, {
+    doc.fontSize(6.9).fillColor("#333333").text(trait.name, x + barWidth / 2, chartBottom + labelHeight - 2, {
       width: labelHeight,
       align: "right",
       lineBreak: false
@@ -1399,15 +1052,13 @@ function drawTraitsVerticalChart(doc, traits) {
   });
 
   doc.restore();
-  doc.x = doc.page.margins.left;
-  doc.y = chartBottom + labelHeight + 22;
+  doc.y = chartBottom + labelHeight + 14;
   doc.fillColor("black");
 }
 
 function drawAdditionalParameterBars(doc, parameters) {
   if (!Array.isArray(parameters) || parameters.length === 0) return;
 
-  doc.x = doc.page.margins.left;
   drawChartTitle(doc, "Parametri aggiuntivi");
 
   const marginLeft = doc.page.margins.left;
@@ -1418,7 +1069,7 @@ function drawAdditionalParameterBars(doc, parameters) {
   const trackHeight = 12;
   const rowHeight = 44;
   const trackColor = "#E9E9E9";
-  const barColor = ZENITH_INDIGO;
+  const barColor = "#2E5F9E";
   const axisColor = "#8A8A8A";
   const startY = doc.y + 12;
 
@@ -1429,20 +1080,20 @@ function drawAdditionalParameterBars(doc, parameters) {
     items.forEach((item, row) => {
       const y = y0 + row * rowHeight;
       const value = chartScore(item.score);
-      const trackX = x + 38;
-      const trackW = columnWidth - 78;
+      const trackX = x + 16;
+      const trackW = columnWidth - 54;
       const zeroX = trackX + trackW / 2;
       const barW = Math.max(2, Math.abs(value) / 100 * (trackW / 2));
       const barX = value >= 0 ? zeroX : zeroX - barW;
       const barY = y + labelHeight + 1;
 
-      doc.fontSize(8.5).fillColor("#111111").text(displayDimensionName(item.name), x, y, {
+      doc.fontSize(8.5).fillColor("#111111").text(item.name, x, y, {
         width: columnWidth,
         lineBreak: false
       });
 
       doc.fontSize(6.5).fillColor("#111111").text("-100", x, barY + 2, {
-        width: 32,
+        width: 24,
         align: "right"
       });
 
@@ -1463,7 +1114,7 @@ function drawAdditionalParameterBars(doc, parameters) {
       });
 
       doc.fontSize(6.5).fillColor("#111111").text("100", trackX + trackW + 7, barY + 2, {
-        width: 28,
+        width: 24,
         align: "left"
       });
     });
@@ -1525,7 +1176,7 @@ function mergeDimensionList(list = []) {
 
 function normalizeNameList(list = []) {
   return (Array.isArray(list) ? list : [])
-    .map((name) => displayDimensionName(normalizeDimensionNameForDisplay(name)))
+    .map((name) => normalizeDimensionNameForDisplay(name))
     .filter(Boolean)
     .filter((name, index, arr) => arr.indexOf(name) === index);
 }
@@ -1553,11 +1204,11 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   };
 }
 
-function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
+function drawAssessmentHistograms(doc, dimensions) {
   const { traits, additionalParameters } = splitDimensions(dimensions);
 
   drawLogo(doc);
-  doc.fontSize(20).fillColor("black").text(assessmentTitle || "Performance Assessment Report", { align: "center" });
+  doc.fontSize(20).fillColor("black").text("Performance Assessment Report", { align: "center" });
   doc.moveDown(0.15);
   doc.fontSize(9).fillColor("#666666").text("Sintesi grafica del profilo", { align: "center" });
   doc.moveDown(0.65);
@@ -1581,21 +1232,20 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v17-multi-assessment");
+  res.send("openai-expanded-report-v10-v5-1-no-automatic-labels");
 });
 
 app.get("/", (_req, res) => {
   res.redirect("/questionnaires");
 });
 
-function getAssessmentToken(type = "zpi_hr") {
+function getZenithAssessmentToken() {
   const companySlug = process.env.COMPANY_SLUG || "demo-company";
-  const config = getAssessmentConfig(type);
-  return process.env[config.tokenEnv] || `${companySlug}-${config.defaultTokenSuffix}`;
+  return process.env.ZENITH_ASSESSMENT_TOKEN || `${companySlug}-manager-001`;
 }
 
-async function findAssessmentLinkByType(type = "zpi_hr") {
-  const token = getAssessmentToken(type);
+async function findZenithAssessmentLink() {
+  const token = getZenithAssessmentToken();
 
   const directLink = await prisma.assessmentLink.findUnique({
     where: { token },
@@ -1605,142 +1255,65 @@ async function findAssessmentLinkByType(type = "zpi_hr") {
   if (directLink?.isActive) return directLink;
 
   return prisma.assessmentLink.findFirst({
-    where: { isActive: true, assessmentType: type },
-    include: { organization: true },
-    orderBy: { createdAt: "asc" }
-  }).catch(() => prisma.assessmentLink.findFirst({
     where: { isActive: true },
     include: { organization: true },
     orderBy: { createdAt: "asc" }
-  }));
+  });
 }
 
 app.get("/questionnaires", async (_req, res) => {
   const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
+  const assessmentPath = "/zenith-assessment";
+  const assessmentUrl = `${publicBaseUrl}${assessmentPath}`;
   const adminUrl = "/admin";
-
-  const zpiUrl = getAssessmentPublicUrl("zpi_hr", publicBaseUrl);
-  const sportUrl = getAssessmentPublicUrl("sport_performance", publicBaseUrl);
-  const qrCodeUrl = buildQrCodeUrl(zpiUrl);
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=14&data=${encodeURIComponent(assessmentUrl)}`;
 
   res.render("questionnaire-welcome", {
     companyName: process.env.COMPANY_NAME || "Zenith",
     publicBaseUrl,
-    assessmentUrl: zpiUrl,
+    assessmentUrl,
     adminUrl,
     qrCodeUrl,
     products: [
       {
         eyebrow: "Questionario attivo",
-        title: getAssessmentConfig("zpi_hr").title,
-        description: "Questionario comportamentale per aziende, team HR e percorsi di valutazione interna.",
+        title: "Zenith Assessment",
+        description: "Assessment comportamentale per aziende, team HR e percorsi di valutazione interna.",
         cta: "Apri questionario",
-        url: zpiUrl,
+        url: assessmentUrl,
         status: "active"
       },
       {
-        eyebrow: "Questionario attivo",
-        title: getAssessmentConfig("sport_performance").title,
+        eyebrow: "Prossimo percorso",
+        title: "Human & Sport Performance",
         description: "Questionario dedicato ad aziende sportive, organizzazioni, staff tecnici e contesti di performance sportiva.",
-        cta: "Apri questionario",
-        url: sportUrl,
-        status: "active"
+        cta: "Disponibile a breve",
+        url: null,
+        status: "coming_soon"
       }
     ]
   });
 });
 
 app.get("/zenith-assessment", async (_req, res) => {
-  const link = await findAssessmentLinkByType("zpi_hr");
+  const link = await findZenithAssessmentLink();
 
   if (!link || !link.isActive) {
-    return res.status(404).send("Questionario ZPI non disponibile o non attivo.");
+    return res.status(404).send("Questionario Zenith non disponibile o non attivo.");
   }
-
-  const assessmentType = "zpi_hr";
-  const config = getAssessmentConfig(assessmentType);
 
   res.render("questionnaire", {
     token: link.token,
     companyName: link.organization.name,
-    assessmentType,
-    assessmentTitle: config.title,
     requestedRole: link.requestedRole,
     roleOptions: ROLE_OPTIONS,
-    questions: getQuestionnaireQuestions(assessmentType)
+    questions: getQuestionTexts()
   });
 });
 
-app.get("/human-sport-performance", async (_req, res) => {
-  const link = await findAssessmentLinkByType("sport_performance");
-
-  if (!link || !link.isActive) {
-    return res.status(404).send("Questionario Human & Sport Performance non disponibile o non attivo.");
-  }
-
-  const assessmentType = "sport_performance";
-  const config = getAssessmentConfig(assessmentType);
-
-  res.render("questionnaire", {
-    token: link.token,
-    companyName: link.organization.name,
-    assessmentType,
-    assessmentTitle: config.title,
-    requestedRole: link.requestedRole,
-    roleOptions: ROLE_OPTIONS,
-    questions: getQuestionnaireQuestions(assessmentType)
-  });
+app.get("/human-sport-performance", (_req, res) => {
+  res.status(503).send("Human & Sport Performance - Work in progress");
 });
-
-
-app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
-  try {
-    const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
-    const assessmentUrl = getAssessmentPublicUrl("zpi_hr", publicBaseUrl);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=1200x1200&margin=40&data=${encodeURIComponent(assessmentUrl)}`;
-
-    const qrResponse = await fetch(qrUrl);
-
-    if (!qrResponse.ok) {
-      throw new Error(`QR generation failed: ${qrResponse.status}`);
-    }
-
-    const buffer = Buffer.from(await qrResponse.arrayBuffer());
-
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Content-Disposition", 'attachment; filename="zpi-zenith-performance-index-qr.png"');
-    res.send(buffer);
-  } catch (error) {
-    console.error("Errore download QR Zenith:", error);
-    res.status(500).send("Errore durante la generazione del QR code.");
-  }
-});
-
-
-
-app.get("/admin/qr/sport/download", requireAdmin, async (_req, res) => {
-  try {
-    const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
-    const assessmentUrl = getAssessmentPublicUrl("sport_performance", publicBaseUrl);
-    const qrUrl = buildQrCodeUrl(assessmentUrl, 1200, 40);
-
-    const qrResponse = await fetch(qrUrl);
-
-    if (!qrResponse.ok) {
-      throw new Error(`QR generation failed: ${qrResponse.status}`);
-    }
-
-    const buffer = Buffer.from(await qrResponse.arrayBuffer());
-
-    res.setHeader("Content-Type", "image/png");
-    res.setHeader("Content-Disposition", 'attachment; filename="human-sport-performance-qr.png"');
-    res.send(buffer);
-  } catch (error) {
-    console.error("Errore download QR Sport:", error);
-    res.status(500).send("Errore durante la generazione del QR code.");
-  }
-});
-
 
 app.get("/q/:token", async (req, res) => {
   const link = await prisma.assessmentLink.findUnique({
@@ -1752,17 +1325,12 @@ app.get("/q/:token", async (req, res) => {
     return res.status(404).send("Link questionario non valido o non attivo.");
   }
 
-  const assessmentType = getLinkAssessmentType(link);
-  const config = getAssessmentConfig(assessmentType);
-
   res.render("questionnaire", {
     token: link.token,
     companyName: link.organization.name,
-    assessmentType,
-    assessmentTitle: config.title,
     requestedRole: link.requestedRole,
     roleOptions: ROLE_OPTIONS,
-    questions: getQuestionnaireQuestions(assessmentType)
+    questions: getQuestionTexts()
   });
 });
 
@@ -1777,9 +1345,8 @@ app.post("/q/:token", async (req, res) => {
       return res.status(404).send("Link questionario non valido o non attivo.");
     }
 
-    const assessmentType = getLinkAssessmentType(link);
-    const answers = collectAnswers(req.body, assessmentType);
-    const traits = buildTraitsFromAnswers(answers, assessmentType);
+    const answers = collectAnswers(req.body);
+    const traits = buildTraitsFromAnswers(answers);
     const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
     const avgScore = avg(mainTraits.map((t) => t.score));
     const avgRange = range(avgScore);
@@ -1797,7 +1364,6 @@ app.post("/q/:token", async (req, res) => {
       data: {
         organizationId: link.organizationId,
         assessmentLinkId: link.id,
-        assessmentType,
         respondentName: req.body.respondentName || "Anonimo",
         respondentEmail: req.body.respondentEmail || null,
         age: req.body.age ? Number(req.body.age) : null,
@@ -1816,8 +1382,6 @@ app.post("/q/:token", async (req, res) => {
         reliabilityScore,
         reliabilityLabel,
         traitsJson: {
-          assessmentType,
-          assessmentTitle: getAssessmentConfig(assessmentType).title,
           traits,
           mainTraits,
           additionalParameters,
@@ -1850,9 +1414,7 @@ app.post("/q/:token", async (req, res) => {
       reliabilityLabel,
       reliabilityFlags,
       roleFit,
-      managementAdvice,
-      assessmentTitle: getAssessmentConfig(assessmentType).title,
-      assessmentType
+      managementAdvice
     });
 
     res.redirect("/thank-you");
@@ -1911,19 +1473,39 @@ app.post("/admin/logout", (req, res) => {
 
 app.get("/admin", requireAdmin, async (req, res) => {
   const companyFilter = (req.query.company || "").toString().trim();
+  const assessmentTypeFilter = (req.query.assessmentType || "").toString().trim();
+  const fromDate = (req.query.fromDate || "").toString().trim();
+  const toDate = (req.query.toDate || "").toString().trim();
+
+  const where = {
+    organizationId: req.session.admin.organizationId
+  };
+
+  if (companyFilter) {
+    where.candidateCompany = {
+      contains: companyFilter,
+      mode: "insensitive"
+    };
+  }
+
+  if (assessmentTypeFilter && ASSESSMENT_TYPES[assessmentTypeFilter]) {
+    where.assessmentType = assessmentTypeFilter;
+  }
+
+  if (fromDate || toDate) {
+    where.createdAt = {};
+
+    if (fromDate) {
+      where.createdAt.gte = europeRomeDateTimeToUtc(fromDate, "00:00:00");
+    }
+
+    if (toDate) {
+      where.createdAt.lte = europeRomeDateTimeToUtc(toDate, "23:59:59.999");
+    }
+  }
 
   const assessments = await prisma.assessment.findMany({
-    where: {
-      organizationId: req.session.admin.organizationId,
-      ...(companyFilter
-        ? {
-            candidateCompany: {
-              contains: companyFilter,
-              mode: "insensitive"
-            }
-          }
-        : {})
-    },
+    where,
     include: {
       result: true
     },
@@ -1947,6 +1529,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
       age: item.age,
       role: item.requestedRole,
       createdAt: item.createdAt,
+      createdAtFormatted: formatDateTimeRome(item.createdAt),
       avgScore: item.result?.avgScore ?? null,
       orientation: item.result?.orientation ?? "-",
       topTraits: normalized.topTraits || [],
@@ -1978,7 +1561,10 @@ app.get("/admin", requireAdmin, async (req, res) => {
     adminAssessmentCards,
     homeUrl: "/questionnaires",
     filters: {
-      company: companyFilter
+      company: companyFilter,
+      assessmentType: assessmentTypeFilter,
+      fromDate,
+      toDate
     }
   });
 });
@@ -2004,11 +1590,9 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
     }
 
     const payload = assessment.result.traitsJson || {};
-    const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
-    const traits = normalized.traits;
-    const roleFit = normalized.roleFit;
-    const managementAdvice = normalized.managementAdvice;
+    const traits = Array.isArray(payload.traits) ? payload.traits : [];
+    const roleFit = payload.roleFit || calculateRoleFit(traits, assessment.requestedRole);
+    const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
     startExpandedReportJob({
       assessmentId: assessment.id,
@@ -2027,192 +1611,13 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
       reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
       reliabilityFlags: normalized.reliabilityFlags || [],
       roleFit,
-      managementAdvice,
-      assessmentTitle: getAssessmentConfig(assessmentType).title,
-      assessmentType
+      managementAdvice
     });
 
     return res.redirect(`/admin/${assessment.id}`);
   } catch (error) {
     console.error("Errore avvio generazione relazione esplosa:", error);
     res.status(500).send("Errore durante l'avvio della generazione della relazione esplosa.");
-  }
-});
-
-
-app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res) => {
-  try {
-    const assessment = await prisma.assessment.findFirst({
-      where: {
-        id: req.params.id,
-        organizationId: req.session.admin.organizationId
-      },
-      include: {
-        result: true
-      }
-    });
-
-    if (!assessment || !assessment.result) {
-      return res.status(404).send("Assessment non trovato");
-    }
-
-    if (assessment.result.isGenerating) {
-      return res.redirect(`/admin/${assessment.id}`);
-    }
-
-    const payload = assessment.result.traitsJson || {};
-    const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
-    const traits = normalized.traits;
-    const roleFit = normalized.roleFit;
-    const managementAdvice = normalized.managementAdvice;
-
-    await prisma.assessmentResult.update({
-      where: { assessmentId: assessment.id },
-      data: {
-        expandedReportJson: null,
-        expandedReportGeneratedAt: null,
-        generationError: null,
-        isGenerating: false
-      }
-    });
-
-    startExpandedReportJob({
-      assessmentId: assessment.id,
-      companyName: req.session.admin.organizationName,
-      role: assessment.requestedRole,
-      avgScore: assessment.result.avgScore,
-      avgRange: assessment.result.avgRange,
-      summary: {
-        orientation: assessment.result.orientation,
-        roleComment: assessment.result.roleComment,
-        roleFit,
-        managementAdvice
-      },
-      traits,
-      reliabilityScore: assessment.result.reliabilityScore ?? 0,
-      reliabilityLabel: assessment.result.reliabilityLabel ?? "Non disponibile",
-      reliabilityFlags: normalized.reliabilityFlags || [],
-      roleFit,
-      managementAdvice,
-      assessmentTitle: getAssessmentConfig(assessmentType).title,
-      assessmentType
-    });
-
-    return res.redirect(`/admin/${assessment.id}`);
-  } catch (error) {
-    console.error("Errore rigenerazione relazione AI:", error);
-    return res.status(500).send("Errore durante la rigenerazione della relazione AI.");
-  }
-});
-
-app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
-  try {
-    const source = await prisma.assessment.findFirst({
-      where: {
-        id: req.params.id,
-        organizationId: req.session.admin.organizationId
-      },
-      include: {
-        result: true,
-        assessmentLink: true
-      }
-    });
-
-    if (!source || !source.result) {
-      return res.status(404).send("Assessment sorgente non trovato");
-    }
-
-    const sourcePayload = source.result.traitsJson || {};
-    const assessmentType = sourcePayload.assessmentType || source.assessmentType || getLinkAssessmentType(source.assessmentLink);
-    const answers = source.result.answersJson || {};
-    const traits = buildTraitsFromAnswers(answers, assessmentType);
-    const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
-    const avgScore = avg(mainTraits.map((t) => t.score));
-    const avgRange = range(avgScore);
-    const requestedRole = source.requestedRole || source.assessmentLink?.requestedRole || "non_specificato";
-    const summary = buildSummary(traits, requestedRole);
-    const roleFit = calculateRoleFit(traits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits, roleFit });
-    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
-
-    const copiedName = `${source.respondentName || "Anonimo"} - copia test`;
-    const copiedCompany = source.candidateCompany
-      ? `${source.candidateCompany} [TEST]`
-      : "TEST";
-
-    const duplicated = await prisma.assessment.create({
-      data: {
-        organizationId: source.organizationId,
-        assessmentLinkId: source.assessmentLinkId,
-        assessmentType,
-        respondentName: copiedName,
-        respondentEmail: source.respondentEmail,
-        age: source.age,
-        candidateCompany: copiedCompany,
-        requestedRole
-      }
-    });
-
-    await prisma.assessmentResult.create({
-      data: {
-        assessmentId: duplicated.id,
-        avgScore,
-        avgRange,
-        orientation: summary.orientation,
-        roleComment: summary.roleComment,
-        reliabilityScore,
-        reliabilityLabel,
-        traitsJson: {
-          assessmentType,
-          assessmentTitle: getAssessmentConfig(assessmentType).title,
-          traits,
-          mainTraits,
-          additionalParameters,
-          roleFit,
-          managementAdvice,
-          topTraits: summary.topTraits,
-          weakTraits: summary.weakTraits,
-          reliabilityFlags,
-          duplicatedFromAssessmentId: source.id,
-          duplicatedAt: new Date().toISOString()
-        },
-        answersJson: answers,
-        expandedReportJson: null,
-        expandedReportGeneratedAt: null,
-        isGenerating: false,
-        generationError: null
-      }
-    });
-
-    if (req.body.generateAi === "yes") {
-      startExpandedReportJob({
-        assessmentId: duplicated.id,
-        companyName: req.session.admin.organizationName,
-        role: requestedRole,
-        avgScore,
-        avgRange,
-        summary: {
-          orientation: summary.orientation,
-          roleComment: summary.roleComment,
-          roleFit,
-          managementAdvice
-        },
-        traits,
-        reliabilityScore,
-        reliabilityLabel,
-        reliabilityFlags,
-        roleFit,
-        managementAdvice,
-        assessmentTitle: getAssessmentConfig(assessmentType).title,
-        assessmentType
-      });
-    }
-
-    return res.redirect(`/admin/${duplicated.id}`);
-  } catch (error) {
-    console.error("Errore duplicazione assessment test:", error);
-    return res.status(500).send("Errore durante la duplicazione del questionario test.");
   }
 });
 
@@ -2232,12 +1637,8 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
-  const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
-  const expanded = applyClientOutputRulesToExpandedReport(
-    cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized
-  );
+  const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
 
   const submission = {
     id: assessment.id,
@@ -2246,8 +1647,6 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     age: assessment.age,
     candidateCompany: assessment.candidateCompany,
     role: assessment.requestedRole,
-    assessmentType,
-    assessmentTitle: payload.assessmentTitle || getAssessmentConfig(assessmentType).title,
     createdAt: assessment.createdAt,
     analysis: {
       avgScore: assessment.result?.avgScore ?? "-",
@@ -2256,7 +1655,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       reliabilityLabel: assessment.result?.reliabilityLabel ?? "-",
       reliabilityFlags: normalized.reliabilityFlags || [],
       answers: assessment.result?.answersJson || {},
-      questions: getQuestionTexts(assessmentType),
+      questions: getQuestionTexts(),
       isGenerating: !!assessment.result?.isGenerating,
       generationError: assessment.result?.generationError || null,
       summary: {
@@ -2268,9 +1667,9 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
         managementAdvice: normalized.managementAdvice,
         generalRelation: buildPlainGeneralRelation({ assessment, normalized, expanded })
       },
-      traits: normalized.traits.map(withDisplayMeta),
-      mainTraits: normalized.mainTraits.map(withDisplayMeta),
-      additionalParameters: normalized.additionalParameters.map(withDisplayMeta),
+      traits: normalized.traits,
+      mainTraits: normalized.mainTraits,
+      additionalParameters: normalized.additionalParameters,
       expandedReport: expanded
     }
   };
@@ -2290,103 +1689,16 @@ function valueDirectionLabel(score) {
   return "area abbastanza equilibrata, da osservare nel lavoro quotidiano";
 }
 
-
-function stripLeadingDefinitionSentence(text, description = "") {
-  let value = String(text || "").trim();
-  if (!value) return value;
-
-  // La spiegazione tecnica del tratto viene già mostrata tra parentesi.
-  // Qui togliamo l'eventuale prima frase definitoria per evitare ripetizioni tipo:
-  // "Misura...", "Valuta...", "Indica...", "Riguarda...".
-  const definitionStartPattern = /^(misura|valuta|indica|rappresenta|riguarda|si riferisce|il tratto misura|questo tratto misura)\b/i;
-  const firstSentenceMatch = value.match(/^(.{1,420}?[.!?])\s+/s);
-  const firstSentence = firstSentenceMatch ? firstSentenceMatch[1].trim() : "";
-
-  if (firstSentence && definitionStartPattern.test(firstSentence)) {
-    value = value.slice(firstSentenceMatch[0].length).trim();
-  }
-
-  // Secondo passaggio: se l'AI ha iniziato ripetendo quasi testualmente la descrizione
-  // ma senza punto dopo la prima frase, tagliamo fino al primo punto utile.
-  if (definitionStartPattern.test(value)) {
-    value = value.replace(/^(.{1,360}?[.!?])\s*/s, "").trim();
-  }
-
-  return value || String(text || "").trim();
-}
-
-function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
-  if (!expandedReportJson || typeof expandedReportJson !== "object") {
-    return expandedReportJson;
-  }
-
-  const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
-  const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
-  const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
-
-  const traits = Array.isArray(expandedReportJson.traits)
-    ? expandedReportJson.traits.map((trait) => {
-        const displayName = displayDimensionName(trait?.name);
-        const dimension = findDimensionByDisplayName(normalizedDimensions, trait?.name || displayName);
-        const value = chartScore(dimension?.score ?? trait?.score ?? 0);
-        const description = dimensionDescription(trait?.name || displayName);
-
-        let expandedText = stripLeadingDefinitionSentence(
-          String(trait.expandedText || "").trim(),
-          description
-        );
-
-        if (displayName === "Attendibilità") {
-          const truthfulness = truthfulnessStatusFromScore(value);
-          const statusText = `${truthfulness.label}: ${truthfulness.text}`;
-          expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
-        }
-
-        if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
-          const note = responsibilityOpinionNote();
-          if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
-            expandedText = expandedText ? `${expandedText} ${note}` : note;
-          }
-        }
-
-        return {
-          ...trait,
-          displayName,
-          description,
-          chartScore: value,
-          showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: shouldShowSkillActionForChartValue(value),
-          expandedText
-        };
-      })
-    : [];
-
-  return {
-    ...expandedReportJson,
-    generalSummary: cleanedGeneralSummary || expandedReportJson.generalSummary,
-    traits
-  };
-}
-
 function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
-  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+  if (expanded?.generalSummary) return expanded.generalSummary;
 
   const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
   const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
-  const roleFitText = normalized?.roleFit?.score != null
-    ? `Compatibilità con il ruolo ricoperto: ${normalized.roleFit.score}%. `
-    : "";
-  const reliabilityText = assessment.result?.reliabilityScore != null
-    ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
-    : "";
+  const role = assessment.requestedRole || "ruolo indicato";
 
-  return `${roleFitText}${reliabilityText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
-
-Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.
-
-Questa valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
+  return `La persona è stata valutata in riferimento al ruolo di ${role}. Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.\n\nLe aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.\n\nQuesta valutazione è indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
@@ -2424,16 +1736,11 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   }
 
   const payload = assessment.result?.traitsJson || {};
-  const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
-  const expanded = applyClientOutputRulesToExpandedReport(
-    cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized
-  );
+  const expanded = cleanExpandedReport(assessment.result?.expandedReportJson || null);
 
   const doc = new PDFDocument({
     margin: 50,
@@ -2453,10 +1760,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   // PAGINA 1: istogrammi principali e parametri aggiuntivi.
   if (traits.length) {
-    drawAssessmentHistograms(doc, traits, assessmentTitle);
+    drawAssessmentHistograms(doc, traits);
   } else {
     drawLogo(doc);
-    doc.fontSize(20).fillColor("black").text(assessmentTitle || "Performance Assessment Report", { align: "center" });
+    doc.fontSize(20).fillColor("black").text("Performance Assessment Report", { align: "center" });
     doc.moveDown();
     doc.fontSize(11).text("Nessun dato grafico disponibile.");
   }
@@ -2472,7 +1779,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   doc.text(`Età: ${assessment.age || "-"}`);
   doc.text(`Azienda risorsa: ${assessment.candidateCompany || "-"}`);
   doc.text(`Ruolo target: ${assessment.requestedRole || "-"}`);
-  doc.text(`Data compilazione: ${new Date(assessment.createdAt).toLocaleString("it-IT")}`);
+  doc.text(`Data compilazione: ${formatDateTimeRome(assessment.createdAt)}`);
   doc.moveDown();
   doc.fontSize(10).fillColor("#666").text(
     "I dati anagrafici servono a contestualizzare la lettura del profilo e ad associare correttamente la compilazione al percorso di assessment.",
@@ -2488,23 +1795,48 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
   writeParagraphs(doc, generalRelation);
 
-  if (roleFit?.score != null) {
-    doc.moveDown(0.1);
-    doc.fontSize(12).fillColor("black").text(`Compatibilità con il ruolo ricoperto: ${roleFit.score}%`, {
-      align: "left"
-    });
-    doc.moveDown(0.6);
-  }
-
   doc.moveDown(0.2);
   doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
   doc.moveDown(0.2);
   writeParagraphs(doc, managementAdvice || "Gestire la risorsa con obiettivi chiari, priorità scritte e momenti di confronto periodici.");
 
+  if (Array.isArray(normalized.reliabilityFlags) && normalized.reliabilityFlags.length) {
+    doc.moveDown(0.2);
+    doc.fontSize(12).fillColor("#A33A2F").text("Nota da tenere presente");
+    doc.moveDown(0.2);
+    doc.fontSize(10).fillColor("black").text(
+      "Alcune risposte mostrano oscillazioni interne. Il risultato va quindi letto con attenzione e verificato nel confronto diretto con la persona.",
+      { lineGap: 2 }
+    );
+  }
+
   doc.fillColor("black");
 
-  // Pagina "Dettaglio tratti e parametri aggiuntivi" rimossa su richiesta cliente.
-  // Il report passa direttamente dalla relazione generale all'approfondimento dei tratti.
+  // PAGINE SUCCESSIVE: dettaglio tratti e parametri.
+  doc.addPage();
+  drawLogo(doc);
+  doc.fontSize(16).fillColor("black").text("Dettaglio tratti e parametri aggiuntivi");
+  doc.moveDown(0.7);
+
+  doc.fontSize(14).text("Tratti");
+  doc.moveDown(0.4);
+
+  if (!mainTraits.length) {
+    doc.fontSize(11).text("Nessun dettaglio tratti disponibile.");
+  } else {
+    mainTraits.forEach((t) => {
+      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)}`);
+    });
+  }
+
+  if (additionalParameters.length) {
+    doc.moveDown();
+    doc.fontSize(14).text("Parametri aggiuntivi");
+    doc.moveDown(0.4);
+    additionalParameters.forEach((t) => {
+      doc.fontSize(11).text(`${t.name}: ${chartScore(t.score)}`);
+    });
+  }
 
   if (expanded?.generalSummary) {
     doc.addPage();
@@ -2517,31 +1849,18 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
-        const displayName = displayDimensionName(t.name || "Tratto");
-        const description = dimensionDescription(t.name);
-        doc.fontSize(14).text(displayName);
-        if (description) {
-          doc.moveDown(0.1);
-          doc.fontSize(9).fillColor("#666666").text(`(${description})`);
-          doc.fillColor("black");
-        }
+        doc.fontSize(14).text(t.name || "Tratto");
         doc.moveDown(0.2);
 
         doc.fontSize(11).text(t.expandedText || "");
         doc.moveDown(0.3);
 
-        if (t.showRemedies !== false) {
-          doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
-          doc.moveDown(0.3);
-        }
+        doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
+        doc.moveDown(0.3);
 
-        if (t.showSkillAction !== false) {
-          doc.fontSize(11).text(
-            `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
-          );
-          doc.moveDown(0.3);
-        }
-
+        doc.fontSize(11).text(
+          `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
+        );
         doc.moveDown();
       });
     }

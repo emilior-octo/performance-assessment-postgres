@@ -59,7 +59,8 @@
       color: #374151;
     }
 
-    input {
+    input,
+    select {
       padding: 10px 12px;
       border: 1px solid #d1d5db;
       border-radius: 10px;
@@ -288,9 +289,38 @@
         />
       </div>
 
+      <div class="field">
+        <label for="assessmentType">Questionario</label>
+        <select id="assessmentType" name="assessmentType">
+          <option value="">Tutti i questionari</option>
+          <option value="zpi_hr" <%= filters && filters.assessmentType === 'zpi_hr' ? 'selected' : '' %>>ZPI™ – Zenith Performance Index</option>
+          <option value="sport_performance" <%= filters && filters.assessmentType === 'sport_performance' ? 'selected' : '' %>>Human & Sport Performance</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="fromDate">Dal</label>
+        <input
+          id="fromDate"
+          type="date"
+          name="fromDate"
+          value="<%= filters && filters.fromDate ? filters.fromDate : '' %>"
+        />
+      </div>
+
+      <div class="field">
+        <label for="toDate">Al</label>
+        <input
+          id="toDate"
+          type="date"
+          name="toDate"
+          value="<%= filters && filters.toDate ? filters.toDate : '' %>"
+        />
+      </div>
+
       <button type="submit">Filtra</button>
 
-      <% if (filters && filters.company) { %>
+      <% if (filters && (filters.company || filters.assessmentType || filters.fromDate || filters.toDate)) { %>
         <a class="btn btn-secondary" href="/admin">Reset</a>
       <% } %>
     </form>
@@ -326,7 +356,7 @@
             <td><%= item.email || "-" %></td>
             <td><%= item.candidateCompany || "-" %></td>
             <td><%= item.role %></td>
-            <td><%= new Date(item.createdAt).toLocaleString("it-IT") %></td>
+            <td><%= (item.createdAtFormatted || new Date(item.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" })) %></td>
             <td><%= item.avgScore ?? "-" %></td>
             <td><%= item.orientation %></td>
             <td><%= item.topTraits && item.topTraits.length ? item.topTraits.join(", ") : "-" %></td>
