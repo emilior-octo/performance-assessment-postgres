@@ -10,7 +10,13 @@ import { PrismaClient } from "@prisma/client";
 import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
 import { SPORT_QUESTIONS, getSportScoredQuestions } from "./sport-questions.js";
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  log: ["warn", "error"]
+});
+
+process.on("beforeExit", async () => {
+  await prisma.$disconnect();
+});
 
 
 function formatDateTimeRome(date) {
@@ -474,20 +480,32 @@ function splitDimensions(dimensions) {
 function normalizeRoleKey(role) {
   const value = String(role || "").trim().toLowerCase();
 
-  const directValues = new Set(ROLE_OPTIONS.map((item) => item.value));
-  if (directValues.has(value)) return value;
+  const operationsRoleValues = new Set([
+    "operations",
+    "responsabile_produzione",
+    "responsabile_logistica",
+    "responsabile_magazzino",
+    "operai",
+    "magazzinieri",
+    "addetti_logistica"
+  ]);
+
+  if (operationsRoleValues.has(value)) return "operations";
   if (value === "altro" || value.startsWith("altro:")) return "altro";
 
+  const directValues = new Set(ROLE_OPTIONS.map((item) => item.value));
+  if (directValues.has(value)) return value;
+
   if (/direzione|imprenditore|ceo|founder|titolare/.test(value)) return "direzione";
+  if (/operations|produzione|logistica|magazzin|operaio|operai|supply/.test(value)) return "operations";
+  if (/responsabile amministrativo|responsabile amministrazione/.test(value)) return "responsabile_amministrativo";
+  if (/impiegato amministrativo|impiegata amministrativa/.test(value)) return "impiegato_amministrativo";
   if (/manager|responsabile|store manager|coordinatore|coordinator/.test(value)) return "manager";
   if (/sales|commerciale|vendit|account/.test(value)) return "sales";
   if (/marketing|comunicazione|communication|brand/.test(value)) return "marketing";
-  if (/responsabile amministrativo|responsabile amministrazione/.test(value)) return "responsabile_amministrativo";
-  if (/impiegato amministrativo|impiegata amministrativa/.test(value)) return "impiegato_amministrativo";
   if (/segreteria direzione|segretaria direzione|assistant direzione|assistente direzione/.test(value)) return "segreteria_direzione";
   if (/segreteria|segretaria|front office|back office/.test(value)) return "segreteria";
   if (/amministr|finance|contabil|accounting/.test(value)) return "amministrativo";
-  if (/operations|produzione|logistica|supply/.test(value)) return "operations";
   if (/customer|post.?vendita|assistenza|support/.test(value)) return "customer_service";
   if (/hr|people|risorse umane|recruit/.test(value)) return "hr";
   if (/it|digital|project|developer|ecommerce|e-commerce/.test(value)) return "it_digital";
