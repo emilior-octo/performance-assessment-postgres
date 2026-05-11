@@ -964,6 +964,31 @@ function reliabilityLabelFromScore(score) {
   return "Indice di coerenza delle risposte basso";
 }
 
+const THEORETICAL_PROFILE_THRESHOLD = 60;
+const THEORETICAL_PROFILE_MIN_COUNT = 11;
+
+function getTheoreticalProfileSignal(dimensions = []) {
+  const highDimensions = (Array.isArray(dimensions) ? dimensions : [])
+    .filter((dimension) => chartScore(dimension?.score) >= THEORETICAL_PROFILE_THRESHOLD)
+    .map((dimension) => displayDimensionName(dimension?.name));
+
+  return {
+    isTheoretical: highDimensions.length >= THEORETICAL_PROFILE_MIN_COUNT,
+    count: highDimensions.length,
+    highDimensions
+  };
+}
+
+function theoreticalProfileFlag(signal) {
+  if (!signal?.isTheoretical) return null;
+
+  return `Profilo teorico: sono presenti ${signal.count} tratti o parametri con punteggio pari o superiore a ${THEORETICAL_PROFILE_THRESHOLD}. Il questionario va letto come teorico e richiede verifica tramite colloquio e osservazione concreta.`;
+}
+
+function hasTheoreticalProfileFlag(flags = []) {
+  return (Array.isArray(flags) ? flags : []).some((flag) => /profilo teorico/i.test(String(flag || "")));
+}
+
 function reliabilityPromptGuidance(score, flags = []) {
   const band = reliabilityBand(score);
   const flagText = Array.isArray(flags) && flags.length ? ` Segnali da considerare: ${flags.join("; ")}.` : "";
@@ -1037,7 +1062,21 @@ function buildReliability(answers, traits) {
     flags.push("Sono presenti oscillazioni interne significative su più tratti");
   }
 
-  const reliabilityScore = Math.max(0, Math.round(100 - penalty));
+  const theoreticalSignal = getTheoreticalProfileSignal(traits);
+  const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
+
+  if (theoreticalFlag) {
+    penalty += 30;
+    flags.push(theoreticalFlag);
+  }
+
+  let reliabilityScore = Math.max(0, Math.round(100 - penalty));
+
+  // Regola cliente: se almeno 11 tratti/parametri dell'istogramma sono >=70,
+  // il profilo va registrato come "teorico" e l'attendibilità non deve risultare pienamente coerente.
+  if (theoreticalSignal.isTheoretical) {
+    reliabilityScore = Math.min(reliabilityScore, 45);
+  }
 
   return {
     reliabilityScore,
@@ -1185,6 +1224,7 @@ async function generateExpandedReportPayload({
 
   const traitsForPrompt = buildAiTraitsForPrompt(traits);
   const reliabilityGuidance = reliabilityPromptGuidance(reliabilityScore, reliabilityFlags);
+  const theoreticalProfileNote = theoreticalProfileNoteFromFlags(reliabilityFlags);
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1201,6 +1241,7 @@ CONTESTO
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
 - Indice di coerenza delle risposte: ${reliabilityLabel} (${reliabilityScore}/100)
 - Filtro di lettura da applicare a tutta la relazione: ${reliabilityGuidance}
+${theoreticalProfileNote ? `- Nota attendibilità: ${theoreticalProfileNote}` : ""}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
@@ -1210,6 +1251,7 @@ MAPPATURA EVO E PARAMETRIZZAZIONE
 - Non inventare significati diversi da quelli indicati in evoGuide.
 - Se evoGuide è presente, l'analisi deve rispettare quella descrizione e può ampliarla in modo consulenziale, senza contraddirla.
 - Per il tratto Attendibilità devi usare il campo truthfulness e indicare chiaramente una delle tre letture: Attendibilità SÌ, Attendibilità FORZATA, Attendibilità NO. Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
+- Se è presente la Nota attendibilità "Profilo teorico", devi integrarla nell'Attendibilità una sola volta, spiegando che la prevalenza di punteggi molto alti rende il questionario teorico e richiede verifica tramite colloquio/osservazione.
 
 PRINCIPI DI LETTURA
 - Non descrivere la persona come se fosse definita una volta per tutte: descrivi il suo funzionamento comportamentale attuale nel lavoro.
@@ -1451,6 +1493,22 @@ function shouldAddResponsibilityOpinionNote(normalized) {
 
 function responsibilityOpinionNote() {
   return "La persona tende a contrariarsi, anche non manifestandolo, quando il suo interlocutore ha un'opinione diversa.";
+}
+
+function stripLeadingTruthfulnessStatus(text) {
+  let value = String(text || "").trim();
+
+  const truthfulnessPattern = /^Attendibilità\s+(SÌ|SI|FORZATA|NO)\s*:\s*[^.]+\.(?:\s*[^.]+\.)?/i;
+
+  while (truthfulnessPattern.test(value)) {
+    value = value.replace(truthfulnessPattern, "").trim();
+  }
+
+  return value;
+}
+
+function theoreticalProfileNoteFromFlags(flags = []) {
+  return (Array.isArray(flags) ? flags : []).find((flag) => /profilo teorico/i.test(String(flag || ""))) || "";
 }
 
 function drawChartTitle(doc, title, subtitle) {
@@ -1701,6 +1759,13 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
   const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
+  const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
+  const theoreticalSignal = getTheoreticalProfileSignal(traits);
+  const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
+  const reliabilityFlags = theoreticalFlag && !hasTheoreticalProfileFlag(existingReliabilityFlags)
+    ? [...existingReliabilityFlags, theoreticalFlag]
+    : existingReliabilityFlags;
+
   return {
     traits,
     mainTraits,
@@ -1709,7 +1774,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     managementAdvice,
     topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
     weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
-    reliabilityFlags: payload.reliabilityFlags || []
+    reliabilityFlags
   };
 }
 
@@ -2574,7 +2639,17 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         if (displayName === "Attendibilità") {
           const truthfulness = truthfulnessStatusFromScore(value);
           const statusText = `${truthfulness.label}: ${truthfulness.text}`;
-          expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
+          const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+
+          expandedText = stripLeadingTruthfulnessStatus(expandedText);
+
+          if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
+            expandedText = expandedText
+              ? `${statusText} ${theoreticalNote} ${expandedText}`
+              : `${statusText} ${theoreticalNote}`;
+          } else {
+            expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
+          }
         }
 
         if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
@@ -2616,8 +2691,10 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
   const reliabilityText = assessment.result?.reliabilityScore != null
     ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
     : "";
+  const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+  const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
 
-  return `${roleFitText}${reliabilityText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
+  return `${roleFitText}${reliabilityText}${theoreticalText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
 
 Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.
 
