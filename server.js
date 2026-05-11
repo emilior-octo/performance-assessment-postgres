@@ -176,17 +176,30 @@ function buildQrCodeUrl(url, size = 220, margin = 14) {
 const ROLE_OPTIONS = [
   { value: "direzione", label: "Direzione / Imprenditore" },
   { value: "manager", label: "Manager / Responsabile di funzione" },
+
   { value: "sales", label: "Sales / Commerciale" },
   { value: "marketing", label: "Marketing / Comunicazione" },
+
   { value: "amministrativo", label: "Amministrazione / Finance" },
   { value: "segreteria", label: "Segreteria" },
   { value: "segreteria_direzione", label: "Segreteria direzione" },
   { value: "impiegato_amministrativo", label: "Impiegato amministrativo" },
   { value: "responsabile_amministrativo", label: "Responsabile amministrativo" },
+
   { value: "operations", label: "Operations / Produzione / Logistica" },
+  { value: "responsabile_produzione", label: "Responsabile produzione" },
+  { value: "responsabile_logistica", label: "Responsabile logistica" },
+  { value: "responsabile_magazzino", label: "Responsabile magazzino" },
+  { value: "operai", label: "Operai" },
+  { value: "magazzinieri", label: "Magazzinieri" },
+  { value: "addetti_logistica", label: "Addetti alla logistica" },
+
   { value: "customer_service", label: "Customer service / Post-vendita" },
+
   { value: "hr", label: "HR / People" },
+
   { value: "it_digital", label: "IT / Digital / Project" },
+
   { value: "altro", label: "Altro" }
 ];
 
