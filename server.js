@@ -90,6 +90,61 @@ function buildAdminQueryString(filters = {}) {
 }
 
 
+
+function normalizeBrokenUtf8(text) {
+  return String(text || "")
+    .replace(/Ã€|A\u0300/g, "À")
+    .replace(/Ãˆ|E\u0300/g, "È")
+    .replace(/Ã‰/g, "É")
+    .replace(/ÃŒ|I\u0300/g, "Ì")
+    .replace(/Ã’|O\u0300/g, "Ò")
+    .replace(/Ã™|U\u0300/g, "Ù")
+    .replace(/Ã /g, "à")
+    .replace(/Ã¡/g, "á")
+    .replace(/Ã¨/g, "è")
+    .replace(/Ã©/g, "é")
+    .replace(/Ã¬/g, "ì")
+    .replace(/Ã­/g, "í")
+    .replace(/Ã²/g, "ò")
+    .replace(/Ã³/g, "ó")
+    .replace(/Ã¹/g, "ù")
+    .replace(/Ãº/g, "ú")
+    .replace(/Ã§/g, "ç")
+    .replace(/Ã±/g, "ñ")
+    .replace(/Ã¼/g, "ü")
+    .replace(/Ã¶/g, "ö")
+    .replace(/Ã¤/g, "ä")
+    .replace(/Â°/g, "°")
+    .replace(/Â«/g, "«")
+    .replace(/Â»/g, "»")
+    .replace(/Â/g, "")
+    .replace(/â€™/g, "’")
+    .replace(/â€˜/g, "‘")
+    .replace(/â€œ/g, "“")
+    .replace(/â€/g, "”")
+    .replace(/â€“/g, "–")
+    .replace(/â€”/g, "—")
+    .replace(/â€¦/g, "…")
+    .replace(/â€¢/g, "•")
+    .replace(/â„¢/g, "™")
+    .replace(/â‚¬/g, "€");
+}
+
+function normalizeTextPayload(value) {
+  if (Array.isArray(value)) return value.map((item) => normalizeTextPayload(item));
+
+  if (value && typeof value === "object" && !(value instanceof Date) && !Buffer.isBuffer(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeTextPayload(item)])
+    );
+  }
+
+  if (typeof value === "string") return normalizeBrokenUtf8(value);
+
+  return value;
+}
+
+
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -432,17 +487,19 @@ function stripForbiddenGeneralRelationPhrases(text) {
 
 
 function displayDimensionName(name) {
-  const value = String(name || "").trim();
+  const value = normalizeBrokenUtf8(String(name || "").trim());
   const normalizedValue = value
     .replace(/gestiÃ³ne/gi, "gestione")
-    .replace(/gestiÃ²ne/gi, "gestione");
+    .replace(/gestiÃ²ne/gi, "gestione")
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione");
 
-  return DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue;
+  return normalizeBrokenUtf8(DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue);
 }
 
 function dimensionDescription(name) {
   const displayName = displayDimensionName(name);
-  return DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "";
+  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
 }
 
 function withDisplayMeta(item) {
@@ -2809,11 +2866,11 @@ function decodeBasicHtmlEntities(value) {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/&#8217;/gi, "â€™")
-    .replace(/&#8220;/gi, "â€œ")
-    .replace(/&#8221;/gi, "â€")
-    .replace(/&#8211;/gi, "â€“")
-    .replace(/&#8482;/gi, "â„¢")
+    .replace(/&#8217;/gi, "’")
+    .replace(/&#8220;/gi, "“")
+    .replace(/&#8221;/gi, "”")
+    .replace(/&#8211;/gi, "–")
+    .replace(/&#8482;/gi, "™")
     .replace(/&#(\d+);/g, (_match, code) => {
       try {
         return String.fromCharCode(Number(code));
@@ -2824,7 +2881,7 @@ function decodeBasicHtmlEntities(value) {
 }
 
 function htmlToPlainText(html) {
-  return decodeBasicHtmlEntities(String(html || "")
+  return normalizeBrokenUtf8(decodeBasicHtmlEntities(String(html || "")
     .replace(/<\s*style[\s\S]*?<\s*\/\s*style\s*>/gi, " ")
     .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, " ")
     .replace(/<\s*\/\s*(p|div|h1|h2|h3|h4|li|tr)\s*>/gi, "\n\n")
@@ -2833,7 +2890,7 @@ function htmlToPlainText(html) {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
-    .trim());
+    .trim()));
 }
 
 function xmlToPlainText(xml) {
@@ -2844,12 +2901,12 @@ function xmlToPlainText(xml) {
     .replace(/<\/w:tr>/g, "\n")
     .replace(/<\/w:tc>/g, " ");
 
-  return decodeBasicHtmlEntities(withBreaks
+  return normalizeBrokenUtf8(decodeBasicHtmlEntities(withBreaks
     .replace(/<[^>]+>/g, "")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
-    .trim());
+    .trim()));
 }
 
 function findZipEntryBuffer(zipBuffer, targetName) {
@@ -3168,6 +3225,38 @@ app.post("/admin/:id/upload-validated-report", requireAdmin, requireSuperAdmin, 
   }
 });
 
+app.post("/admin/:id/validate-ai", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: {
+        result: true
+      }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    await prisma.assessmentResult.update({
+      where: { id: assessment.result.id },
+      data: {
+        isValidated: true,
+        validatedAt: new Date(),
+        validatedById: req.session.admin.id
+      }
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore validazione relazione AI:", error);
+    return res.status(500).send("Errore durante la validazione della relazione AI.");
+  }
+});
+
 app.post("/admin/:id/unvalidate-report", requireAdmin, requireSuperAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
@@ -3388,11 +3477,11 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       })
     : [];
 
-  return {
+  return normalizeTextPayload({
     ...expandedReportJson,
     generalSummary: cleanedGeneralSummary || expandedReportJson.generalSummary,
     traits
-  };
+  });
 }
 
 function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
@@ -3428,7 +3517,7 @@ function drawSimpleSectionTitle(doc, title) {
 }
 
 function writeParagraphs(doc, text) {
-  String(text || "-")
+  String(normalizeBrokenUtf8(text) || "-")
     .split(/\n\s*\n/g)
     .map((part) => part.trim())
     .filter(Boolean)

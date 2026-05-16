@@ -255,7 +255,10 @@
           Esporta Word
         </a>
 
-        <form method="POST" action="/admin/<%= submission.id %>/upload-validated-report" enctype="multipart/form-data">
+        <form method="POST" action="/admin/<%= submission.id %>/validate-ai" onsubmit="return confirm('Validare la relazione AI corrente senza caricare un nuovo file?');">
+              <button type="submit">Valida relazione AI corrente</button>
+            </form>
+            <form method="POST" action="/admin/<%= submission.id %>/upload-validated-report" enctype="multipart/form-data">
           <input type="file" name="reportFile" accept=".doc,.docx" required>
           <button class="btn btn-secondary" type="submit">
             Carica Word validato
