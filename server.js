@@ -2217,6 +2217,8 @@ app.post("/admin/login", async (req, res) => {
     id: admin.id,
     email: admin.email,
     name: admin.name,
+    role: admin.role,
+    sessionVersion: admin.sessionVersion,
     organizationId: admin.organizationId,
     organizationName: admin.organization.name
   };
