@@ -235,7 +235,7 @@
         Apri PDF
       </a>
 
-      <% if (!isGenerating) { %>
+      <% if (!isGenerating && typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
         <% if (submission.analysis.expandedReport) { %>
           <form method="POST" action="/admin/<%= submission.id %>/regenerate-expanded-report" id="regenerate-expanded-form">
             <button class="btn" type="submit" id="regenerate-expanded-button" onclick="return confirm('Rigenerare la relazione AI? La relazione attuale verrà sostituita.');">
@@ -265,6 +265,45 @@
       <% } %>
     </div>
   </div>
+
+  <% if (submission.analysis.validation && submission.analysis.validation.isValidated) { %>
+    <div class="notice notice-success">
+      <strong>Relazione validata.</strong>
+      Validata il <%= new Date(submission.analysis.validation.validatedAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" }) %>
+      <% if (submission.analysis.validation.validatedBy) { %>
+        da <%= submission.analysis.validation.validatedBy.name %>
+      <% } %>.
+    </div>
+  <% } else { %>
+    <div class="notice notice-warning">
+      <strong>Relazione non ancora validata.</strong>
+      Il report è disponibile, ma non risulta ancora revisionato e validato da un Super Admin.
+    </div>
+  <% } %>
+
+  <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
+    <div class="card">
+      <h2>Revisione Word e validazione</h2>
+      <p class="muted">Esporta il report in formato Word, modifica il file e ricaricalo per marcarlo come validato.</p>
+      <div class="actions" style="margin-bottom: 14px;">
+        <a class="btn btn-secondary" href="/admin/<%= submission.id %>/export-word">Esporta Word</a>
+        <% if (submission.analysis.validation && submission.analysis.validation.revisions && submission.analysis.validation.revisions.length) { %>
+          <a class="btn btn-secondary" href="/admin/<%= submission.id %>/validated-word">Scarica Word validato</a>
+        <% } %>
+        <form method="POST" action="/admin/<%= submission.id %>/validate-current-report" onsubmit="return confirm('Validare la relazione AI corrente senza caricare un Word revisionato?');">
+          <button class="btn btn-secondary" type="submit">Valida relazione corrente</button>
+        </form>
+      </div>
+
+      <form method="POST" action="/admin/<%= submission.id %>/upload-validated-word" enctype="multipart/form-data">
+        <div style="margin-bottom: 12px;">
+          <label for="validatedReport"><strong>Carica Word revisionato (.doc o .docx)</strong></label><br />
+          <input id="validatedReport" name="validatedReport" type="file" accept=".doc,.docx,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" required />
+        </div>
+        <button class="btn" type="submit">Carica e marca come validata</button>
+      </form>
+    </div>
+  <% } %>
 
   <% if (isGenerating) { %>
     <div class="notice notice-warning">

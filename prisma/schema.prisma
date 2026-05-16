@@ -7,6 +7,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum AdminRole {
+  SUPER_ADMIN
+  VIEWER
+}
+
 model Organization {
   id              String           @id @default(cuid())
   name            String
@@ -18,14 +23,21 @@ model Organization {
 }
 
 model AdminUser {
-  id             String       @id @default(cuid())
-  organizationId String
-  name           String
-  email          String       @unique
-  passwordHash   String
-  createdAt      DateTime     @default(now())
+  id                       String           @id @default(cuid())
+  organizationId           String
+  name                     String
+  email                    String           @unique
+  passwordHash             String
+  role                     AdminRole        @default(SUPER_ADMIN)
+  sessionVersion           Int              @default(1)
+  isActive                 Boolean          @default(true)
+  lastLoginAt              DateTime?
+  createdAt                DateTime         @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organization             Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedReportRevisions  ReportRevision[] @relation("ReportRevisionUploadedBy")
+  validatedReportRevisions ReportRevision[] @relation("ReportRevisionValidatedBy")
+  validatedAssessmentResults AssessmentResult[] @relation("AssessmentResultValidatedBy")
 }
 
 model AssessmentLink {
@@ -76,10 +88,35 @@ model AssessmentResult {
   expandedReportJson        Json?
   expandedReportGeneratedAt DateTime?
 
-  isGenerating              Boolean    @default(false)
+  isGenerating              Boolean          @default(false)
   generationError           String?
 
-  createdAt                 DateTime   @default(now())
+  isValidated               Boolean          @default(false)
+  validatedAt               DateTime?
+  validatedById             String?
+  validatedRevisionId       String?
 
-  assessment                Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  createdAt                 DateTime         @default(now())
+
+  assessment                Assessment       @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  validatedBy               AdminUser?       @relation("AssessmentResultValidatedBy", fields: [validatedById], references: [id], onDelete: SetNull)
+  reportRevisions           ReportRevision[]
+}
+
+model ReportRevision {
+  id                 String           @id @default(cuid())
+  assessmentResultId String
+  uploadedById       String
+  originalFileName   String
+  mimeType           String
+  fileBytes          Bytes
+  fileSize           Int
+  status             String           @default("VALIDATED")
+  createdAt          DateTime         @default(now())
+  validatedAt        DateTime?
+  validatedById      String?
+
+  assessmentResult   AssessmentResult @relation(fields: [assessmentResultId], references: [id], onDelete: Cascade)
+  uploadedBy         AdminUser        @relation("ReportRevisionUploadedBy", fields: [uploadedById], references: [id], onDelete: Cascade)
+  validatedBy        AdminUser?       @relation("ReportRevisionValidatedBy", fields: [validatedById], references: [id], onDelete: SetNull)
 }

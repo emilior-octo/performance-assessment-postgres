@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gestione utenti admin</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1100px; margin: 40px auto; padding: 0 16px; background: #f7f9fc; color: #111827; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 18px; margin-bottom: 18px; }
+    .muted { color: #666; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    label { font-size: 13px; font-weight: 700; color: #374151; }
+    input, select { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 10px; font-size: 14px; background: #fff; margin-top: 6px; }
+    button, .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 14px; border: 0; border-radius: 10px; cursor: pointer; text-decoration: none; background: #111827; color: #fff; font-size: 14px; font-weight: 700; }
+    .btn-secondary { background: #f3f4f6; color: #111827; border: 1px solid #d1d5db; }
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 14px; overflow: hidden; }
+    th, td { border: 1px solid #e5e7eb; padding: 10px; text-align: left; vertical-align: top; font-size: 14px; }
+    th { background: #f3f4f6; font-size: 13px; color: #374151; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .badge { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .badge-ready { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-pending { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+    .badge-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .error { color: #991b1b; font-weight: 700; }
+    @media (max-width: 800px) { .topbar { flex-direction: column; align-items: flex-start; } .grid { grid-template-columns: 1fr; } table { display: block; overflow-x: auto; } }
+  </style>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+</head>
+<body>
+  <div class="topbar">
+    <div>
+      <h1>Gestione utenti</h1>
+      <p class="muted"><%= organizationName %></p>
+    </div>
+    <div class="actions">
+      <a class="btn btn-secondary" href="/admin">Torna alla dashboard</a>
+      <form method="POST" action="/admin/logout"><button class="btn btn-secondary" type="submit">Logout</button></form>
+    </div>
+  </div>
+
+  <% if (error) { %><div class="card error"><%= error %></div><% } %>
+
+  <div class="card">
+    <h2>Crea nuovo utente</h2>
+    <form method="POST" action="/admin/users">
+      <div class="grid">
+        <div><label>Nome<input name="name" type="text" required></label></div>
+        <div><label>Email<input name="email" type="email" required></label></div>
+        <div><label>Password temporanea<input name="password" type="password" minlength="8" required></label></div>
+        <div>
+          <label>Ruolo
+            <select name="role">
+              <option value="VIEWER">VIEWER — solo vista e PDF</option>
+              <option value="SUPER_ADMIN">SUPER_ADMIN — gestione completa</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div style="margin-top: 14px;"><button type="submit">Crea utente</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Sessioni</h2>
+    <p class="muted">Incrementa la versione sessione di tutti gli utenti. Tutti dovranno rifare login.</p>
+    <form method="POST" action="/admin/users/invalidate-sessions" onsubmit="return confirm('Invalidare tutte le sessioni admin attive?');">
+      <button class="btn btn-secondary" type="submit">Invalida tutti gli accessi attuali</button>
+    </form>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Ruolo</th>
+        <th>Stato</th>
+        <th>Ultimo login</th>
+        <th>Azioni</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(function(user) { %>
+        <tr>
+          <td><%= user.name %></td>
+          <td><%= user.email %></td>
+          <td>
+            <form method="POST" action="/admin/users/<%= user.id %>/role" class="actions">
+              <select name="role">
+                <option value="VIEWER" <%= user.role === 'VIEWER' ? 'selected' : '' %>>VIEWER</option>
+                <option value="SUPER_ADMIN" <%= user.role === 'SUPER_ADMIN' ? 'selected' : '' %>>SUPER_ADMIN</option>
+              </select>
+              <button class="btn btn-secondary" type="submit">Salva</button>
+            </form>
+          </td>
+          <td>
+            <% if (user.isActive) { %><span class="badge badge-ready">Attivo</span><% } else { %><span class="badge badge-error">Disattivato</span><% } %>
+          </td>
+          <td><%= user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleString('it-IT', { timeZone: 'Europe/Rome' }) : '-' %></td>
+          <td>
+            <div class="actions">
+              <% if (user.id !== currentAdmin.id) { %>
+                <form method="POST" action="/admin/users/<%= user.id %>/toggle">
+                  <button class="btn btn-secondary" type="submit"><%= user.isActive ? 'Disattiva' : 'Riattiva' %></button>
+                </form>
+              <% } %>
+              <form method="POST" action="/admin/users/<%= user.id %>/reset-password" class="actions">
+                <input name="password" type="password" minlength="8" placeholder="Nuova password" required style="width: 160px; margin:0;">
+                <button class="btn btn-secondary" type="submit">Reset password</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</body>
+</html>

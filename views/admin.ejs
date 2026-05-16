@@ -253,6 +253,9 @@
     </div>
 
     <div class="admin-actions">
+      <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
+        <a class="btn btn-secondary" href="/admin/users">Gestione utenti</a>
+      <% } %>
       <a class="btn btn-secondary" href="<%= typeof homeUrl !== 'undefined' ? homeUrl : '/questionnaires' %>">Torna alla Home</a>
       <form method="POST" action="/admin/logout">
         <button class="logout-btn" type="submit">Logout</button>
@@ -260,6 +263,7 @@
     </div>
   </div>
 
+  <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
   <% const qrCards = Array.isArray(typeof adminAssessmentCards !== "undefined" ? adminAssessmentCards : null) ? adminAssessmentCards : [{ title: "ZPI™ – Zenith Performance Index", url: assessmentUrl, qrCodeUrl, qrDownloadUrl }]; %>
   <% qrCards.forEach(function(card) { %>
     <div class="card qr-card">
@@ -277,6 +281,7 @@
       </div>
     </div>
   <% }) %>
+  <% } %>
 
   <div class="card">
     <form class="filters" method="GET" action="/admin">
@@ -333,6 +338,7 @@
       <% } %>
     </form>
 
+    <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
     <form
       method="POST"
       action="/admin/regenerate-reports"
@@ -348,6 +354,7 @@
         Rigenera relazioni filtrate
       </button>
     </form>
+    <% } %>
   </div>
 
   <% if (!submissions.length) { %>
@@ -368,6 +375,7 @@
           <th>Orientamento</th>
           <th>Punti forti</th>
           <th>Relazione AI</th>
+          <th>Validazione</th>
           <th>Azione</th>
         </tr>
       </thead>
@@ -393,6 +401,13 @@
                 <span class="badge badge-error">Errore</span>
               <% } else { %>
                 <span class="badge badge-pending">Fallback disponibile</span>
+              <% } %>
+            </td>
+            <td>
+              <% if (item.isValidated) { %>
+                <span class="badge badge-ready">Validata</span>
+              <% } else { %>
+                <span class="badge badge-pending">Da validare</span>
               <% } %>
             </td>
             <td>
