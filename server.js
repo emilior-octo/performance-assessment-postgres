@@ -124,8 +124,45 @@ app.use(
   })
 );
 
+const ADMIN_ROLES = {
+  SUPER_ADMIN: "SUPER_ADMIN",
+  VIEWER: "VIEWER"
+};
+
+function normalizeAdminRole(role) {
+  return role === ADMIN_ROLES.SUPER_ADMIN ? ADMIN_ROLES.SUPER_ADMIN : ADMIN_ROLES.VIEWER;
+}
+
+function isSuperAdminSession(req) {
+  return normalizeAdminRole(req.session?.admin?.role) === ADMIN_ROLES.SUPER_ADMIN;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function textToHtmlParagraphs(text) {
+  return String(text || "-")
+    .split(/
+\s*
+/g)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `<p>${escapeHtml(part).replace(/
+/g, "<br>")}</p>`)
+    .join("
+");
+}
+
 app.use((req, res, next) => {
   res.locals.currentAdmin = req.session?.admin || null;
+  res.locals.currentAdminRole = normalizeAdminRole(req.session?.admin?.role);
+  res.locals.isSuperAdmin = isSuperAdminSession(req);
   next();
 });
 
@@ -372,7 +409,7 @@ const DIMENSION_DESCRIPTIONS = {
   "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo",
   "Affidabilità + autodisciplina": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
   "Affidabilità": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
-  "Sicurezza": "misura la struttura delle convinzioni della persona: quanto è certa delle proprie idee, quanto le difende, quanto è disposta a metterle in discussione e quanto il suo punto di vista è concreto o teorico",
+  "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni, procedure e valutazioni",
   "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",
   "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",
   "Dinamismo": "misura il livello di energia, movimento e prontezza nell’iniziare le attività",
@@ -396,7 +433,7 @@ const ZPI_EVO_TRAIT_GUIDE = {
   "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico è alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro può non essere organizzato con continuità" }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
   "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacità" }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma può non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltà" }, { min: -100, text: "crede poco in se stessa e può aver rinunciato a scopi o obiettivi importanti" }] },
   "Affidabilità": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dà peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "può non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attività non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuità" }] },
-  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "convinzioni molto radicate: può avere una visione d'insieme forte, ma rischia di diventare teorica o rigida se non verifica le idee nell'azione" }, { min: 50, text: "convinzioni strutturate e stabili: tende a sostituire se stessa con dati e criteri, ma può essere poco facile farle cambiare idea" }, { min: 10, text: "mantiene un punto di vista abbastanza stabile, pur potendo metterlo in discussione davanti a dati o alternative migliori" }, { min: -20, text: "può mettere facilmente in discussione le proprie idee e cercare riferimenti esterni, con rischio di influenzabilità" }, { min: -100, text: "convinzioni poco stabili: può essere vittima di ciò che non conosce, cercando sicurezza fuori da sé" }] },
+  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini; può essere rigida" }, { min: 50, text: "molto coerente, non è facile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma può mettersi in discussione se comprende alternative migliori" }, { min: -20, text: "flessibile e aperta al cambiamento, ma può cercare conferme esterne" }, { min: -100, text: "creativa ma incostante, con rischio di incoerenza e dispersione" }] },
   "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma può accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "può esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
   "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciò che deve fare" }, { min: 50, text: "attiva, preferisce attività dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, può preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, può fare fatica ad avviare nuove attività" }, { min: -100, text: "bassa energia di azione e difficoltà a mettersi in moto" }] },
   "Flessibilità comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertività" }, { min: 20, text: "può manifestare lentezza produttiva o difficoltà a incidere" }, { min: -100, text: "tende ad aggirare i problemi e può perdere focus sui risultati" }] },
@@ -760,9 +797,52 @@ function buildManagementAdvice({ traits, roleFit }) {
   return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide andrebbero presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
 }
 
-function requireAdmin(req, res, next) {
-  if (!req.session?.admin) {
+async function requireAdmin(req, res, next) {
+  if (!req.session?.admin?.id) {
     return res.redirect("/admin/login");
+  }
+
+  try {
+    const freshAdmin = await prisma.adminUser.findUnique({
+      where: { id: req.session.admin.id },
+      include: { organization: true }
+    });
+
+    if (!freshAdmin || freshAdmin.isActive === false) {
+      return req.session.destroy(() => res.redirect("/admin/login"));
+    }
+
+    const storedSessionVersion = Number(req.session.admin.sessionVersion || 0);
+    const currentSessionVersion = Number(freshAdmin.sessionVersion || 1);
+
+    if (storedSessionVersion !== currentSessionVersion) {
+      return req.session.destroy(() => res.redirect("/admin/login"));
+    }
+
+    req.session.admin = {
+      id: freshAdmin.id,
+      email: freshAdmin.email,
+      name: freshAdmin.name,
+      role: normalizeAdminRole(freshAdmin.role),
+      sessionVersion: currentSessionVersion,
+      organizationId: freshAdmin.organizationId,
+      organizationName: freshAdmin.organization.name
+    };
+
+    res.locals.currentAdmin = req.session.admin;
+    res.locals.currentAdminRole = req.session.admin.role;
+    res.locals.isSuperAdmin = req.session.admin.role === ADMIN_ROLES.SUPER_ADMIN;
+
+    return next();
+  } catch (error) {
+    console.error("Errore verifica sessione admin:", error);
+    return res.status(500).send("Errore durante la verifica della sessione admin.");
+  }
+}
+
+function requireSuperAdmin(req, res, next) {
+  if (!isSuperAdminSession(req)) {
+    return res.status(403).send("Permesso negato. Questa azione è riservata al Super Admin.");
   }
 
   next();
@@ -964,31 +1044,6 @@ function reliabilityLabelFromScore(score) {
   return "Indice di coerenza delle risposte basso";
 }
 
-const THEORETICAL_PROFILE_THRESHOLD = 60;
-const THEORETICAL_PROFILE_MIN_COUNT = 11;
-
-function getTheoreticalProfileSignal(dimensions = []) {
-  const highDimensions = (Array.isArray(dimensions) ? dimensions : [])
-    .filter((dimension) => chartScore(dimension?.score) >= THEORETICAL_PROFILE_THRESHOLD)
-    .map((dimension) => displayDimensionName(dimension?.name));
-
-  return {
-    isTheoretical: highDimensions.length >= THEORETICAL_PROFILE_MIN_COUNT,
-    count: highDimensions.length,
-    highDimensions
-  };
-}
-
-function theoreticalProfileFlag(signal) {
-  if (!signal?.isTheoretical) return null;
-
-  return `Profilo teorico: sono presenti ${signal.count} tratti o parametri con punteggio pari o superiore a ${THEORETICAL_PROFILE_THRESHOLD}. Il questionario va letto come teorico e richiede verifica tramite colloquio e osservazione concreta.`;
-}
-
-function hasTheoreticalProfileFlag(flags = []) {
-  return (Array.isArray(flags) ? flags : []).some((flag) => /profilo teorico/i.test(String(flag || "")));
-}
-
 function reliabilityPromptGuidance(score, flags = []) {
   const band = reliabilityBand(score);
   const flagText = Array.isArray(flags) && flags.length ? ` Segnali da considerare: ${flags.join("; ")}.` : "";
@@ -1062,21 +1117,7 @@ function buildReliability(answers, traits) {
     flags.push("Sono presenti oscillazioni interne significative su più tratti");
   }
 
-  const theoreticalSignal = getTheoreticalProfileSignal(traits);
-  const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
-
-  if (theoreticalFlag) {
-    penalty += 30;
-    flags.push(theoreticalFlag);
-  }
-
-  let reliabilityScore = Math.max(0, Math.round(100 - penalty));
-
-  // Regola cliente: se almeno 11 tratti/parametri dell'istogramma sono >=60,
-  // il profilo va registrato come "teorico" e l'attendibilità non deve risultare pienamente coerente.
-  if (theoreticalSignal.isTheoretical) {
-    reliabilityScore = Math.min(reliabilityScore, 45);
-  }
+  const reliabilityScore = Math.max(0, Math.round(100 - penalty));
 
   return {
     reliabilityScore,
@@ -1224,13 +1265,6 @@ async function generateExpandedReportPayload({
 
   const traitsForPrompt = buildAiTraitsForPrompt(traits);
   const reliabilityGuidance = reliabilityPromptGuidance(reliabilityScore, reliabilityFlags);
-  const theoreticalProfileNote = theoreticalProfileNoteFromFlags(reliabilityFlags);
-  const convictionChange = convictionChangePattern(traits);
-  const securityTheory = theoreticalSecuritySignal(traits, reliabilityFlags);
-  const convictionChangeNote = convictionChange
-    ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
-    : "";
-  const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1247,24 +1281,15 @@ CONTESTO
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
 - Indice di coerenza delle risposte: ${reliabilityLabel} (${reliabilityScore}/100)
 - Filtro di lettura da applicare a tutta la relazione: ${reliabilityGuidance}
-${theoreticalProfileNote ? `- Nota attendibilità: ${theoreticalProfileNote}` : ""}
-${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
-${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
 MAPPATURA EVO E PARAMETRIZZAZIONE
-- Sicurezza deve essere interpretata come Convinzioni: non è semplice autostima, ma modo in cui la persona costruisce, difende o mette in discussione le proprie idee.
-- Se Sicurezza è alta, valuta il rischio di rigidità, punto di osservazione troppo distante o sicurezza teorica, soprattutto se è presente Profilo teorico.
-- Se Sicurezza è bassa, valuta il rischio di influenzabilità, ricerca di conferme esterne o instabilità decisionale.
-- Resistenza al cambiamento è un sotto-tratto delle Convinzioni/Sicurezza relativo all'approccio specifico al cambiamento.
-- Quando sono presenti le note Sicurezza/Convinzioni o Lettura Sicurezza/Resistenza, usale per arricchire il tratto Sicurezza, il tratto Resistenza al cambiamento e la relazione generale, senza inventare diagnosi.
 - Per i tratti ZPI usa il campo evoGuide come riferimento principale: contiene il parametro EVO equivalente e la lettura corretta del punteggio.
 - Non inventare significati diversi da quelli indicati in evoGuide.
 - Se evoGuide è presente, l'analisi deve rispettare quella descrizione e può ampliarla in modo consulenziale, senza contraddirla.
 - Per il tratto Attendibilità devi usare il campo truthfulness e indicare chiaramente una delle tre letture: Attendibilità SÌ, Attendibilità FORZATA, Attendibilità NO. Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
-- Se è presente la Nota attendibilità "Profilo teorico", devi integrarla nell'Attendibilità una sola volta, spiegando che la prevalenza di punteggi molto alti rende il questionario teorico e richiede verifica tramite colloquio/osservazione.
 
 PRINCIPI DI LETTURA
 - Non descrivere la persona come se fosse definita una volta per tutte: descrivi il suo funzionamento comportamentale attuale nel lavoro.
@@ -1495,77 +1520,6 @@ function scoreGuidanceForPrompt(score) {
   return "-100--31: profonda difficoltà da approfondire. L'analisi deve descrivere una criticità importante da verificare con attenzione, senza toni clinici o giudicanti. I consigli devono essere prudenti, orientati a osservazione, affiancamento e verifica sul campo.";
 }
 
-function dimensionByName(dimensions, name) {
-  const target = displayDimensionName(name);
-  return (Array.isArray(dimensions) ? dimensions : []).find((item) => {
-    return displayDimensionName(item?.name) === target || item?.name === name;
-  }) || null;
-}
-
-function convictionChangePattern(dimensions = []) {
-  const sicurezza = dimensionByName(dimensions, "Sicurezza");
-  const resistance = dimensionByName(dimensions, "Resistenza al cambiamento");
-
-  if (!sicurezza || !resistance) {
-    return null;
-  }
-
-  const sicurezzaValue = chartScore(sicurezza.score);
-  const resistanceValue = chartScore(resistance.score);
-
-  const sicurezzaAlta = sicurezzaValue >= 50;
-  const sicurezzaBassa = sicurezzaValue <= 0;
-  const resistenzaAlta = resistanceValue >= 40;
-  const resistenzaBassa = resistanceValue <= -20;
-
-  let label = "Sicurezza e cambiamento da leggere in colloquio";
-  let interpretation = "Il rapporto tra convinzioni e cambiamento non è estremo: conviene verificare nel colloquio come la persona reagisce quando deve modificare abitudini, procedure o punti di vista.";
-  let unlockKey = "Usare esempi concreti, piccoli test operativi e confronto sui risultati ottenuti.";
-
-  if (sicurezzaAlta && resistenzaBassa) {
-    label = "Convinzioni alte e bassa resistenza al cambiamento";
-    interpretation = "La persona può avere idee radicate sulla necessità di cambiare come soluzione ai problemi. Può essere strutturata nelle proprie convinzioni, ma disponibile a sperimentare se vede una direzione utile.";
-    unlockKey = "Mettere in azione e far sperimentare in modo pratico, più che spiegare solo in teoria.";
-  } else if (sicurezzaBassa && resistenzaAlta) {
-    label = "Convinzioni basse e alta resistenza al cambiamento";
-    interpretation = "La persona può mettere in discussione le proprie idee, ma vivere il cambiamento con timore operativo. Può accogliere nuove idee e poi frenare quando deve uscire dalla propria zona di comfort.";
-    unlockKey = "Dare dati nuovi, formazione e affiancamento graduale, procedendo per piccoli passaggi.";
-  } else if (sicurezzaAlta && resistenzaAlta) {
-    label = "Convinzioni alte e alta resistenza al cambiamento";
-    interpretation = "La persona può essere molto ancorata al proprio modello mentale e percepire il cambiamento come una fonte di potenziali problemi o perdita di controllo.";
-    unlockKey = "Gestire con numeri, dati concreti, aspettative chiare e fermezza professionale.";
-  } else if (sicurezzaBassa && resistenzaBassa) {
-    label = "Convinzioni basse e bassa resistenza al cambiamento";
-    interpretation = "La persona può essere aperta al cambiamento e disponibile a modificare le proprie idee, ma va monitorato il rischio di cambiare troppo spesso direzione o adattarsi eccessivamente.";
-    unlockKey = "Gestire con pro e contro a 360 gradi, priorità scritte e criteri chiari di scelta.";
-  }
-
-  return {
-    label,
-    sicurezzaScore: sicurezzaValue,
-    resistanceScore: resistanceValue,
-    interpretation,
-    unlockKey
-  };
-}
-
-function theoreticalSecuritySignal(dimensions = [], reliabilityFlags = []) {
-  const sicurezza = dimensionByName(dimensions, "Sicurezza");
-  if (!sicurezza) return null;
-
-  const sicurezzaValue = chartScore(sicurezza.score);
-  const isTheoreticalProfile = hasTheoreticalProfileFlag(reliabilityFlags);
-
-  if (sicurezzaValue >= 50 && isTheoreticalProfile) {
-    return {
-      label: "Sicurezza teorica",
-      text: "La Sicurezza appare alta dentro un profilo teorico: la persona può appoggiarsi a ciò che conosce o ritiene corretto, ma la concretezza va verificata nei risultati e nell'azione pratica."
-    };
-  }
-
-  return null;
-}
-
 function shouldAddResponsibilityOpinionNote(normalized) {
   const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "Responsabilità" || item?.name === "Responsabilità");
@@ -1577,30 +1531,6 @@ function shouldAddResponsibilityOpinionNote(normalized) {
 
 function responsibilityOpinionNote() {
   return "La persona tende a contrariarsi, anche non manifestandolo, quando il suo interlocutore ha un'opinione diversa.";
-}
-
-function stripLeadingTruthfulnessStatus(text) {
-  let value = String(text || "").trim();
-
-  // Evita duplicazioni tipo:
-  // "Attendibilità Sì: ... Attendibilità Sì. Le risposte ..."
-  // L'AI può usare due formati:
-  // - Attendibilità SÌ: testo...
-  // - Attendibilità Sì. Le risposte...
-  // Noi aggiungiamo già il prefisso ufficiale da codice, quindi rimuoviamo
-  // qualunque prefisso Attendibilità generato dall'AI all'inizio del testo.
-  const truthfulnessPattern =
-    /^Attendibilità\s+(SÌ|SI|Sì|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilità\s+(SÌ|SI|Sì|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
-
-  while (truthfulnessPattern.test(value)) {
-    value = value.replace(truthfulnessPattern, "").trim();
-  }
-
-  return value;
-}
-
-function theoreticalProfileNoteFromFlags(flags = []) {
-  return (Array.isArray(flags) ? flags : []).find((flag) => /profilo teorico/i.test(String(flag || ""))) || "";
 }
 
 function drawChartTitle(doc, title, subtitle) {
@@ -1851,15 +1781,6 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
   const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
-  const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
-  const theoreticalSignal = getTheoreticalProfileSignal(traits);
-  const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
-  const reliabilityFlags = theoreticalFlag && !hasTheoreticalProfileFlag(existingReliabilityFlags)
-    ? [...existingReliabilityFlags, theoreticalFlag]
-    : existingReliabilityFlags;
-  const convictionChange = convictionChangePattern(traits);
-  const securityTheory = theoreticalSecuritySignal(traits, reliabilityFlags);
-
   return {
     traits,
     mainTraits,
@@ -1868,9 +1789,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     managementAdvice,
     topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
     weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
-    reliabilityFlags,
-    convictionChange,
-    securityTheory
+    reliabilityFlags: payload.reliabilityFlags || []
   };
 }
 
@@ -2014,7 +1933,7 @@ app.get("/human-sport-performance", async (_req, res) => {
 });
 
 
-app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
+app.get("/admin/qr/zenith/download", requireAdmin, requireSuperAdmin, async (_req, res) => {
   try {
     const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
     const assessmentUrl = getAssessmentPublicUrl("zpi_hr", publicBaseUrl);
@@ -2039,7 +1958,7 @@ app.get("/admin/qr/zenith/download", requireAdmin, async (_req, res) => {
 
 
 
-app.get("/admin/qr/sport/download", requireAdmin, async (_req, res) => {
+app.get("/admin/qr/sport/download", requireAdmin, requireSuperAdmin, async (_req, res) => {
   try {
     const publicBaseUrl = process.env.PUBLIC_BASE_URL || `http://127.0.0.1:${PORT}`;
     const assessmentUrl = getAssessmentPublicUrl("sport_performance", publicBaseUrl);
@@ -2205,6 +2124,12 @@ app.post("/admin/login", async (req, res) => {
     });
   }
 
+  if (admin.isActive === false) {
+    return res.status(401).render("admin-login", {
+      error: "Utente disattivato. Contatta il Super Admin."
+    });
+  }
+
   const ok = await bcrypt.compare(password, admin.passwordHash);
 
   if (!ok) {
@@ -2213,12 +2138,20 @@ app.post("/admin/login", async (req, res) => {
     });
   }
 
+  const refreshedAdmin = await prisma.adminUser.update({
+    where: { id: admin.id },
+    data: { lastLoginAt: new Date() },
+    include: { organization: true }
+  });
+
   req.session.admin = {
-    id: admin.id,
-    email: admin.email,
-    name: admin.name,
-    organizationId: admin.organizationId,
-    organizationName: admin.organization.name
+    id: refreshedAdmin.id,
+    email: refreshedAdmin.email,
+    name: refreshedAdmin.name,
+    role: normalizeAdminRole(refreshedAdmin.role),
+    sessionVersion: Number(refreshedAdmin.sessionVersion || 1),
+    organizationId: refreshedAdmin.organizationId,
+    organizationName: refreshedAdmin.organization.name
   };
 
   res.redirect("/admin");
@@ -2239,7 +2172,14 @@ app.get("/admin", requireAdmin, async (req, res) => {
   const assessments = await prisma.assessment.findMany({
     where,
     include: {
-      result: true
+      result: {
+        include: {
+          reportRevisions: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
     },
     orderBy: {
       createdAt: "desc"
@@ -2268,7 +2208,10 @@ app.get("/admin", requireAdmin, async (req, res) => {
       roleFit: normalized.roleFit,
       expandedReady: !!item.result?.expandedReportJson,
       expandedGenerating: !!item.result?.isGenerating,
-      generationError: item.result?.generationError || null
+      generationError: item.result?.generationError || null,
+      isValidated: !!item.result?.isValidated,
+      validatedAt: item.result?.validatedAt || null,
+      latestRevisionFileName: item.result?.reportRevisions?.[0]?.originalFileName || null
     };
   });
 
@@ -2293,6 +2236,8 @@ app.get("/admin", requireAdmin, async (req, res) => {
     adminAssessmentCards,
     homeUrl: "/questionnaires",
     filters,
+    currentAdmin: req.session.admin,
+    isSuperAdmin: isSuperAdminSession(req),
     assessmentTypeOptions: Object.values(ASSESSMENT_TYPES).map((config) => ({
       key: config.key,
       title: config.title
@@ -2300,7 +2245,141 @@ app.get("/admin", requireAdmin, async (req, res) => {
   });
 });
 
-app.post("/admin/regenerate-reports", requireAdmin, async (req, res) => {
+
+app.get("/admin/users", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const users = await prisma.adminUser.findMany({
+    where: { organizationId: req.session.admin.organizationId },
+    orderBy: { createdAt: "asc" }
+  });
+
+  res.render("admin-users", {
+    users,
+    organizationName: req.session.admin.organizationName,
+    currentAdmin: req.session.admin,
+    error: null,
+    success: null
+  });
+});
+
+app.post("/admin/users", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const role = normalizeAdminRole(req.body.role);
+
+    if (!name || !email || password.length < 8) {
+      throw new Error("Nome, email e password di almeno 8 caratteri sono obbligatori.");
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await prisma.adminUser.create({
+      data: {
+        organizationId: req.session.admin.organizationId,
+        name,
+        email,
+        passwordHash,
+        role,
+        sessionVersion: 1,
+        isActive: true
+      }
+    });
+
+    return res.redirect("/admin/users");
+  } catch (error) {
+    const users = await prisma.adminUser.findMany({
+      where: { organizationId: req.session.admin.organizationId },
+      orderBy: { createdAt: "asc" }
+    });
+
+    return res.status(400).render("admin-users", {
+      users,
+      organizationName: req.session.admin.organizationName,
+      currentAdmin: req.session.admin,
+      error: error?.message || "Errore creazione utente.",
+      success: null
+    });
+  }
+});
+
+app.post("/admin/users/:id/toggle", requireAdmin, requireSuperAdmin, async (req, res) => {
+  if (req.params.id === req.session.admin.id) {
+    return res.status(400).send("Non puoi disattivare il tuo utente mentre sei loggato.");
+  }
+
+  const user = await prisma.adminUser.findFirst({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    }
+  });
+
+  if (!user) return res.status(404).send("Utente non trovato.");
+
+  await prisma.adminUser.update({
+    where: { id: user.id },
+    data: {
+      isActive: !user.isActive,
+      sessionVersion: { increment: 1 }
+    }
+  });
+
+  return res.redirect("/admin/users");
+});
+
+app.post("/admin/users/:id/role", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const role = normalizeAdminRole(req.body.role);
+
+  await prisma.adminUser.updateMany({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    data: {
+      role,
+      sessionVersion: { increment: 1 }
+    }
+  });
+
+  return res.redirect("/admin/users");
+});
+
+app.post("/admin/users/:id/reset-password", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const password = String(req.body.password || "");
+  if (password.length < 8) {
+    return res.status(400).send("La nuova password deve avere almeno 8 caratteri.");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
+  await prisma.adminUser.updateMany({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    data: {
+      passwordHash,
+      sessionVersion: { increment: 1 }
+    }
+  });
+
+  return res.redirect("/admin/users");
+});
+
+app.post("/admin/users/invalidate-sessions", requireAdmin, requireSuperAdmin, async (req, res) => {
+  await prisma.adminUser.updateMany({
+    where: { organizationId: req.session.admin.organizationId },
+    data: {
+      sessionVersion: { increment: 1 }
+    }
+  });
+
+  req.session.admin.sessionVersion = Number(req.session.admin.sessionVersion || 1) + 1;
+  return res.redirect("/admin/users");
+});
+
+app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const { where, filters } = buildAdminAssessmentWhere(
       req.body || {},
@@ -2378,7 +2457,7 @@ app.post("/admin/regenerate-reports", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) => {
+app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const assessment = await prisma.assessment.findFirst({
       where: {
@@ -2435,7 +2514,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
 });
 
 
-app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res) => {
+app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const assessment = await prisma.assessment.findFirst({
       where: {
@@ -2501,7 +2580,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res)
   }
 });
 
-app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
+app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const source = await prisma.assessment.findFirst({
       where: {
@@ -2618,7 +2697,18 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       organizationId: req.session.admin.organizationId
     },
     include: {
-      result: true
+      result: {
+        include: {
+          validatedBy: true,
+          reportRevisions: {
+            orderBy: { createdAt: "desc" },
+            include: {
+              uploadedBy: true,
+              validatedBy: true
+            }
+          }
+        }
+      }
     }
   });
 
@@ -2667,13 +2757,22 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       traits: normalized.traits.map(withDisplayMeta),
       mainTraits: normalized.mainTraits.map(withDisplayMeta),
       additionalParameters: normalized.additionalParameters.map(withDisplayMeta),
-      expandedReport: expanded
+      expandedReport: expanded,
+      validation: {
+        isValidated: !!assessment.result?.isValidated,
+        validatedAt: assessment.result?.validatedAt || null,
+        validatedBy: assessment.result?.validatedBy || null,
+        validatedRevisionId: assessment.result?.validatedRevisionId || null,
+        revisions: assessment.result?.reportRevisions || []
+      }
     }
   };
 
   res.render("detail", {
     submission,
     organizationName: req.session.admin.organizationName,
+    currentAdmin: req.session.admin,
+    isSuperAdmin: isSuperAdminSession(req),
     isGenerating: !!assessment.result?.isGenerating && !expanded
   });
 });
@@ -2735,42 +2834,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         if (displayName === "Attendibilità") {
           const truthfulness = truthfulnessStatusFromScore(value);
           const statusText = `${truthfulness.label}: ${truthfulness.text}`;
-          const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
-
-          expandedText = stripLeadingTruthfulnessStatus(expandedText);
-
-          // Evita incoerenze verbali tipo:
-          // "Attendibilità FORZATA..." + "l'indice resta adeguato".
-          // La lettura deve rimanere prudente e utilizzabile, non "adeguata" in senso pieno.
-          expandedText = expandedText
-            .replace(/L[’']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/L[’']indice di coerenza delle risposte è adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/l[’']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/l[’']indice di coerenza delle risposte è adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.");
-
-          if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
-            expandedText = expandedText
-              ? `${statusText} ${theoreticalNote} ${expandedText}`
-              : `${statusText} ${theoreticalNote}`;
-          } else {
-            expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
-          }
-        }
-
-        if (displayName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
-          expandedText = expandedText
-            ? `${expandedText} ${normalized.securityTheory.text}`
-            : normalized.securityTheory.text;
-        }
-
-        if (
-          (displayName === "Sicurezza" || displayName === "Resistenza al cambiamento") &&
-          normalized?.convictionChange &&
-          !expandedText.includes(normalized.convictionChange.label)
-        ) {
-          expandedText = expandedText
-            ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
-            : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
+          expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
         }
 
         if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
@@ -2812,14 +2876,8 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
   const reliabilityText = assessment.result?.reliabilityScore != null
     ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
     : "";
-  const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
-  const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
-  const securityTheoryText = normalized?.securityTheory ? `${normalized.securityTheory.text} ` : "";
-  const convictionChangeText = normalized?.convictionChange
-    ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
-    : "";
 
-  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
+  return `${roleFitText}${reliabilityText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuità al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilità ben definite.
 
 Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In una PMI è importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali priorità chiarire e in quali situazioni affiancarla.
 
@@ -2844,6 +2902,278 @@ function writeParagraphs(doc, text) {
       doc.moveDown(0.6);
     });
 }
+
+
+function buildEditableWordHtml({ assessment, normalized, expanded }) {
+  const title = assessment.result?.traitsJson?.assessmentTitle || "ZPI™ – Zenith Performance Index";
+  const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
+  const roleFit = normalized?.roleFit;
+  const validation = assessment.result?.isValidated ? "VALIDATA" : "NON VALIDATA";
+
+  const traitBlocks = Array.isArray(expanded?.traits)
+    ? expanded.traits.map((trait) => {
+        const title = trait.displayName || trait.name || "Tratto";
+        const parts = [
+          `<h2>${escapeHtml(title)}</h2>`,
+          trait.description ? `<p><em>${escapeHtml(trait.description)}</em></p>` : "",
+          textToHtmlParagraphs(trait.expandedText || "-"),
+          trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(trait.improvementPlan || "-")}</p>` : "",
+          trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : ""
+        ];
+        return parts.filter(Boolean).join("\n");
+      }).join("\n")
+    : "";
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${escapeHtml(title)} - ${escapeHtml(assessment.respondentName || "Report")}</title>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.45; color: #111; }
+    h1 { font-size: 20pt; }
+    h2 { font-size: 15pt; margin-top: 22pt; }
+    h3 { font-size: 12pt; margin-top: 14pt; }
+    .meta { border: 1px solid #ddd; padding: 12px; margin: 14px 0 22px; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <div class="meta">
+    <p><strong>Stato revisione:</strong> ${escapeHtml(validation)}</p>
+    <p><strong>Nome:</strong> ${escapeHtml(assessment.respondentName || "-")}</p>
+    <p><strong>Email:</strong> ${escapeHtml(assessment.respondentEmail || "-")}</p>
+    <p><strong>Età:</strong> ${escapeHtml(assessment.age || "-")}</p>
+    <p><strong>Azienda risorsa:</strong> ${escapeHtml(assessment.candidateCompany || "-")}</p>
+    <p><strong>Ruolo target:</strong> ${escapeHtml(assessment.requestedRole || "-")}</p>
+    <p><strong>Data compilazione:</strong> ${escapeHtml(formatDateTimeRome(assessment.createdAt))}</p>
+    ${roleFit?.score != null ? `<p><strong>Compatibilità con il ruolo ricoperto:</strong> ${escapeHtml(roleFit.score)}%</p>` : ""}
+    ${assessment.result?.reliabilityScore != null ? `<p><strong>Indice di coerenza:</strong> ${escapeHtml(assessment.result.reliabilityScore)}/100</p>` : ""}
+  </div>
+
+  <h2>Relazione generale</h2>
+  ${textToHtmlParagraphs(generalRelation)}
+
+  <h2>Indicazione pratica per la gestione</h2>
+  ${textToHtmlParagraphs(normalized.managementAdvice || "-")}
+
+  ${traitBlocks ? `<h1>Approfondimento dei tratti</h1>${traitBlocks}` : ""}
+
+  <p class="muted">Questa relazione rappresenta una prima lettura strutturata dei tratti emersi dal questionario e non costituisce una valutazione definitiva.</p>
+</body>
+</html>`;
+}
+
+function safeWordFileName(value) {
+  return String(value || "report")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "report";
+}
+
+async function readMultipartWordUpload(req, maxBytes = 10 * 1024 * 1024) {
+  const contentType = String(req.headers["content-type"] || "");
+  const boundaryMatch = contentType.match(/boundary=(?:(?:"([^"]+)")|([^;]+))/i);
+
+  if (!boundaryMatch) {
+    throw new Error("Richiesta upload non valida: boundary mancante.");
+  }
+
+  const boundary = boundaryMatch[1] || boundaryMatch[2];
+  const chunks = [];
+  let total = 0;
+
+  await new Promise((resolve, reject) => {
+    req.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        reject(new Error("File troppo grande. Limite massimo: 10 MB."));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", resolve);
+    req.on("error", reject);
+  });
+
+  const raw = Buffer.concat(chunks);
+  const rawBinary = raw.toString("binary");
+  const parts = rawBinary.split(`--${boundary}`);
+
+  for (const part of parts) {
+    if (!part.includes("filename=")) continue;
+
+    const headerEnd = part.indexOf("\r\n\r\n");
+    if (headerEnd === -1) continue;
+
+    const header = part.slice(0, headerEnd);
+    let body = part.slice(headerEnd + 4);
+    body = body.replace(/\r\n--$/, "").replace(/\r\n$/, "");
+
+    const nameMatch = header.match(/name="([^"]+)"/i);
+    const fileNameMatch = header.match(/filename="([^"]*)"/i);
+    const typeMatch = header.match(/Content-Type:\s*([^\r\n]+)/i);
+
+    const fieldName = nameMatch?.[1] || "file";
+    const originalFileName = fileNameMatch?.[1] || "report.doc";
+    const mimeType = (typeMatch?.[1] || "application/octet-stream").trim();
+    const fileBytes = Buffer.from(body, "binary");
+
+    if (fieldName !== "validatedReport") continue;
+    if (!originalFileName || !fileBytes.length) throw new Error("File Word mancante.");
+    if (!/\.(doc|docx)$/i.test(originalFileName)) throw new Error("Carica un file Word .doc o .docx.");
+
+    return {
+      originalFileName,
+      mimeType,
+      fileBytes,
+      fileSize: fileBytes.length
+    };
+  }
+
+  throw new Error("File Word non trovato nel form.");
+}
+
+app.get("/admin/:id/export-word", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const assessment = await prisma.assessment.findFirst({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    include: {
+      result: {
+        include: {
+          validatedBy: true,
+          reportRevisions: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
+    }
+  });
+
+  if (!assessment || !assessment.result) {
+    return res.status(404).send("Assessment non trovato");
+  }
+
+  const payload = assessment.result.traitsJson || {};
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+  const expanded = applyClientOutputRulesToExpandedReport(
+    cleanExpandedReport(assessment.result.expandedReportJson || null),
+    normalized
+  );
+  const html = buildEditableWordHtml({ assessment, normalized, expanded });
+  const filename = `${safeWordFileName(assessment.respondentName)}-${assessment.id}.doc`;
+
+  res.setHeader("Content-Type", "application/msword; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(Buffer.from(html, "utf8"));
+});
+
+app.post("/admin/:id/upload-validated-word", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: { result: true }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    const upload = await readMultipartWordUpload(req);
+
+    const revision = await prisma.reportRevision.create({
+      data: {
+        assessmentResultId: assessment.result.id,
+        uploadedById: req.session.admin.id,
+        originalFileName: upload.originalFileName,
+        mimeType: upload.mimeType,
+        fileBytes: upload.fileBytes,
+        fileSize: upload.fileSize,
+        status: "VALIDATED",
+        validatedAt: new Date(),
+        validatedById: req.session.admin.id
+      }
+    });
+
+    await prisma.assessmentResult.update({
+      where: { assessmentId: assessment.id },
+      data: {
+        isValidated: true,
+        validatedAt: new Date(),
+        validatedById: req.session.admin.id,
+        validatedRevisionId: revision.id
+      }
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore upload Word validato:", error);
+    return res.status(400).send(error?.message || "Errore durante il caricamento del Word validato.");
+  }
+});
+
+app.get("/admin/:id/validated-word", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const assessment = await prisma.assessment.findFirst({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    include: {
+      result: {
+        include: {
+          reportRevisions: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
+    }
+  });
+
+  const revision = assessment?.result?.reportRevisions?.[0];
+  if (!assessment || !revision) {
+    return res.status(404).send("Word validato non trovato.");
+  }
+
+  res.setHeader("Content-Type", revision.mimeType || "application/octet-stream");
+  res.setHeader("Content-Disposition", `attachment; filename="${revision.originalFileName}"`);
+  res.send(Buffer.from(revision.fileBytes));
+});
+
+app.post("/admin/:id/validate-current-report", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const assessment = await prisma.assessment.findFirst({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    include: { result: true }
+  });
+
+  if (!assessment || !assessment.result) {
+    return res.status(404).send("Assessment non trovato");
+  }
+
+  await prisma.assessmentResult.update({
+    where: { assessmentId: assessment.id },
+    data: {
+      isValidated: true,
+      validatedAt: new Date(),
+      validatedById: req.session.admin.id
+    }
+  });
+
+  return res.redirect(`/admin/${assessment.id}`);
+});
 
 app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
