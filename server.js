@@ -3146,6 +3146,7 @@ app.post("/admin/:id/upload-validated-report", requireAdmin, requireSuperAdmin, 
         originalFileName: file.originalFileName || `report-${assessment.id}.doc`,
         mimeType: file.contentType || "application/octet-stream",
         fileBytes: file.buffer,
+        fileSize: file.buffer.length,
         status: "VALIDATED",
         validatedAt: new Date()
       }
@@ -3610,4 +3611,5 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://127.0.0.1:${PORT}`);
 });
+
 
