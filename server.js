@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import path from "path";
+import zlib from "zlib";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import PDFDocument from "pdfkit";
@@ -760,12 +761,59 @@ function buildManagementAdvice({ traits, roleFit }) {
   return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide andrebbero presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
 }
 
-function requireAdmin(req, res, next) {
-  if (!req.session?.admin) {
+function isSuperAdmin(admin) {
+  return String(admin?.role || "").toUpperCase() === "SUPER_ADMIN";
+}
+
+async function requireAdmin(req, res, next) {
+  if (!req.session?.admin?.id) {
     return res.redirect("/admin/login");
   }
 
-  next();
+  try {
+    const admin = await prisma.adminUser.findUnique({
+      where: { id: req.session.admin.id },
+      include: { organization: true }
+    });
+
+    if (!admin || admin.isActive === false) {
+      return req.session.destroy(() => res.redirect("/admin/login"));
+    }
+
+    if (
+      typeof req.session.admin.sessionVersion === "number" &&
+      typeof admin.sessionVersion === "number" &&
+      req.session.admin.sessionVersion !== admin.sessionVersion
+    ) {
+      return req.session.destroy(() => res.redirect("/admin/login"));
+    }
+
+    req.session.admin = {
+      id: admin.id,
+      email: admin.email,
+      name: admin.name,
+      role: admin.role || "VIEWER",
+      sessionVersion: admin.sessionVersion || 1,
+      organizationId: admin.organizationId,
+      organizationName: admin.organization?.name || req.session.admin.organizationName
+    };
+
+    res.locals.currentAdmin = req.session.admin;
+    res.locals.isSuperAdmin = isSuperAdmin(req.session.admin);
+
+    return next();
+  } catch (error) {
+    console.error("Errore controllo sessione admin:", error);
+    return res.status(500).send("Errore durante il controllo della sessione admin.");
+  }
+}
+
+function requireSuperAdmin(req, res, next) {
+  if (!isSuperAdmin(req.session?.admin)) {
+    return res.status(403).send("Operazione consentita solo a un Super Admin.");
+  }
+
+  return next();
 }
 
 function baseScore(answer) {
@@ -2199,7 +2247,7 @@ app.post("/admin/login", async (req, res) => {
     include: { organization: true }
   });
 
-  if (!admin) {
+  if (!admin || admin.isActive === false) {
     return res.status(401).render("admin-login", {
       error: "Credenziali non valide."
     });
@@ -2213,12 +2261,17 @@ app.post("/admin/login", async (req, res) => {
     });
   }
 
+  await prisma.adminUser.update({
+    where: { id: admin.id },
+    data: { lastLoginAt: new Date() }
+  }).catch(() => null);
+
   req.session.admin = {
     id: admin.id,
     email: admin.email,
     name: admin.name,
-    role: admin.role,
-    sessionVersion: admin.sessionVersion,
+    role: admin.role || "VIEWER",
+    sessionVersion: admin.sessionVersion || 1,
     organizationId: admin.organizationId,
     organizationName: admin.organization.name
   };
@@ -2270,7 +2323,9 @@ app.get("/admin", requireAdmin, async (req, res) => {
       roleFit: normalized.roleFit,
       expandedReady: !!item.result?.expandedReportJson,
       expandedGenerating: !!item.result?.isGenerating,
-      generationError: item.result?.generationError || null
+      generationError: item.result?.generationError || null,
+      isValidated: !!item.result?.isValidated,
+      validatedAt: item.result?.validatedAt || null
     };
   });
 
@@ -2298,11 +2353,12 @@ app.get("/admin", requireAdmin, async (req, res) => {
     assessmentTypeOptions: Object.values(ASSESSMENT_TYPES).map((config) => ({
       key: config.key,
       title: config.title
-    }))
+    })),
+    currentAdmin: req.session.admin
   });
 });
 
-app.post("/admin/regenerate-reports", requireAdmin, async (req, res) => {
+app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const { where, filters } = buildAdminAssessmentWhere(
       req.body || {},
@@ -2380,7 +2436,7 @@ app.post("/admin/regenerate-reports", requireAdmin, async (req, res) => {
   }
 });
 
-app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) => {
+app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const assessment = await prisma.assessment.findFirst({
       where: {
@@ -2437,7 +2493,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, async (req, res) =
 });
 
 
-app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res) => {
+app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const assessment = await prisma.assessment.findFirst({
       where: {
@@ -2503,7 +2559,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, async (req, res)
   }
 });
 
-app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
+app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const source = await prisma.assessment.findFirst({
       where: {
@@ -2613,7 +2669,408 @@ app.post("/admin/:id/duplicate-test", requireAdmin, async (req, res) => {
   }
 });
 
-app.get("/admin/:id", requireAdmin, async (req, res) => {
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function textToHtmlParagraphs(text) {
+  return String(text || "-")
+    .split(/\r?\n\s*\r?\n/g)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `<p>${escapeHtml(part).replace(/\r?\n/g, "<br>")}</p>`)
+    .join("\n");
+}
+
+function buildEditableWordHtml({ assessment, normalized, expanded }) {
+  const title = assessment.result?.traitsJson?.assessmentTitle || getAssessmentConfig(assessment.assessmentType).title;
+  const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
+  const traits = Array.isArray(expanded?.traits) ? expanded.traits : [];
+
+  const traitHtml = traits.map((trait) => {
+    const title = trait.displayName || trait.name || "Tratto";
+    const description = trait.description ? `<p><em>(${escapeHtml(trait.description)})</em></p>` : "";
+    const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(trait.improvementPlan || "-")}</p>` : "";
+    const action = trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
+
+    return `
+      <h2>${escapeHtml(title)}</h2>
+      ${description}
+      ${textToHtmlParagraphs(trait.expandedText || "-")}
+      ${remedies}
+      ${action}
+    `;
+  }).join("\n");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${escapeHtml(title)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.45; color: #111; }
+    h1 { font-size: 24px; }
+    h2 { font-size: 18px; margin-top: 26px; }
+    p { font-size: 11pt; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(title)}</h1>
+  <p class="muted">Documento esportato per revisione. Modificare il testo e ricaricare il file revisionato dalla scheda assessment.</p>
+
+  <h2>Dati anagrafici</h2>
+  <p><strong>Nome:</strong> ${escapeHtml(assessment.respondentName || "-")}</p>
+  <p><strong>Email:</strong> ${escapeHtml(assessment.respondentEmail || "-")}</p>
+  <p><strong>Età:</strong> ${escapeHtml(assessment.age || "-")}</p>
+  <p><strong>Azienda risorsa:</strong> ${escapeHtml(assessment.candidateCompany || "-")}</p>
+  <p><strong>Ruolo target:</strong> ${escapeHtml(assessment.requestedRole || "-")}</p>
+  <p><strong>Data compilazione:</strong> ${escapeHtml(formatDateTimeRome(assessment.createdAt))}</p>
+
+  <h2>Relazione generale</h2>
+  ${textToHtmlParagraphs(generalRelation)}
+
+  ${traitHtml}
+</body>
+</html>`;
+}
+
+async function readRequestBodyBuffer(req, maxBytes = 15 * 1024 * 1024) {
+  const chunks = [];
+  let size = 0;
+
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > maxBytes) {
+      throw new Error("File troppo grande. Dimensione massima: 15 MB.");
+    }
+    chunks.push(chunk);
+  }
+
+  return Buffer.concat(chunks);
+}
+
+function parseMultipartForm(req, bodyBuffer) {
+  const contentType = req.headers["content-type"] || "";
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  if (!boundaryMatch) {
+    throw new Error("Upload non valido: boundary mancante.");
+  }
+
+  const boundary = `--${boundaryMatch[1] || boundaryMatch[2]}`;
+  const body = bodyBuffer.toString("binary");
+  const parts = body.split(boundary).slice(1, -1);
+  const fields = {};
+  const files = {};
+
+  parts.forEach((rawPart) => {
+    let part = rawPart;
+    if (part.startsWith("\r\n")) part = part.slice(2);
+    if (part.endsWith("\r\n")) part = part.slice(0, -2);
+
+    const separator = "\r\n\r\n";
+    const separatorIndex = part.indexOf(separator);
+    if (separatorIndex < 0) return;
+
+    const header = part.slice(0, separatorIndex);
+    const contentBinary = part.slice(separatorIndex + separator.length);
+    const disposition = header.match(/Content-Disposition:\s*form-data;\s*name="([^"]+)"(?:;\s*filename="([^"]*)")?/i);
+    if (!disposition) return;
+
+    const name = disposition[1];
+    const filename = disposition[2];
+
+    if (filename !== undefined) {
+      const contentTypeMatch = header.match(/Content-Type:\s*([^\r\n]+)/i);
+      files[name] = {
+        originalFileName: filename,
+        contentType: contentTypeMatch ? contentTypeMatch[1].trim() : "application/octet-stream",
+        buffer: Buffer.from(contentBinary, "binary")
+      };
+    } else {
+      fields[name] = Buffer.from(contentBinary, "binary").toString("utf8").trim();
+    }
+  });
+
+  return { fields, files };
+}
+
+function decodeBasicHtmlEntities(value) {
+  return String(value || "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#8217;/gi, "’")
+    .replace(/&#8220;/gi, "“")
+    .replace(/&#8221;/gi, "”")
+    .replace(/&#8211;/gi, "–")
+    .replace(/&#8482;/gi, "™")
+    .replace(/&#(\d+);/g, (_match, code) => {
+      try {
+        return String.fromCharCode(Number(code));
+      } catch (_error) {
+        return "";
+      }
+    });
+}
+
+function htmlToPlainText(html) {
+  return decodeBasicHtmlEntities(String(html || "")
+    .replace(/<\s*style[\s\S]*?<\s*\/\s*style\s*>/gi, " ")
+    .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, " ")
+    .replace(/<\s*\/\s*(p|div|h1|h2|h3|h4|li|tr)\s*>/gi, "\n\n")
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim());
+}
+
+function xmlToPlainText(xml) {
+  const withBreaks = String(xml || "")
+    .replace(/<w:tab\/>/g, "\t")
+    .replace(/<w:br\/>/g, "\n")
+    .replace(/<\/w:p>/g, "\n\n")
+    .replace(/<\/w:tr>/g, "\n")
+    .replace(/<\/w:tc>/g, " ");
+
+  return decodeBasicHtmlEntities(withBreaks
+    .replace(/<[^>]+>/g, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim());
+}
+
+function findZipEntryBuffer(zipBuffer, targetName) {
+  const buffer = Buffer.from(zipBuffer || []);
+  const eocdSignature = 0x06054b50;
+
+  let eocdOffset = -1;
+  for (let i = buffer.length - 22; i >= Math.max(0, buffer.length - 65557); i -= 1) {
+    if (buffer.readUInt32LE(i) === eocdSignature) {
+      eocdOffset = i;
+      break;
+    }
+  }
+
+  if (eocdOffset < 0) return null;
+
+  const entries = buffer.readUInt16LE(eocdOffset + 10);
+  const centralDirectoryOffset = buffer.readUInt32LE(eocdOffset + 16);
+
+  let offset = centralDirectoryOffset;
+
+  for (let index = 0; index < entries; index += 1) {
+    if (buffer.readUInt32LE(offset) !== 0x02014b50) break;
+
+    const compressionMethod = buffer.readUInt16LE(offset + 10);
+    const compressedSize = buffer.readUInt32LE(offset + 20);
+    const fileNameLength = buffer.readUInt16LE(offset + 28);
+    const extraLength = buffer.readUInt16LE(offset + 30);
+    const commentLength = buffer.readUInt16LE(offset + 32);
+    const localHeaderOffset = buffer.readUInt32LE(offset + 42);
+    const fileName = buffer.slice(offset + 46, offset + 46 + fileNameLength).toString("utf8");
+
+    if (fileName === targetName) {
+      if (buffer.readUInt32LE(localHeaderOffset) !== 0x04034b50) return null;
+
+      const localFileNameLength = buffer.readUInt16LE(localHeaderOffset + 26);
+      const localExtraLength = buffer.readUInt16LE(localHeaderOffset + 28);
+      const dataOffset = localHeaderOffset + 30 + localFileNameLength + localExtraLength;
+      const compressed = buffer.slice(dataOffset, dataOffset + compressedSize);
+
+      if (compressionMethod === 0) return compressed;
+      if (compressionMethod === 8) return zlib.inflateRawSync(compressed);
+      return null;
+    }
+
+    offset += 46 + fileNameLength + extraLength + commentLength;
+  }
+
+  return null;
+}
+
+function extractDocxPlainText(fileBytes) {
+  const xmlBuffer = findZipEntryBuffer(fileBytes, "word/document.xml");
+  if (!xmlBuffer) return "";
+  return xmlToPlainText(xmlBuffer.toString("utf8"));
+}
+
+function extractValidatedWordPlainText(revision) {
+  if (!revision?.fileBytes) return "";
+
+  const buffer = Buffer.from(revision.fileBytes);
+  const fileName = String(revision.originalFileName || "").toLowerCase();
+
+  try {
+    if (fileName.endsWith(".docx") || buffer.slice(0, 2).toString("utf8") === "PK") {
+      const text = extractDocxPlainText(buffer);
+      if (text) return text;
+    }
+
+    const utf8Text = buffer.toString("utf8");
+
+    if (/<html|<body|<p|<h1|<h2/i.test(utf8Text)) {
+      return htmlToPlainText(utf8Text);
+    }
+
+    const latinText = buffer.toString("latin1");
+    if (/<html|<body|<p|<h1|<h2/i.test(latinText)) {
+      return htmlToPlainText(latinText);
+    }
+
+    return utf8Text.trim();
+  } catch (error) {
+    console.error("Errore estrazione testo Word validato:", error);
+    return "";
+  }
+}
+
+function latestValidatedRevisionFromAssessment(assessment) {
+  const revisions = assessment?.result?.reportRevisions;
+  if (!Array.isArray(revisions) || revisions.length === 0) return null;
+  return revisions.find((revision) => revision.status === "VALIDATED") || revisions[0];
+}
+
+
+app.get("/admin/users", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const users = await prisma.adminUser.findMany({
+    where: { organizationId: req.session.admin.organizationId },
+    orderBy: { createdAt: "asc" }
+  });
+
+  res.render("admin-users", {
+    users,
+    organizationName: req.session.admin.organizationName,
+    error: null
+  });
+});
+
+app.post("/admin/users", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const name = String(req.body.name || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    const password = String(req.body.password || "");
+    const role = String(req.body.role || "VIEWER").toUpperCase() === "SUPER_ADMIN" ? "SUPER_ADMIN" : "VIEWER";
+
+    if (!name || !email || password.length < 8) {
+      throw new Error("Nome, email e password di almeno 8 caratteri sono obbligatori.");
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    await prisma.adminUser.create({
+      data: {
+        organizationId: req.session.admin.organizationId,
+        name,
+        email,
+        passwordHash,
+        role,
+        isActive: true,
+        sessionVersion: 1
+      }
+    });
+
+    return res.redirect("/admin/users");
+  } catch (error) {
+    console.error("Errore creazione admin user:", error);
+
+    const users = await prisma.adminUser.findMany({
+      where: { organizationId: req.session.admin.organizationId },
+      orderBy: { createdAt: "asc" }
+    });
+
+    return res.status(400).render("admin-users", {
+      users,
+      organizationName: req.session.admin.organizationName,
+      error: error?.message || "Errore durante la creazione utente."
+    });
+  }
+});
+
+app.post("/admin/users/invalidate-sessions", requireAdmin, requireSuperAdmin, async (req, res) => {
+  await prisma.adminUser.updateMany({
+    where: { organizationId: req.session.admin.organizationId },
+    data: { sessionVersion: { increment: 1 } }
+  });
+
+  req.session.destroy(() => {
+    res.redirect("/admin/login");
+  });
+});
+
+app.post("/admin/users/:userId/role", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const role = String(req.body.role || "VIEWER").toUpperCase() === "SUPER_ADMIN" ? "SUPER_ADMIN" : "VIEWER";
+
+  await prisma.adminUser.updateMany({
+    where: {
+      id: req.params.userId,
+      organizationId: req.session.admin.organizationId
+    },
+    data: {
+      role,
+      sessionVersion: { increment: 1 }
+    }
+  });
+
+  res.redirect("/admin/users");
+});
+
+app.post("/admin/users/:userId/toggle", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const user = await prisma.adminUser.findFirst({
+    where: {
+      id: req.params.userId,
+      organizationId: req.session.admin.organizationId
+    }
+  });
+
+  if (user && user.id !== req.session.admin.id) {
+    await prisma.adminUser.update({
+      where: { id: user.id },
+      data: {
+        isActive: !user.isActive,
+        sessionVersion: { increment: 1 }
+      }
+    });
+  }
+
+  res.redirect("/admin/users");
+});
+
+app.post("/admin/users/:userId/reset-password", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const password = String(req.body.password || "");
+  if (password.length < 8) {
+    return res.status(400).send("La password deve avere almeno 8 caratteri.");
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  await prisma.adminUser.updateMany({
+    where: {
+      id: req.params.userId,
+      organizationId: req.session.admin.organizationId
+    },
+    data: {
+      passwordHash,
+      sessionVersion: { increment: 1 }
+    }
+  });
+
+  res.redirect("/admin/users");
+});
+
+app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
       id: req.params.id,
@@ -2621,6 +3078,123 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     },
     include: {
       result: true
+    }
+  });
+
+  if (!assessment || !assessment.result) {
+    return res.status(404).send("Assessment non trovato");
+  }
+
+  const payload = assessment.result.traitsJson || {};
+  const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+  const expanded = applyClientOutputRulesToExpandedReport(
+    cleanExpandedReport(assessment.result.expandedReportJson || null),
+    normalized
+  );
+
+  const html = buildEditableWordHtml({ assessment, normalized, expanded });
+
+  res.setHeader("Content-Type", "application/msword; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename=report-${assessment.id}.doc`);
+  res.send(html);
+});
+
+app.post("/admin/:id/upload-validated-report", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: { result: true }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    const bodyBuffer = await readRequestBodyBuffer(req);
+    const parsed = parseMultipartForm(req, bodyBuffer);
+    const file = parsed.files.reportFile;
+
+    if (!file || !file.buffer?.length) {
+      return res.status(400).send("File Word mancante.");
+    }
+
+    const fileName = String(file.originalFileName || "").toLowerCase();
+    if (!fileName.endsWith(".doc") && !fileName.endsWith(".docx")) {
+      return res.status(400).send("Carica un file .doc o .docx.");
+    }
+
+    await prisma.reportRevision.create({
+      data: {
+        assessmentResultId: assessment.result.id,
+        uploadedById: req.session.admin.id,
+        originalFileName: file.originalFileName || `report-${assessment.id}.doc`,
+        contentType: file.contentType || "application/octet-stream",
+        fileBytes: file.buffer,
+        status: "VALIDATED",
+        validatedAt: new Date()
+      }
+    });
+
+    await prisma.assessmentResult.update({
+      where: { id: assessment.result.id },
+      data: {
+        isValidated: true,
+        validatedAt: new Date(),
+        validatedById: req.session.admin.id
+      }
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore upload report validato:", error);
+    return res.status(500).send(error?.message || "Errore durante upload report validato.");
+  }
+});
+
+app.post("/admin/:id/unvalidate-report", requireAdmin, requireSuperAdmin, async (req, res) => {
+  const assessment = await prisma.assessment.findFirst({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    include: { result: true }
+  });
+
+  if (!assessment || !assessment.result) {
+    return res.status(404).send("Assessment non trovato");
+  }
+
+  await prisma.assessmentResult.update({
+    where: { id: assessment.result.id },
+    data: {
+      isValidated: false,
+      validatedAt: null,
+      validatedById: null
+    }
+  });
+
+  res.redirect(`/admin/${assessment.id}`);
+});
+
+app.get("/admin/:id", requireAdmin, async (req, res) => {
+  const assessment = await prisma.assessment.findFirst({
+    where: {
+      id: req.params.id,
+      organizationId: req.session.admin.organizationId
+    },
+    include: {
+      result: {
+        include: {
+          reportRevisions: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
     }
   });
 
@@ -2669,13 +3243,20 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       traits: normalized.traits.map(withDisplayMeta),
       mainTraits: normalized.mainTraits.map(withDisplayMeta),
       additionalParameters: normalized.additionalParameters.map(withDisplayMeta),
-      expandedReport: expanded
+      expandedReport: expanded,
+      isValidated: !!assessment.result?.isValidated,
+      validatedAt: assessment.result?.validatedAt || null,
+      validatedRevision: latestValidatedRevisionFromAssessment(assessment),
+      validatedReportText: assessment.result?.isValidated
+        ? extractValidatedWordPlainText(latestValidatedRevisionFromAssessment(assessment))
+        : ""
     }
   };
 
   res.render("detail", {
     submission,
     organizationName: req.session.admin.organizationName,
+    currentAdmin: req.session.admin,
     isGenerating: !!assessment.result?.isGenerating && !expanded
   });
 });
@@ -2854,7 +3435,14 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
       organizationId: req.session.admin.organizationId
     },
     include: {
-      result: true
+      result: {
+        include: {
+          reportRevisions: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          }
+        }
+      }
     }
   });
 
@@ -2873,6 +3461,12 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
     normalized
   );
+  const validatedRevision = assessment.result?.isValidated
+    ? latestValidatedRevisionFromAssessment(assessment)
+    : null;
+  const validatedReportText = validatedRevision
+    ? extractValidatedWordPlainText(validatedRevision)
+    : "";
 
   const doc = new PDFDocument({
     margin: 50,
@@ -2924,8 +3518,14 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   drawLogo(doc);
   drawSimpleSectionTitle(doc, "Relazione generale");
 
-  const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
-  writeParagraphs(doc, generalRelation);
+  if (validatedReportText) {
+    doc.fontSize(9).fillColor("#2f4b7c").text("Relazione validata da revisione Word caricata.", { align: "left" });
+    doc.moveDown(0.5);
+    writeParagraphs(doc, validatedReportText);
+  } else {
+    const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
+    writeParagraphs(doc, generalRelation);
+  }
 
   if (roleFit?.score != null) {
     doc.moveDown(0.1);
@@ -2945,7 +3545,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   // Pagina "Dettaglio tratti e parametri aggiuntivi" rimossa su richiesta cliente.
   // Il report passa direttamente dalla relazione generale all'approfondimento dei tratti.
 
-  if (expanded?.generalSummary) {
+  if (!validatedReportText && expanded?.generalSummary) {
     doc.addPage();
     drawLogo(doc);
 

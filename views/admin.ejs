@@ -253,7 +253,7 @@
     </div>
 
     <div class="admin-actions">
-      <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
+      <% if (currentAdmin && currentAdmin.role === "SUPER_ADMIN") { %>
         <a class="btn btn-secondary" href="/admin/users">Gestione utenti</a>
       <% } %>
       <a class="btn btn-secondary" href="<%= typeof homeUrl !== 'undefined' ? homeUrl : '/questionnaires' %>">Torna alla Home</a>
@@ -263,7 +263,6 @@
     </div>
   </div>
 
-  <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
   <% const qrCards = Array.isArray(typeof adminAssessmentCards !== "undefined" ? adminAssessmentCards : null) ? adminAssessmentCards : [{ title: "ZPI™ – Zenith Performance Index", url: assessmentUrl, qrCodeUrl, qrDownloadUrl }]; %>
   <% qrCards.forEach(function(card) { %>
     <div class="card qr-card">
@@ -281,7 +280,6 @@
       </div>
     </div>
   <% }) %>
-  <% } %>
 
   <div class="card">
     <form class="filters" method="GET" action="/admin">
@@ -338,22 +336,22 @@
       <% } %>
     </form>
 
-    <% if (typeof isSuperAdmin !== "undefined" && isSuperAdmin) { %>
-    <form
-      method="POST"
-      action="/admin/regenerate-reports"
-      style="margin-top: 14px;"
-      onsubmit="return confirm('Rigenerare le relazioni AI per tutti gli assessment attualmente filtrati?');"
-    >
-      <input type="hidden" name="company" value="<%= filters && filters.company ? filters.company : '' %>" />
-      <input type="hidden" name="assessmentType" value="<%= filters && filters.assessmentType ? filters.assessmentType : '' %>" />
-      <input type="hidden" name="fromDate" value="<%= filters && filters.fromDate ? filters.fromDate : '' %>" />
-      <input type="hidden" name="toDate" value="<%= filters && filters.toDate ? filters.toDate : '' %>" />
+    <% if (currentAdmin && currentAdmin.role === "SUPER_ADMIN") { %>
+      <form
+        method="POST"
+        action="/admin/regenerate-reports"
+        style="margin-top: 14px;"
+        onsubmit="return confirm('Rigenerare le relazioni AI per tutti gli assessment attualmente filtrati?');"
+      >
+        <input type="hidden" name="company" value="<%= filters && filters.company ? filters.company : '' %>" />
+        <input type="hidden" name="assessmentType" value="<%= filters && filters.assessmentType ? filters.assessmentType : '' %>" />
+        <input type="hidden" name="fromDate" value="<%= filters && filters.fromDate ? filters.fromDate : '' %>" />
+        <input type="hidden" name="toDate" value="<%= filters && filters.toDate ? filters.toDate : '' %>" />
 
-      <button type="submit" class="btn btn-secondary">
-        Rigenera relazioni filtrate
-      </button>
-    </form>
+        <button type="submit" class="btn btn-secondary">
+          Rigenera relazioni filtrate
+        </button>
+      </form>
     <% } %>
   </div>
 
@@ -407,7 +405,7 @@
               <% if (item.isValidated) { %>
                 <span class="badge badge-ready">Validata</span>
               <% } else { %>
-                <span class="badge badge-pending">Da validare</span>
+                <span class="badge badge-pending">Non validata</span>
               <% } %>
             </td>
             <td>
