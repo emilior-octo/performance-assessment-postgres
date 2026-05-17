@@ -3664,31 +3664,6 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
 Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
 Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
-}) {
-  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
-
-  const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
-  const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
-  const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
-  const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
-  const roleFitText = normalized?.roleFit?.score != null
-    ? `CompatibilitÃ  con il ruolo ricoperto: ${normalized.roleFit.score}%. `
-    : "";
-  const reliabilityText = assessment.result?.reliabilityScore != null
-    ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
-    : "";
-  const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
-  const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
-  const securityTheoryText = normalized?.securityTheory ? `${normalized.securityTheory.text} ` : "";
-  const convictionChangeText = normalized?.convictionChange
-    ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
-    : "";
-
-  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuitÃ  al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilitÃ  ben definite.
-
-Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nellâ€™osservazione sul campo. In una PMI Ã¨ importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali prioritÃ  chiarire e in quali situazioni affiancarla.
-
-Questa valutazione Ã¨ indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
