@@ -220,8 +220,8 @@ app.use((req, res, next) => {
 const ASSESSMENT_TYPES = {
   zpi_hr: {
     key: "zpi_hr",
-    title: "ZPIâ„¢ â€“ Zenith Performance Index",
-    shortTitle: "ZPIâ„¢",
+    title: "ZPI™ – Zenith Performance Index",
+    shortTitle: "ZPI™",
     publicPath: "/zenith-assessment",
     qrDownloadPath: "/admin/qr/zenith/download",
     tokenEnv: "ZENITH_ASSESSMENT_TOKEN",
@@ -454,16 +454,19 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
-  "Affidabilità + autodisciplina": "Affidabilità + autodisciplina",
+  "Affidabilità + autodisciplina": "Affidabilità",
+  "AffidabilitÃ  + autodisciplina": "Affidabilità",
+  "AffidabilitÃ  + autodisciplina": "Affidabilità",
+  "Affidabilità": "Affidabilità",
+  "Stress": "Gestione pressioni / Stress",
+  "Gestione pressioni / Stress": "Gestione pressioni / Stress",
   "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
   "ResponsabilitÃ ": "Responsabilità",
   "EspansivitÃ ": "Espansività",
   "Gestione prioritÃ ": "Gestione priorità",
   "CapacitÃ  di gestione finanziaria": "Capacità di gestione finanziaria",
   "CapacitÃ  di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria",
-  "AttendibilitÃ ": "Attendibilità",
-  "Stress": "Gestione pressioni / Stress"
+  "AttendibilitÃ ": "Attendibilità"
 };
 
 const DIMENSION_DESCRIPTIONS = {
@@ -2039,13 +2042,34 @@ function drawAdditionalParameterBars(doc, parameters) {
 }
 
 function normalizeDimensionNameForDisplay(name) {
-  const value = normalizeBrokenUtf8(String(name || "").trim());
+  const value = normalizeBrokenUtf8(String(name || "").trim())
+    .replace(/gestiÃ³ne/gi, "gestione")
+    .replace(/gestiÃ²ne/gi, "gestione")
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione")
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (value === "Attuabilità") return "Attendibilità";
   if (value === "Emotiva") return "Cooperazione";
   if (value === "Capacità di gestióne finanziaria") return "Capacità di gestione finanziaria";
 
-  const sourceAliasToApproved = {
+  const canonicalAliases = {
+    "Affidabilità": "Affidabilità + autodisciplina",
+    "Affidabilità + autodisciplina": "Affidabilità + autodisciplina",
+    "AffidabilitÃ ": "Affidabilità + autodisciplina",
+    "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
+    "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
+    "ResponsabilitÃ ": "Responsabilità",
+    "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
+    "EspansivitÃ ": "Espansività",
+    "Gestione prioritÃ ": "Gestione priorità",
+    "CapacitÃ  di gestione finanziaria": "Capacità di gestione finanziaria",
+    "CapacitÃ  di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria",
+    "AttendibilitÃ ": "Attendibilità",
+    "Gestione pressioni / Stress": "Stress",
+
     "Responsabilità e ownership": "Responsabilità",
     "Stabilità emotiva e fiducia": "Sicurezza",
     "Fiducia relazionale e sicurezza sociale": "Sicurezza",
@@ -2069,7 +2093,7 @@ function normalizeDimensionNameForDisplay(name) {
     "Comportamento generale": "Dinamismo"
   };
 
-  return sourceAliasToApproved[value] || DISPLAY_LABELS[value] || value;
+  return canonicalAliases[value] || value;
 }
 
 function mergeDimensionList(list = []) {
@@ -2132,8 +2156,9 @@ function normalizeNameList(list = []) {
     .filter((name, index, arr) => arr.indexOf(name) === index);
 }
 
-function countOutputDimensions(list = []) {
-  const split = splitDimensions(mergeDimensionList(list));
+function countOutputDimensions(dimensions = []) {
+  const merged = mergeDimensionList(dimensions);
+  const split = splitDimensions(merged);
   return {
     traits: split.traits.length,
     additionalParameters: split.additionalParameters.length,
@@ -2141,50 +2166,46 @@ function countOutputDimensions(list = []) {
   };
 }
 
-function shouldUseRebuiltZpiTraits(currentTraits, rebuiltTraits, answersJson) {
-  const answeredCount = Object.values(answersJson || {}).filter(Boolean).length;
-  if (answeredCount < 200) return false;
-
-  const currentCounts = countOutputDimensions(currentTraits);
-  const rebuiltCounts = countOutputDimensions(rebuiltTraits);
-
-  const rebuiltComplete =
-    rebuiltCounts.traits === TRAIT_DIMENSIONS.length &&
-    rebuiltCounts.additionalParameters === ADDITIONAL_PARAMETER_DIMENSIONS.length;
-
-  const currentComplete =
-    currentCounts.traits === TRAIT_DIMENSIONS.length &&
-    currentCounts.additionalParameters === ADDITIONAL_PARAMETER_DIMENSIONS.length;
-
-  if (rebuiltComplete && !currentComplete) return true;
-  if (rebuiltCounts.total > currentCounts.total) return true;
-
-  return false;
-}
-
 function getNormalizedAnalysis(payload = {}, requestedRole = "", answersJson = null) {
   const assessmentType = payload.assessmentType || "zpi_hr";
   const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
   let traits = mergeDimensionList(rawTraits);
 
+  // Regola di sicurezza: per ZPI, se abbiamo answersJson completo,
+  // il grafico deve nascere dalle risposte e non da traitsJson storico eventualmente monco.
   if (assessmentType === "zpi_hr" && answersJson && typeof answersJson === "object") {
+    const answeredCount = Object.values(answersJson).filter(Boolean).length;
     const rebuiltTraits = mergeDimensionList(buildTraitsFromAnswers(answersJson, assessmentType));
+    const rebuiltCounts = countOutputDimensions(rebuiltTraits);
+    const currentCounts = countOutputDimensions(traits);
 
-    if (shouldUseRebuiltZpiTraits(traits, rebuiltTraits, answersJson)) {
-      console.warn("[ZPI] using traits rebuilt from answersJson", {
-        stored: countOutputDimensions(traits),
-        rebuilt: countOutputDimensions(rebuiltTraits)
+    if (
+      answeredCount >= 200 &&
+      rebuiltCounts.traits >= currentCounts.traits &&
+      rebuiltCounts.additionalParameters >= currentCounts.additionalParameters &&
+      rebuiltCounts.total > currentCounts.total
+    ) {
+      console.warn("[ZPI] PDF/Admin using dimensions rebuilt from answersJson", {
+        answeredCount,
+        stored: currentCounts,
+        rebuilt: rebuiltCounts
       });
       traits = rebuiltTraits;
     }
   }
 
   const split = splitDimensions(traits);
-  const mainTraits = mergeDimensionList(split.traits)
+  const storedMainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : [])
     .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
-  const additionalParameters = mergeDimensionList(split.additionalParameters)
+  const storedAdditionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : [])
     .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
-  const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
+
+  const mainTraits = split.traits.length >= storedMainTraits.length ? split.traits : storedMainTraits;
+  const additionalParameters = split.additionalParameters.length >= storedAdditionalParameters.length
+    ? split.additionalParameters
+    : storedAdditionalParameters;
+
+  const roleFit = calculateRoleFit(traits, requestedRole);
   const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
   const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
@@ -3616,7 +3637,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
           description
         );
 
-        if (displayName === "AttendibilitÃ ") {
+        if (displayName === "Attendibilità") {
           const truthfulness = truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) });
           const statusText = `${truthfulness.label}: ${truthfulness.text}`;
           const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
@@ -3657,7 +3678,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
             : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
         }
 
-        if (shouldAddResponsibilityNote && displayName === "ResponsabilitÃ ") {
+        if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
           const note = responsibilityOpinionNote();
           if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
             expandedText = expandedText ? `${expandedText} ${note}` : note;
@@ -3670,7 +3691,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
           description,
           chartScore: value,
           showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: shouldShowSkillActionForChartValue(value),
+          showSkillAction: normalized?.roleFit?.roleKey === "direzione" ? false : shouldShowSkillActionForChartValue(value),
           expandedText
         };
       })
