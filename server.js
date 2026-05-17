@@ -134,15 +134,6 @@ function normalizeBrokenUtf8(text) {
     .replace(/Ã¼/g, "ü")
     .replace(/Ã¶/g, "ö")
     .replace(/Ã¤/g, "ä")
-    .replace(/Ã\u00A0/g, "à")
-    .replace(/Ã\s*$/g, "à")
-    .replace(/Ã(?=\s|,|\]|\)|\}|$)/g, "à")
-    .replace(/\bResponsabilitÃ\b/g, "Responsabilità")
-    .replace(/\bEspansivitÃ\b/g, "Espansività")
-    .replace(/\bAttendibilitÃ\b/g, "Attendibilità")
-    .replace(/\bprioritÃ\b/g, "priorità")
-    .replace(/FlessibilitÃ\s+comunicativa/g, "Flessibilità comunicativa")
-    .replace(/CapacitÃ\s+di gestione finanziaria/g, "Capacità di gestione finanziaria")
     .replace(/Â°/g, "°")
     .replace(/Â«/g, "«")
     .replace(/Â»/g, "»")
@@ -594,9 +585,34 @@ function withDisplayMeta(item) {
   };
 }
 
+function normalizeDimensionDefinitionKey(value) {
+  return normalizeBrokenUtf8(String(value || "").trim())
+    .replace(/\u00A0/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/Ã[\u00A0 ]/g, "à")
+    .replace(/Ã\s*$/g, "à")
+    .replace(/Ã(?=\s|,|\]|\)|\}|$)/g, "à")
+    .replace(/\bResponsabilitÃ\b/g, "Responsabilità")
+    .replace(/\bEspansivitÃ\b/g, "Espansività")
+    .replace(/\bAttendibilitÃ\b/g, "Attendibilità")
+    .replace(/\bprioritÃ\b/g, "priorità")
+    .replace(/FlessibilitÃ\s+comunicativa/g, "Flessibilità comunicativa")
+    .replace(/FlessibilitÃ\s+e\s+adattabilitÃ/g, "Flessibilità e adattabilità")
+    .replace(/CapacitÃ\s+di gestione finanziaria/g, "Capacità di gestione finanziaria")
+    .trim();
+}
+
+function findDimensionDefinitionByKey(key) {
+  const wanted = normalizeDimensionDefinitionKey(key);
+
+  return Object.entries(DIMENSION_DEFINITIONS).find(([definitionKey]) => {
+    return normalizeDimensionDefinitionKey(definitionKey) === wanted;
+  })?.[1] || null;
+}
+
 function normalizeDimensionDefinitions(originalTrait) {
   const rawValue = String(originalTrait || "").trim();
-  const value = normalizeBrokenUtf8(rawValue);
+  const value = normalizeDimensionDefinitionKey(rawValue);
 
   const aliases = {
     "Organizzazione e metodo": "Organizzazione e metodo",
@@ -625,9 +641,19 @@ function normalizeDimensionDefinitions(originalTrait) {
 
   const key = aliases[value] || aliases[rawValue] || value;
 
-  return DIMENSION_DEFINITIONS[key] || [
-    { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
-  ];
+  const direct = DIMENSION_DEFINITIONS[key];
+  if (direct) return direct;
+
+  const normalizedMatch = findDimensionDefinitionByKey(key);
+  if (normalizedMatch) return normalizedMatch;
+
+  console.warn("[ZPI] Source trait non mappato:", {
+    originalTrait,
+    normalizedTrait: value,
+    resolvedKey: key
+  });
+
+  return [];
 }
 
 function histogramColor(score) {
@@ -682,11 +708,6 @@ function normalizeRoleKey(role) {
 
   return "altro";
 }
-
-function isDirectionOrEntrepreneurRole(role) {
-  return normalizeRoleKey(role) === "direzione";
-}
-
 
 const ROLE_FIT_WEIGHTS = {
   direzione: {
@@ -1482,7 +1503,6 @@ async function generateExpandedReportPayload({
     ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
     : "";
   const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
-  const isDirectionRole = isDirectionOrEntrepreneurRole(role);
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1511,7 +1531,6 @@ CONTESTO
 ${theoreticalProfileNote ? `- Nota attendibilitÃ : ${theoreticalProfileNote}` : ""}
 ${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
 ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
-${isDirectionRole ? `- Regola speciale Direzione/Imprenditore: chi legge il report coincide con la persona valutata. Nel campo improvementPlan scrivi sempre in seconda persona singolare, rivolgendoti direttamente alla persona con "tu", "puoi", "ti conviene", "dovresti". Il campo skillAction verrà omesso nel report finale, quindi non deve contenere indicazioni rivolte a terzi.` : ""}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
@@ -1569,7 +1588,6 @@ Per ogni tratto restituisci:
 - expandedText: vera analisi comportamentale del tratto, coerente con writingGuidance. Deve spiegare come la persona tende a funzionare, cosa puÃ² emergere nel lavoro e quali effetti operativi o relazionali puÃ² produrre. NON ripetere la definizione del campo description, perchÃ© verrÃ  giÃ  mostrata tra parentesi nel report. NON inserire consigli operativi in questo campo.
 - improvementPlan: rimedi pratici solo se il tratto Ã¨ sotto 40 su scala -100/+100. Se il tratto Ã¨ pari o superiore a 40, scrivi una frase breve di valorizzazione/consolidamento non correttiva, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale.
 - skillAction: indicazione gestionale solo se il tratto Ã¨ sotto 50 su scala -100/+100. Se il tratto Ã¨ da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale. Non deve contraddire expandedText.
-- Se il ruolo target è Direzione / Imprenditore, il campo improvementPlan deve parlare direttamente alla persona valutata, non a un responsabile che deve gestirla. Mantieni il contenuto pratico, ma usa tono diretto: "puoi", "ti conviene", "dovresti", "mantieni", "evita", "lavora su".
 
 STILE DI SCRITTURA
 - Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
@@ -2150,72 +2168,14 @@ function normalizeNameList(list = []) {
     .filter((name, index, arr) => arr.indexOf(name) === index);
 }
 
-function countOutputDimensions(list = []) {
-  const normalized = mergeDimensionList(list);
-  const split = splitDimensions(normalized);
-
-  return {
-    total: normalized.length,
-    traits: split.traits.length,
-    additionalParameters: split.additionalParameters.length
-  };
-}
-
-function shouldRebuildZpiDimensions({ assessmentType, traits, answersJson }) {
-  if (assessmentType !== "zpi_hr") return false;
-  if (!answersJson || typeof answersJson !== "object") return false;
-
-  const answeredCount = Object.values(answersJson).filter(Boolean).length;
-  if (answeredCount === 0) return false;
-
-  const counts = countOutputDimensions(traits);
-  return counts.traits < TRAIT_DIMENSIONS.length || counts.additionalParameters < ADDITIONAL_PARAMETER_DIMENSIONS.length;
-}
-
-function chooseBestZpiDimensions(currentTraits, rebuiltTraits) {
-  const currentCounts = countOutputDimensions(currentTraits);
-  const rebuiltCounts = countOutputDimensions(rebuiltTraits);
-
-  const currentScore = currentCounts.traits + currentCounts.additionalParameters;
-  const rebuiltScore = rebuiltCounts.traits + rebuiltCounts.additionalParameters;
-
-  if (rebuiltCounts.traits >= currentCounts.traits && rebuiltCounts.additionalParameters >= currentCounts.additionalParameters && rebuiltScore > currentScore) {
-    return rebuiltTraits;
-  }
-
-  if (rebuiltCounts.traits === TRAIT_DIMENSIONS.length && rebuiltCounts.additionalParameters === ADDITIONAL_PARAMETER_DIMENSIONS.length) {
-    return rebuiltTraits;
-  }
-
-  return currentTraits;
-}
-
-function getNormalizedAnalysis(payload = {}, requestedRole = "", answersJson = null) {
-  const assessmentType = payload.assessmentType || "zpi_hr";
+function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
-  let traits = mergeDimensionList(rawTraits);
-
-  if (shouldRebuildZpiDimensions({ assessmentType, traits, answersJson })) {
-    const rebuiltTraits = mergeDimensionList(buildTraitsFromAnswers(answersJson, assessmentType));
-    const chosenTraits = chooseBestZpiDimensions(traits, rebuiltTraits);
-
-    if (chosenTraits !== traits) {
-      console.warn("[ZPI] traits rebuilt from answersJson because stored traitsJson was incomplete", {
-        stored: countOutputDimensions(traits),
-        rebuilt: countOutputDimensions(rebuiltTraits)
-      });
-      traits = chosenTraits;
-    }
-  }
-
+  const traits = mergeDimensionList(rawTraits);
   const split = splitDimensions(traits);
   const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
     .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
   const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
     .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
-
-  const normalizedMainTraits = split.traits.length > mainTraits.length ? split.traits : mainTraits;
-  const normalizedAdditionalParameters = split.additionalParameters.length > additionalParameters.length ? split.additionalParameters : additionalParameters;
   const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
   const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
@@ -2230,17 +2190,18 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "", answersJson = n
 
   return {
     traits,
-    mainTraits: normalizedMainTraits,
-    additionalParameters: normalizedAdditionalParameters,
+    mainTraits,
+    additionalParameters,
     roleFit,
     managementAdvice,
-    topTraits: normalizeNameList(payload.topTraits || normalizedMainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
-    weakTraits: normalizeNameList(payload.weakTraits || normalizedMainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
+    topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
+    weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
     reliabilityFlags,
     convictionChange,
     securityTheory
   };
 }
+
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
   const { traits, additionalParameters } = splitDimensions(dimensions);
 
@@ -2623,7 +2584,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
   const submissions = assessments.map((item) => {
     const payload = item.result?.traitsJson || {};
     const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, item.requestedRole, item.result?.answersJson);
+    const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
     return {
       assessmentType,
@@ -2703,7 +2664,7 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
 
       const payload = assessment.result.traitsJson || {};
       const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-      const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
+      const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
       const traits = normalized.traits;
       const roleFit = normalized.roleFit;
       const managementAdvice = normalized.managementAdvice;
@@ -2777,7 +2738,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin,
 
     const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
     const managementAdvice = normalized.managementAdvice;
@@ -2834,7 +2795,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmi
 
     const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
     const managementAdvice = normalized.managementAdvice;
@@ -3406,11 +3367,10 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
 
   const payload = assessment.result.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result.expandedReportJson || null),
-    normalized,
-    { requestedRole: assessment.requestedRole }
+    normalized
   );
 
   const html = buildEditableWordHtml({ assessment, normalized, expanded });
@@ -3537,11 +3497,10 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
 
   const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized,
-    { requestedRole: assessment.requestedRole }
+    normalized
   );
 
   const submission = {
@@ -3628,57 +3587,7 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
-
-function lowerFirstLetter(value) {
-  const text = String(value || "").trim();
-  if (!text) return text;
-  return text.charAt(0).toLowerCase() + text.slice(1);
-}
-
-function makePracticalTextDirectForResource(text) {
-  let value = normalizeBrokenUtf8(String(text || "").trim());
-  if (!value) return value;
-
-  value = value
-    .replace(/\b[Ll]a risorsa\s+puÃ²\b/g, "Puoi")
-    .replace(/\b[Ll]a risorsa\s+può\b/g, "Puoi")
-    .replace(/\b[Ll]a persona\s+puÃ²\b/g, "Puoi")
-    .replace(/\b[Ll]a persona\s+può\b/g, "Puoi")
-    .replace(/\b[Ll]a risorsa\s+dovrebbe\b/g, "Dovresti")
-    .replace(/\b[Ll]a persona\s+dovrebbe\b/g, "Dovresti")
-    .replace(/\b[Ll]a risorsa\s+deve\b/g, "Devi")
-    .replace(/\b[Ll]a persona\s+deve\b/g, "Devi")
-    .replace(/\b[Ll]a risorsa\s+ha bisogno di\b/g, "Hai bisogno di")
-    .replace(/\b[Ll]a persona\s+ha bisogno di\b/g, "Hai bisogno di")
-    .replace(/\b[Ll]a risorsa\b/g, "tu")
-    .replace(/\b[Ll]a persona\b/g, "tu")
-    .replace(/\baffidarle\b/gi, "darti")
-    .replace(/\bassegnarle\b/gi, "assegnarti")
-    .replace(/\bseguirla\b/gi, "seguirti")
-    .replace(/\baffiancarla\b/gi, "affiancarti")
-    .replace(/\bgestirla\b/gi, "gestirti")
-    .replace(/\baiutarla\b/gi, "aiutarti")
-    .replace(/\bvalorizzarla\b/gi, "valorizzarti")
-    .replace(/\bsostenerla\b/gi, "sostenerti")
-    .replace(/\bverificarla\b/gi, "verificarti")
-    .replace(/\ble sue\b/gi, "le tue")
-    .replace(/\bi suoi\b/gi, "i tuoi")
-    .replace(/\bil suo\b/gi, "il tuo")
-    .replace(/\bla sua\b/gi, "la tua");
-
-  if (!/\b(tu|ti|puoi|dovresti|devi|hai bisogno|mantieni|evita|lavora|usa|concentrati)\b/i.test(value)) {
-    value = `Per lavorare su questo punto, puoi partire da questa indicazione: ${lowerFirstLetter(value)}`;
-  }
-
-  return value;
-}
-
-function isDirectionOutputContext(normalized, options = {}) {
-  if (normalized?.roleFit?.roleKey === "direzione") return true;
-  return isDirectionOrEntrepreneurRole(options.requestedRole || options.role || "");
-}
-
-function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized, options = {}) {
+function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     return expandedReportJson;
   }
@@ -3686,7 +3595,6 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized, 
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
   const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
-  const isDirectionRole = isDirectionOutputContext(normalized, options);
 
   const traits = Array.isArray(expandedReportJson.traits)
     ? expandedReportJson.traits.map((trait) => {
@@ -3748,18 +3656,13 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized, 
           }
         }
 
-        const improvementPlan = isDirectionRole
-          ? makePracticalTextDirectForResource(trait.improvementPlan || "")
-          : trait.improvementPlan;
-
         return {
           ...trait,
           displayName,
           description,
           chartScore: value,
           showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: isDirectionRole ? false : shouldShowSkillActionForChartValue(value),
-          improvementPlan,
+          showSkillAction: shouldShowSkillActionForChartValue(value),
           expandedText
         };
       })
@@ -3843,14 +3746,13 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized,
-    { requestedRole: assessment.requestedRole }
+    normalized
   );
   const validatedRevision = assessment.result?.isValidated
     ? latestValidatedRevisionFromAssessment(assessment)
