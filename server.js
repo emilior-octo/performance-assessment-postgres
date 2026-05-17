@@ -318,15 +318,15 @@ const DIMENSION_CATEGORY = {
 const TRAIT_DIMENSIONS = [
   "Organizzazione e pianificazione",
   "Automotivazione",
-  "AffidabilitÃ  + autodisciplina",
+  "Affidabilità + autodisciplina",
   "Sicurezza",
   "Stress",
   "Dinamismo",
-  "FlessibilitÃ  comunicativa",
-  "ResponsabilitÃ ",
+  "Flessibilità comunicativa",
+  "Responsabilità",
   "Ascolto attivo",
   "Comprensione",
-  "EspansivitÃ "
+  "Espansività"
 ];
 
 const ADDITIONAL_PARAMETER_DIMENSIONS = [
@@ -336,9 +336,9 @@ const ADDITIONAL_PARAMETER_DIMENSIONS = [
   "Cooperazione",
   "Principi",
   "Vendite",
-  "Gestione prioritÃ ",
-  "CapacitÃ  di gestione finanziaria",
-  "AttendibilitÃ "
+  "Gestione priorità",
+  "Capacità di gestione finanziaria",
+  "Attendibilità"
 ];
 
 const DIMENSION_ORDER = new Map(
@@ -454,48 +454,55 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
-  "Stress": "Gestione pressioni / Stress",
-  "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
+  "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
+  "Affidabilità + autodisciplina": "Affidabilità + autodisciplina",
+  "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
+  "ResponsabilitÃ ": "Responsabilità",
+  "EspansivitÃ ": "Espansività",
+  "Gestione prioritÃ ": "Gestione priorità",
+  "CapacitÃ  di gestione finanziaria": "Capacità di gestione finanziaria",
+  "CapacitÃ  di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria",
+  "AttendibilitÃ ": "Attendibilità",
+  "Stress": "Gestione pressioni / Stress"
 };
 
 const DIMENSION_DESCRIPTIONS = {
-  "Organizzazione e pianificazione": "misura la capacitÃ  di programmare il lavoro nel breve e nel lungo periodo",
-  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacitÃ  di avere successo",
-  "AffidabilitÃ  + autodisciplina": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
-  "AffidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
-  "Sicurezza": "misura la struttura delle convinzioni della persona: quanto Ã¨ certa delle proprie idee, quanto le difende, quanto Ã¨ disposta a metterle in discussione e quanto il suo punto di vista Ã¨ concreto o teorico",
-  "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",
-  "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",
-  "Dinamismo": "misura il livello di energia, movimento e prontezza nellâ€™iniziare le attivitÃ ",
-  "FlessibilitÃ  comunicativa": "misura determinazione, assertivitÃ , focus sul risultato e capacitÃ  di comunicare con decisione",
-  "ResponsabilitÃ ": "misura proattivitÃ , centralitÃ  e capacitÃ  di assumersi responsabilitÃ  senza subire gli eventi",
-  "Ascolto attivo": "misura la capacitÃ  di comprendere punti di vista diversi senza filtrarli attraverso pregiudizi",
-  "Comprensione": "misura la capacitÃ  di comprendere gli altri da un punto di vista emotivo e relazionale",
-  "EspansivitÃ ": "misura la qualitÃ  del primo approccio e la disponibilitÃ  a relazionarsi con apertura",
-  "Resistenza al cambiamento": "misura la disponibilitÃ  ad accettare cambiamenti, nuove procedure e nuove modalitÃ  di lavoro",
+  "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",
+  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo in campo professionale",
+  "Affidabilità + autodisciplina": "misura la coscienziosità della persona: senso di responsabilità, capacità di mantenere ciò che viene affidato, accuratezza, profondità e affidabilità",
+  "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni",
+  "Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
+  "Gestione pressioni / Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
+  "Dinamismo": "indica il livello di energia e movimento della persona",
+  "Flessibilità comunicativa": "misura convinzione in se stessi, assertività e focus sul risultato",
+  "Responsabilità": "misura proattività o reattività",
+  "Ascolto attivo": "indica la capacità di comprendere punti di vista diversi",
+  "Comprensione": "indica la capacità di comprendere gli altri da un punto di vista emotivo",
+  "Espansività": "indica la qualità del primo approccio e la disponibilità a relazionarsi",
+  "Resistenza al cambiamento": "misura la disponibilità ad accettare cambiamenti, nuove procedure e nuove modalità di lavoro",
   "Leadership naturale": "misura la tendenza a coinvolgere, guidare e diventare punto di riferimento per gli altri",
-  "Management": "misura la capacitÃ  di organizzare persone, attivitÃ  e responsabilitÃ  in modo concreto",
-  "Cooperazione": "misura la capacitÃ  di collaborare, condividere informazioni e lavorare con continuitÃ  insieme agli altri",
+  "Management": "misura la capacità di organizzare persone, attività e responsabilità in modo concreto",
+  "Cooperazione": "misura la capacità di collaborare, condividere informazioni e lavorare con continuità insieme agli altri",
   "Principi": "misura la coerenza con regole, valori aziendali e comportamenti professionali corretti",
   "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
-  "Gestione prioritÃ ": "misura la capacitÃ  di distinguere ciÃ² che Ã¨ importante da ciÃ² che Ã¨ solo urgente",
-  "CapacitÃ  di gestione finanziaria": "misura la capacitÃ  di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
-  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
+  "Gestione priorità": "misura la capacità di distinguere ciò che è importante da ciò che è solo urgente",
+  "Capacità di gestione finanziaria": "misura la capacità di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
+  "Attendibilità": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
 };
 
 const ZPI_EVO_TRAIT_GUIDE = {
-  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico Ã¨ alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro puÃ² non essere organizzato con continuitÃ " }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
-  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacitÃ " }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma puÃ² non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltÃ " }, { min: -100, text: "crede poco in se stessa e puÃ² aver rinunciato a scopi o obiettivi importanti" }] },
-  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dÃ  peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "puÃ² non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attivitÃ  non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuitÃ " }] },
-  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "convinzioni molto radicate: puÃ² avere una visione d'insieme forte, ma rischia di diventare teorica o rigida se non verifica le idee nell'azione" }, { min: 50, text: "convinzioni strutturate e stabili: tende a sostituire se stessa con dati e criteri, ma puÃ² essere poco facile farle cambiare idea" }, { min: 10, text: "mantiene un punto di vista abbastanza stabile, pur potendo metterlo in discussione davanti a dati o alternative migliori" }, { min: -20, text: "puÃ² mettere facilmente in discussione le proprie idee e cercare riferimenti esterni, con rischio di influenzabilitÃ " }, { min: -100, text: "convinzioni poco stabili: puÃ² essere vittima di ciÃ² che non conosce, cercando sicurezza fuori da sÃ©" }] },
-  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma puÃ² accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "puÃ² esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
-  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciÃ² che deve fare" }, { min: 50, text: "attiva, preferisce attivitÃ  dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, puÃ² preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, puÃ² fare fatica ad avviare nuove attivitÃ " }, { min: -100, text: "bassa energia di azione e difficoltÃ  a mettersi in moto" }] },
-  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertivitÃ " }, { min: 20, text: "puÃ² manifestare lentezza produttiva o difficoltÃ  a incidere" }, { min: -100, text: "tende ad aggirare i problemi e puÃ² perdere focus sui risultati" }] },
-  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilitÃ  soprattutto per ciÃ² che dipende direttamente da lei" }, { min: -10, text: "puÃ² iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e puÃ² subire le situazioni" }] },
-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da piÃ¹ punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende puÃ² iniziare a criticare o valutare parzialmente" }, { min: -100, text: "comunicazione critica e poco motivante, con difficoltÃ  a comprendere punti di vista diversi" }] },
-  "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio e coglie bene stati dâ€™animo e bisogni" }, { min: 20, text: "calorosa, disponibile e attenta agli altri" }, { min: -20, text: "puÃ² mostrare freddezza o distacco, soprattutto in situazioni di disaccordo" }, { min: -100, text: "generalmente distaccata e fredda, con rischio di risultare poco sensibile" }] },
-  "EspansivitÃ ": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata, disinibita e calorosa nellâ€™approccio" }, { min: 40, text: "aperta e cordiale nel primo approccio" }, { min: 20, text: "selettiva e formale, ma capace di approcciare se necessario" }, { min: 0, text: "traspare un poâ€™ di timidezza con persone nuove" }, { min: -40, text: "non fa facilmente il primo passo e puÃ² restare sulle sue" }, { min: -100, text: "chiusa, ritirata o impacciata con persone che non conosce" }] }
+  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "capacità di programmare a breve. Persona ordinata, precisa, pianifica il lavoro ed è puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva. A volte può avere confusione se ci sono molte cose da fare, ma in genere riesce a programmarsi" }, { min: 10, text: "ha bisogno di aiuto per organizzare il lavoro sotto forma di piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente. La persona non organizza bene il lavoro" }, { min: -100, text: "molto disorganizzata e dispersiva" }] },
+  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "persona fortemente motivata" }, { min: 40, text: "molto motivata e ambiziosa" }, { min: 0, text: "si automotiva, ma ha difficoltà ad accendere gli altri" }, { min: -30, text: "ha bisogno di essere motivata" }, { min: -100, text: "crede poco in se stessa" }] },
+  "Affidabilità + autodisciplina": { evo: "Autodisciplina", bands: [{ min: 60, text: "persona molto affidabile" }, { min: 40, text: "decisamente affidabile" }, { min: 20, text: "non cura fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "rimanda e lascia attività non completamente gestite" }, { min: -100, text: "ha bisogno di direttive chiare e controllo costante" }] },
+  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini" }, { min: 50, text: "molto coerente, difficile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma è disponibile a mettersi in discussione" }, { min: -20, text: "flessibile e aperta al cambiamento" }, { min: -100, text: "creativa ma fortemente incoerente e incostante" }] },
+  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
+  "Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
+  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica" }, { min: 50, text: "persona attiva" }, { min: 30, text: "attiva ma non troppo" }, { min: 0, text: "poco attiva" }, { min: -100, text: "bassa energia di azione" }] },
+  "Flessibilità comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole e diretta" }, { min: 60, text: "concreta e assertiva" }, { min: 40, text: "buon focus sul risultato" }, { min: 20, text: "lentezza produttiva" }, { min: -100, text: "tende ad aggirare i problemi" }] },
+  "Responsabilità": { evo: "Centralità", bands: [{ min: 60, text: "persona propositiva" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilità solo delle cose strettamente dipendenti da lei" }, { min: -10, text: "inizia a ragionare da effetto" }, { min: -100, text: "si sente effetto degli eventi" }] },
+  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende tende a criticare" }, { min: -100, text: "comunicazione critica e poco motivante" }] },
+  "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio" }, { min: 20, text: "persona calorosa e disponibile" }, { min: -20, text: "manifestazioni di freddezza e distacco" }, { min: -100, text: "generalmente distaccata e fredda" }] },
+  "Espansività": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata e calorosa" }, { min: 40, text: "aperta e cordiale" }, { min: 20, text: "selettiva e formale" }, { min: 0, text: "traspare un po’ di timidezza" }, { min: -40, text: "non fa il primo passo" }, { min: -100, text: "chiusa e impacciata" }] }
 };
 
 function evoGuideForDimension(name, score) {
@@ -507,11 +514,41 @@ function evoGuideForDimension(name, score) {
   return { evoParameter: guide.evo, chartScore: value, interpretation: band.text };
 }
 
-function truthfulnessStatusFromScore(score) {
+function truthfulnessStatusFromScore(score, options = {}) {
   const value = Number(score || 0);
-  if (value >= 50) return { label: "AttendibilitÃ  SÃŒ", text: "le risposte risultano complessivamente coerenti e il profilo puÃ² essere letto con buona fiducia, pur restando da confrontare con colloquio e osservazione concreta." };
-  if (value >= 30) return { label: "AttendibilitÃ  FORZATA", text: "le risposte appaiono parzialmente controllate o orientate a presentarsi in modo favorevole; il profilo va letto con prudenza e verificato con esempi reali." };
-  return { label: "AttendibilitÃ  NO", text: "le risposte non offrono una base sufficientemente coerente; la relazione va considerata indicativa e richiede approfondimento diretto prima di trarre conclusioni operative." };
+
+  if (options.forced) {
+    return {
+      label: "Attendibilità FORCED",
+      text: "l’analisi è stata riparametrizzata perché inizialmente inattendibile. L’analisi forced va quindi considerata come se il questionario fosse attendibile, poiché i tratti sono stati ricalibrati. La lettura resta utilizzabile, ma va comunque confrontata con colloquio, osservazione concreta ed esempi di lavoro reale."
+    };
+  }
+
+  if (value >= 40) {
+    return {
+      label: "Attendibilità YES",
+      text: "l’analisi è attendibile. Le risposte risultano sufficientemente coerenti e il profilo può essere interpretato con buona affidabilità, pur restando da confrontare con colloquio e osservazione concreta."
+    };
+  }
+
+  if (value <= -31) {
+    return {
+      label: "Attendibilità NO",
+      text: "l’analisi non è attendibile. La persona potrebbe aver risposto cercando di influenzarne i risultati oppure in maniera non del tutto consapevole o teorica. La relazione va quindi considerata non utilizzabile come base autonoma di valutazione."
+    };
+  }
+
+  return {
+    label: "Attendibilità ZERO",
+    text: "l’analisi non è attendibile. La persona potrebbe aver risposto cercando di influenzarne i risultati oppure in maniera non del tutto consapevole o teorica. Il risultato va letto solo come traccia di confronto e richiede verifica diretta."
+  };
+}
+
+function shouldUseForcedTruthfulness(flags = []) {
+  return (Array.isArray(flags) ? flags : []).some((flag) => {
+    const value = String(flag || "").toLowerCase();
+    return value.includes("forced") || value.includes("forzata") || value.includes("riparametrizz");
+  });
 }
 
 function stripForbiddenGeneralRelationPhrases(text) {
@@ -523,7 +560,7 @@ function stripForbiddenGeneralRelationPhrases(text) {
 
 
 function displayDimensionName(name) {
-  const value = normalizeBrokenUtf8(String(name || "").trim());
+  const value = normalizeDimensionNameForDisplay(name);
   const normalizedValue = value
     .replace(/gestiÃ³ne/gi, "gestione")
     .replace(/gestiÃ²ne/gi, "gestione")
@@ -826,14 +863,20 @@ function roleFitLabel(score) {
 function calculateRoleFit(dimensions, requestedRole) {
   const roleKey = normalizeRoleKey(requestedRole);
   const weights = ROLE_FIT_WEIGHTS[roleKey] || ROLE_FIT_WEIGHTS.altro;
-  const byName = new Map((Array.isArray(dimensions) ? dimensions : []).map((item) => [item.name, item]));
+  const byName = new Map(
+    (Array.isArray(dimensions) ? dimensions : []).map((item) => [
+      displayDimensionName(normalizeDimensionNameForDisplay(item.name)),
+      item
+    ])
+  );
 
   let weightedTotal = 0;
   let weightTotal = 0;
   const details = [];
 
   Object.entries(weights).forEach(([name, weight]) => {
-    const dimension = byName.get(name);
+    const normalizedName = displayDimensionName(normalizeDimensionNameForDisplay(name));
+    const dimension = byName.get(normalizedName);
     if (!dimension) return;
 
     const score = scoreToPercent(dimension.score);
@@ -841,7 +884,7 @@ function calculateRoleFit(dimensions, requestedRole) {
     weightTotal += weight;
 
     details.push({
-      name,
+      name: normalizedName,
       score: dimension.score,
       percent: score,
       weight
@@ -855,7 +898,7 @@ function calculateRoleFit(dimensions, requestedRole) {
     score,
     label: roleFitLabel(score),
     details: details.sort((a, b) => b.weight - a.weight),
-    note: "La compatibilitÃ  con il ruolo Ã¨ una lettura orientativa e non sostituisce il colloquio con la persona."
+    note: "La compatibilità con il ruolo è una lettura orientativa e non sostituisce il colloquio con la persona."
   };
 }
 
@@ -1308,7 +1351,7 @@ function cleanExpandedReport(expandedReportJson) {
     ? expandedReportJson.traits
         .map((trait) => ({
           ...trait,
-          name: normalizeDimensionNameForDisplay(displayDimensionName(normalizeTraitName(trait?.name)))
+          name: displayDimensionName(normalizeDimensionNameForDisplay(normalizeTraitName(trait?.name)))
         }))
         .filter((trait) => {
           const name = normalizeTraitName(trait?.name);
@@ -1334,13 +1377,18 @@ function cleanExpandedReport(expandedReportJson) {
   };
 }
 
-function buildAiTraitsForPrompt(traits) {
+function buildAiTraitsForPrompt(traits, reliabilityFlags = []) {
   const seenNames = new Set();
 
   return (Array.isArray(traits) ? traits : [])
+    .map((trait) => ({
+      ...trait,
+      name: displayDimensionName(normalizeDimensionNameForDisplay(normalizeTraitName(trait?.name)))
+    }))
     .filter((trait) => {
       const name = normalizeTraitName(trait?.name);
       if (!name) return false;
+      if (!TRAIT_DIMENSIONS.includes(name) && !ADDITIONAL_PARAMETER_DIMENSIONS.includes(name)) return false;
       if (seenNames.has(name.toLowerCase())) return false;
       if (/duplicato controllo/i.test(String(trait?.name || ""))) return false;
       seenNames.add(name.toLowerCase());
@@ -1350,7 +1398,9 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = name === "Attendibilità"
+        ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(reliabilityFlags) })
+        : null;
 
       return {
         name,
@@ -1409,7 +1459,7 @@ async function generateExpandedReportPayload({
     required: ["generalSummary", "generalManagementAdvice", "traits"]
   };
 
-  const traitsForPrompt = buildAiTraitsForPrompt(traits);
+  const traitsForPrompt = buildAiTraitsForPrompt(traits, reliabilityFlags);
   const reliabilityGuidance = reliabilityPromptGuidance(reliabilityScore, reliabilityFlags);
   const theoreticalProfileNote = theoreticalProfileNoteFromFlags(reliabilityFlags);
   const convictionChange = convictionChangePattern(traits);
@@ -1421,7 +1471,16 @@ async function generateExpandedReportPayload({
 
   const input = `
 Sei un consulente organizzativo senior.
-Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario Ã¨ sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
+Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario è sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
+
+ISTRUZIONE SPECIALE PER generalSummary
+- Il campo generalSummary deve essere scritto in seconda persona singolare, rivolgendoti direttamente a chi ha compilato il test.
+- Usa un tono umano, diretto, riflessivo e concreto.
+- Puoi usare formule come: "tendi a", "potresti", "quando ti trovi", "hai costruito", "per te".
+- Non usare nel campo generalSummary formule impersonali come: "il profilo mostra", "il profilo evidenzia", "la persona presenta", "la risorsa mostra", "il candidato appare", "il soggetto".
+- Non usare elenchi puntati nel campo generalSummary.
+- Non usare linguaggio clinico o diagnostico.
+- Mantieni prudenza professionale: non trasformare il testo in verità assoluta.
 
 CONTESTO
 - Questionario: ${assessmentTitle}
@@ -1450,7 +1509,12 @@ MAPPATURA EVO E PARAMETRIZZAZIONE
 - Per i tratti ZPI usa il campo evoGuide come riferimento principale: contiene il parametro EVO equivalente e la lettura corretta del punteggio.
 - Non inventare significati diversi da quelli indicati in evoGuide.
 - Se evoGuide Ã¨ presente, l'analisi deve rispettare quella descrizione e puÃ² ampliarla in modo consulenziale, senza contraddirla.
-- Per il tratto AttendibilitÃ  devi usare il campo truthfulness e indicare chiaramente una delle tre letture: AttendibilitÃ  SÃŒ, AttendibilitÃ  FORZATA, AttendibilitÃ  NO. Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
+- Per il parametro Attendibilità devi usare il campo truthfulness e indicare chiaramente una delle quattro letture: Attendibilità YES, Attendibilità ZERO, Attendibilità NO, Attendibilità FORCED.
+- Attendibilità YES: l’analisi è attendibile.
+- Attendibilità ZERO: l’analisi non è attendibile e la persona potrebbe aver risposto cercando di influenzarne i risultati oppure in modo non del tutto consapevole o teorico.
+- Attendibilità NO: l’analisi non è attendibile e non va usata come base autonoma di valutazione.
+- Attendibilità FORCED: l’analisi è stata riparametrizzata perché inizialmente inattendibile. Va considerata come se il questionario fosse attendibile, perché i tratti sono stati ricalibrati, ma va letta con cautela professionale.
+- Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
 - Se Ã¨ presente la Nota attendibilitÃ  "Profilo teorico", devi integrarla nell'AttendibilitÃ  una sola volta, spiegando che la prevalenza di punteggi molto alti rende il questionario teorico e richiede verifica tramite colloquio/osservazione.
 
 PRINCIPI DI LETTURA
@@ -1777,7 +1841,7 @@ function stripLeadingTruthfulnessStatus(text) {
   // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
   // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
   const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -1981,8 +2045,6 @@ function normalizeDimensionNameForDisplay(name) {
   if (value === "Emotiva") return "Cooperazione";
   if (value === "Capacità di gestióne finanziaria") return "Capacità di gestione finanziaria";
 
-  // Source/internal dimensions must never appear in charts or reports.
-  // They are mapped to the approved ZPI dimensions.
   const sourceAliasToApproved = {
     "Responsabilità e ownership": "Responsabilità",
     "Stabilità emotiva e fiducia": "Sicurezza",
@@ -2007,7 +2069,7 @@ function normalizeDimensionNameForDisplay(name) {
     "Comportamento generale": "Dinamismo"
   };
 
-  return sourceAliasToApproved[value] || value;
+  return sourceAliasToApproved[value] || DISPLAY_LABELS[value] || value;
 }
 
 function mergeDimensionList(list = []) {
@@ -2991,11 +3053,11 @@ function decodeBasicHtmlEntities(value) {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
-    .replace(/&#8217;/gi, "â€™")
-    .replace(/&#8220;/gi, "â€œ")
-    .replace(/&#8221;/gi, "â€")
-    .replace(/&#8211;/gi, "â€“")
-    .replace(/&#8482;/gi, "â„¢")
+    .replace(/&#8217;/gi, "’")
+    .replace(/&#8220;/gi, "“")
+    .replace(/&#8221;/gi, "”")
+    .replace(/&#8211;/gi, "–")
+    .replace(/&#8482;/gi, "™")
     .replace(/&#(\d+);/g, (_match, code) => {
       try {
         return String.fromCharCode(Number(code));
@@ -3511,7 +3573,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         );
 
         if (displayName === "AttendibilitÃ ") {
-          const truthfulness = truthfulnessStatusFromScore(value);
+          const truthfulness = truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) });
           const statusText = `${truthfulness.label}: ${truthfulness.text}`;
           const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
@@ -3578,6 +3640,31 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 }
 
 function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
+  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+
+  const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
+  const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
+  const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
+  const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
+  const roleFitText = normalized?.roleFit?.score != null
+    ? `La compatibilità con il ruolo ricoperto è pari al ${normalized.roleFit.score}%. `
+    : "";
+  const reliabilityText = assessment.result?.reliabilityScore != null
+    ? `L’indice di coerenza delle risposte è ${assessment.result.reliabilityScore}/100. `
+    : "";
+  const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+  const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
+  const securityTheoryText = normalized?.securityTheory ? `${normalized.securityTheory.text} ` : "";
+  const convictionChangeText = normalized?.convictionChange
+    ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
+    : "";
+
+  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Nel modo in cui affronti il lavoro emergono alcuni elementi che possono aiutarti a dare continuità e struttura, in particolare ${topText}. Quando hai obiettivi chiari e responsabilità ben definite, puoi riuscire a trasformare meglio queste caratteristiche in risultati concreti.
+
+Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
+
+Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
+}) {
   if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
 
   const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
