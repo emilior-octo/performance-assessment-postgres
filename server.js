@@ -220,8 +220,8 @@ app.use((req, res, next) => {
 const ASSESSMENT_TYPES = {
   zpi_hr: {
     key: "zpi_hr",
-    title: "ZPIâ„¢ â€“ Zenith Performance Index",
-    shortTitle: "ZPIâ„¢",
+    title: "ZPI™ – Zenith Performance Index",
+    shortTitle: "ZPI™",
     publicPath: "/zenith-assessment",
     qrDownloadPath: "/admin/qr/zenith/download",
     tokenEnv: "ZENITH_ASSESSMENT_TOKEN",
@@ -318,7 +318,7 @@ const DIMENSION_CATEGORY = {
 const TRAIT_DIMENSIONS = [
   "Organizzazione e pianificazione",
   "Automotivazione",
-  "Affidabilità + autodisciplina",
+  "Affidabilità",
   "Sicurezza",
   "Stress",
   "Dinamismo",
@@ -360,11 +360,11 @@ const DIMENSION_DEFINITIONS = {
     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Indice di attendibilitÃ ": [
-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Affidabilità", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Principi", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "ContinuitÃ  professionale": [
-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Affidabilità", category: DIMENSION_CATEGORY.TRAIT },
     { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "ResponsabilitÃ  e ownership": [
@@ -454,8 +454,8 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
-  "Affidabilità + autodisciplina": "Affidabilità + autodisciplina",
+  "Affidabilità + autodisciplina": "Affidabilità",
+  "Affidabilità": "Affidabilità",
   "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
   "ResponsabilitÃ ": "Responsabilità",
   "EspansivitÃ ": "Espansività",
@@ -469,7 +469,7 @@ const DISPLAY_LABELS = {
 const DIMENSION_DESCRIPTIONS = {
   "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",
   "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo in campo professionale",
-  "Affidabilità + autodisciplina": "misura la coscienziosità della persona: senso di responsabilità, capacità di mantenere ciò che viene affidato, accuratezza, profondità e affidabilità",
+  "Affidabilità": "misura la coscienziosità della persona: senso di responsabilità, capacità di mantenere ciò che viene affidato, accuratezza, profondità e affidabilità",
   "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni",
   "Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
   "Gestione pressioni / Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
@@ -493,7 +493,7 @@ const DIMENSION_DESCRIPTIONS = {
 const ZPI_EVO_TRAIT_GUIDE = {
   "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "capacità di programmare a breve. Persona ordinata, precisa, pianifica il lavoro ed è puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva. A volte può avere confusione se ci sono molte cose da fare, ma in genere riesce a programmarsi" }, { min: 10, text: "ha bisogno di aiuto per organizzare il lavoro sotto forma di piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente. La persona non organizza bene il lavoro" }, { min: -100, text: "molto disorganizzata e dispersiva" }] },
   "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "persona fortemente motivata" }, { min: 40, text: "molto motivata e ambiziosa" }, { min: 0, text: "si automotiva, ma ha difficoltà ad accendere gli altri" }, { min: -30, text: "ha bisogno di essere motivata" }, { min: -100, text: "crede poco in se stessa" }] },
-  "Affidabilità + autodisciplina": { evo: "Autodisciplina", bands: [{ min: 60, text: "persona molto affidabile" }, { min: 40, text: "decisamente affidabile" }, { min: 20, text: "non cura fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "rimanda e lascia attività non completamente gestite" }, { min: -100, text: "ha bisogno di direttive chiare e controllo costante" }] },
+  "Affidabilità": { evo: "Autodisciplina", bands: [{ min: 60, text: "persona molto affidabile" }, { min: 40, text: "decisamente affidabile" }, { min: 20, text: "non cura fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "rimanda e lascia attività non completamente gestite" }, { min: -100, text: "ha bisogno di direttive chiare e controllo costante" }] },
   "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini" }, { min: 50, text: "molto coerente, difficile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma è disponibile a mettersi in discussione" }, { min: -20, text: "flessibile e aperta al cambiamento" }, { min: -100, text: "creativa ma fortemente incoerente e incostante" }] },
   "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
   "Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
@@ -690,7 +690,7 @@ const ROLE_FIT_WEIGHTS = {
   manager: {
     "ResponsabilitÃ ": 1.35,
     "Organizzazione e pianificazione": 1.25,
-    "AffidabilitÃ  + autodisciplina": 1.25,
+    "Affidabilità": 1.25,
     "Sicurezza": 1.1,
     "Ascolto attivo": 1.1,
     "Leadership naturale": 1.3,
@@ -722,7 +722,7 @@ const ROLE_FIT_WEIGHTS = {
   },
   amministrativo: {
     "Organizzazione e pianificazione": 1.45,
-    "AffidabilitÃ  + autodisciplina": 1.4,
+    "Affidabilità": 1.4,
     "ResponsabilitÃ ": 1.25,
     "Stress": 1.1,
     "Gestione prioritÃ ": 1.3,
@@ -734,7 +734,7 @@ const ROLE_FIT_WEIGHTS = {
   operations: {
     "Organizzazione e pianificazione": 1.35,
     "ResponsabilitÃ ": 1.3,
-    "AffidabilitÃ  + autodisciplina": 1.25,
+    "Affidabilità": 1.25,
     "Stress": 1.15,
     "Dinamismo": 1.1,
     "Gestione prioritÃ ": 1.35,
@@ -766,7 +766,7 @@ const ROLE_FIT_WEIGHTS = {
   },
   it_digital: {
     "Organizzazione e pianificazione": 1.25,
-    "AffidabilitÃ  + autodisciplina": 1.25,
+    "Affidabilità": 1.25,
     "Automotivazione": 1.2,
     "Stress": 1.1,
     "FlessibilitÃ  comunicativa": 1.05,
@@ -780,7 +780,7 @@ const ROLE_FIT_WEIGHTS = {
     // Fallback prudente per ruoli liberi: profilo equilibrato da impiegato/collaboratore generalista.
     // Evita interpretazioni troppo specialistiche quando il ruolo non rientra nei preset.
     "Organizzazione e pianificazione": 1.2,
-    "AffidabilitÃ  + autodisciplina": 1.2,
+    "Affidabilità": 1.2,
     "ResponsabilitÃ ": 1.15,
     "Gestione prioritÃ ": 1.15,
     "AttendibilitÃ ": 1.15,
@@ -805,7 +805,7 @@ const ROLE_FIT_WEIGHTS = {
 
 ROLE_FIT_WEIGHTS.segreteria = {
   "Organizzazione e pianificazione": 1.35,
-  "AffidabilitÃ  + autodisciplina": 1.35,
+  "Affidabilità": 1.35,
   "ResponsabilitÃ ": 1.15,
   "Ascolto attivo": 1.2,
   "Comprensione": 1.15,
@@ -819,7 +819,7 @@ ROLE_FIT_WEIGHTS.segreteria = {
 
 ROLE_FIT_WEIGHTS.segreteria_direzione = {
   "Organizzazione e pianificazione": 1.4,
-  "AffidabilitÃ  + autodisciplina": 1.35,
+  "Affidabilità": 1.35,
   "ResponsabilitÃ ": 1.25,
   "Sicurezza": 1.1,
   "Ascolto attivo": 1.15,
@@ -920,7 +920,7 @@ function buildManagementAdvice({ traits, roleFit }) {
     return "La risorsa puÃ² rendere meglio in contesti dinamici, con interazione, confronto e obiettivi visibili. Ãˆ utile canalizzare lâ€™energia relazionale su attivitÃ  con responsabilitÃ  definite, evitando che la spinta comunicativa si disperda in iniziative poco prioritarie.";
   }
 
-  if (top.includes("Organizzazione e pianificazione") || top.includes("AffidabilitÃ  + autodisciplina")) {
+  if (top.includes("Organizzazione e pianificazione") || top.includes("Affidabilità")) {
     return "La risorsa puÃ² essere gestita efficacemente con processi chiari, responsabilitÃ  definite e spazio per presidiare attivitÃ  operative o progettuali. Ãˆ utile affidarle obiettivi misurabili e riconoscere la continuitÃ  di esecuzione.";
   }
 
@@ -1117,7 +1117,7 @@ function buildSummary(traits, role) {
   let orientation = "profilo equilibrato";
   const topSet = new Set(top);
 
-  if (topSet.has("ResponsabilitÃ ") || topSet.has("AffidabilitÃ  + autodisciplina")) {
+  if (topSet.has("ResponsabilitÃ ") || topSet.has("Affidabilità")) {
     orientation = "orientamento manageriale / guida";
   } else if (
     topSet.has("EspansivitÃ ") ||
@@ -1125,7 +1125,7 @@ function buildSummary(traits, role) {
     topSet.has("Dinamismo")
   ) {
     orientation = "orientamento commerciale / relazione";
-  } else if (topSet.has("Organizzazione e pianificazione") || topSet.has("AffidabilitÃ  + autodisciplina")) {
+  } else if (topSet.has("Organizzazione e pianificazione") || topSet.has("Affidabilità")) {
     orientation = "orientamento organizzativo / metodo";
   } else if (topSet.has("Automotivazione") || topSet.has("Dinamismo")) {
     orientation = "orientamento evolutivo / progettuale";
@@ -1137,7 +1137,7 @@ function buildSummary(traits, role) {
   if (role === "manager") {
     roleComment =
       topSet.has("ResponsabilitÃ ") ||
-      topSet.has("AffidabilitÃ  + autodisciplina") ||
+      topSet.has("Affidabilità") ||
       topSet.has("Organizzazione e pianificazione")
         ? "Il profilo mostra elementi coerenti con un ruolo manageriale, soprattutto sul piano della guida, della responsabilitÃ  e della struttura operativa."
         : "Per un ruolo manageriale sarÃ  utile approfondire in particolare guida, responsabilitÃ , capacitÃ  organizzativa e tenuta nella gestione delle persone.";
@@ -1153,7 +1153,7 @@ function buildSummary(traits, role) {
     roleComment =
       topSet.has("Organizzazione e pianificazione") ||
       topSet.has("ResponsabilitÃ ") ||
-      topSet.has("AffidabilitÃ  + autodisciplina")
+      topSet.has("Affidabilità")
         ? "Il profilo mostra elementi coerenti con un ruolo amministrativo, soprattutto su metodo, affidabilitÃ , continuitÃ  e presidio operativo."
         : "Per un ruolo amministrativo sarÃ  utile approfondire soprattutto metodo, precisione, affidabilitÃ  e continuitÃ  nellâ€™esecuzione.";
   }
@@ -1428,7 +1428,7 @@ async function generateExpandedReportPayload({
   reliabilityFlags,
   roleFit,
   managementAdvice,
-  assessmentTitle = "ZPIâ„¢ â€“ Zenith Performance Index",
+  assessmentTitle = "ZPI™ – Zenith Performance Index",
   assessmentType = "zpi_hr"
 }) {
   if (!openai) {
@@ -1621,7 +1621,7 @@ function startExpandedReportJob({
   reliabilityFlags,
   roleFit,
   managementAdvice,
-  assessmentTitle = "ZPIâ„¢ â€“ Zenith Performance Index",
+  assessmentTitle = "ZPI™ – Zenith Performance Index",
   assessmentType = "zpi_hr"
 }) {
   if (!assessmentId) {
@@ -2046,6 +2046,7 @@ function normalizeDimensionNameForDisplay(name) {
   if (value === "Capacità di gestióne finanziaria") return "Capacità di gestione finanziaria";
 
   const sourceAliasToApproved = {
+    "Affidabilità + autodisciplina": "Affidabilità",
     "Responsabilità e ownership": "Responsabilità",
     "Stabilità emotiva e fiducia": "Sicurezza",
     "Fiducia relazionale e sicurezza sociale": "Sicurezza",
@@ -2055,7 +2056,7 @@ function normalizeDimensionNameForDisplay(name) {
     "Creatività e innovazione": "Dinamismo",
     "Indice di attendibilità": "Attendibilità",
     "Flessibilità e adattabilità": "Resistenza al cambiamento",
-    "Continuità professionale": "Affidabilità + autodisciplina",
+    "Continuità professionale": "Affidabilità",
     "Organizzazione e metodo": "Organizzazione e pianificazione",
     "Visione e orientamento al futuro": "Automotivazione",
     "Gestione della pressione": "Stress",
