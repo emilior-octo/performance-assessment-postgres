@@ -674,6 +674,11 @@ function normalizeRoleKey(role) {
   return "altro";
 }
 
+function isDirectionOrEntrepreneurRole(role) {
+  return normalizeRoleKey(role) === "direzione";
+}
+
+
 const ROLE_FIT_WEIGHTS = {
   direzione: {
     "Automotivazione": 1.35,
@@ -1468,6 +1473,7 @@ async function generateExpandedReportPayload({
     ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
     : "";
   const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
+  const isDirectionRole = isDirectionOrEntrepreneurRole(role);
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1496,6 +1502,7 @@ CONTESTO
 ${theoreticalProfileNote ? `- Nota attendibilitÃ : ${theoreticalProfileNote}` : ""}
 ${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
 ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
+${isDirectionRole ? `- Regola speciale Direzione/Imprenditore: chi legge il report coincide con la persona valutata. Nel campo improvementPlan scrivi sempre in seconda persona singolare, rivolgendoti direttamente alla persona con "tu", "puoi", "ti conviene", "dovresti". Il campo skillAction verrà omesso nel report finale, quindi non deve contenere indicazioni rivolte a terzi.` : ""}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
@@ -1553,6 +1560,7 @@ Per ogni tratto restituisci:
 - expandedText: vera analisi comportamentale del tratto, coerente con writingGuidance. Deve spiegare come la persona tende a funzionare, cosa puÃ² emergere nel lavoro e quali effetti operativi o relazionali puÃ² produrre. NON ripetere la definizione del campo description, perchÃ© verrÃ  giÃ  mostrata tra parentesi nel report. NON inserire consigli operativi in questo campo.
 - improvementPlan: rimedi pratici solo se il tratto Ã¨ sotto 40 su scala -100/+100. Se il tratto Ã¨ pari o superiore a 40, scrivi una frase breve di valorizzazione/consolidamento non correttiva, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale.
 - skillAction: indicazione gestionale solo se il tratto Ã¨ sotto 50 su scala -100/+100. Se il tratto Ã¨ da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale. Non deve contraddire expandedText.
+- Se il ruolo target è Direzione / Imprenditore, il campo improvementPlan deve parlare direttamente alla persona valutata, non a un responsabile che deve gestirla. Mantieni il contenuto pratico, ma usa tono diretto: "puoi", "ti conviene", "dovresti", "mantieni", "evita", "lavora su".
 
 STILE DI SCRITTURA
 - Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
@@ -3335,7 +3343,8 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result.expandedReportJson || null),
-    normalized
+    normalized,
+    { requestedRole: assessment.requestedRole }
   );
 
   const html = buildEditableWordHtml({ assessment, normalized, expanded });
@@ -3465,7 +3474,8 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized
+    normalized,
+    { requestedRole: assessment.requestedRole }
   );
 
   const submission = {
@@ -3552,7 +3562,57 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
-function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
+
+function lowerFirstLetter(value) {
+  const text = String(value || "").trim();
+  if (!text) return text;
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+function makePracticalTextDirectForResource(text) {
+  let value = normalizeBrokenUtf8(String(text || "").trim());
+  if (!value) return value;
+
+  value = value
+    .replace(/\b[Ll]a risorsa\s+puÃ²\b/g, "Puoi")
+    .replace(/\b[Ll]a risorsa\s+può\b/g, "Puoi")
+    .replace(/\b[Ll]a persona\s+puÃ²\b/g, "Puoi")
+    .replace(/\b[Ll]a persona\s+può\b/g, "Puoi")
+    .replace(/\b[Ll]a risorsa\s+dovrebbe\b/g, "Dovresti")
+    .replace(/\b[Ll]a persona\s+dovrebbe\b/g, "Dovresti")
+    .replace(/\b[Ll]a risorsa\s+deve\b/g, "Devi")
+    .replace(/\b[Ll]a persona\s+deve\b/g, "Devi")
+    .replace(/\b[Ll]a risorsa\s+ha bisogno di\b/g, "Hai bisogno di")
+    .replace(/\b[Ll]a persona\s+ha bisogno di\b/g, "Hai bisogno di")
+    .replace(/\b[Ll]a risorsa\b/g, "tu")
+    .replace(/\b[Ll]a persona\b/g, "tu")
+    .replace(/\baffidarle\b/gi, "darti")
+    .replace(/\bassegnarle\b/gi, "assegnarti")
+    .replace(/\bseguirla\b/gi, "seguirti")
+    .replace(/\baffiancarla\b/gi, "affiancarti")
+    .replace(/\bgestirla\b/gi, "gestirti")
+    .replace(/\baiutarla\b/gi, "aiutarti")
+    .replace(/\bvalorizzarla\b/gi, "valorizzarti")
+    .replace(/\bsostenerla\b/gi, "sostenerti")
+    .replace(/\bverificarla\b/gi, "verificarti")
+    .replace(/\ble sue\b/gi, "le tue")
+    .replace(/\bi suoi\b/gi, "i tuoi")
+    .replace(/\bil suo\b/gi, "il tuo")
+    .replace(/\bla sua\b/gi, "la tua");
+
+  if (!/\b(tu|ti|puoi|dovresti|devi|hai bisogno|mantieni|evita|lavora|usa|concentrati)\b/i.test(value)) {
+    value = `Per lavorare su questo punto, puoi partire da questa indicazione: ${lowerFirstLetter(value)}`;
+  }
+
+  return value;
+}
+
+function isDirectionOutputContext(normalized, options = {}) {
+  if (normalized?.roleFit?.roleKey === "direzione") return true;
+  return isDirectionOrEntrepreneurRole(options.requestedRole || options.role || "");
+}
+
+function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized, options = {}) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     return expandedReportJson;
   }
@@ -3560,6 +3620,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
   const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const isDirectionRole = isDirectionOutputContext(normalized, options);
 
   const traits = Array.isArray(expandedReportJson.traits)
     ? expandedReportJson.traits.map((trait) => {
@@ -3621,13 +3682,18 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
           }
         }
 
+        const improvementPlan = isDirectionRole
+          ? makePracticalTextDirectForResource(trait.improvementPlan || "")
+          : trait.improvementPlan;
+
         return {
           ...trait,
           displayName,
           description,
           chartScore: value,
           showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: shouldShowSkillActionForChartValue(value),
+          showSkillAction: isDirectionRole ? false : shouldShowSkillActionForChartValue(value),
+          improvementPlan,
           expandedText
         };
       })
@@ -3717,7 +3783,8 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const additionalParameters = normalized.additionalParameters;
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized
+    normalized,
+    { requestedRole: assessment.requestedRole }
   );
   const validatedRevision = assessment.result?.isValidated
     ? latestValidatedRevisionFromAssessment(assessment)
