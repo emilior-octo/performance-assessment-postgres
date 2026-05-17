@@ -229,8 +229,8 @@ app.use((req, res, next) => {
 const ASSESSMENT_TYPES = {
   zpi_hr: {
     key: "zpi_hr",
-    title: "ZPIâ„¢ â€“ Zenith Performance Index",
-    shortTitle: "ZPIâ„¢",
+    title: "ZPI™ – Zenith Performance Index",
+    shortTitle: "ZPI™",
     publicPath: "/zenith-assessment",
     qrDownloadPath: "/admin/qr/zenith/download",
     tokenEnv: "ZENITH_ASSESSMENT_TOKEN",
@@ -327,7 +327,7 @@ const DIMENSION_CATEGORY = {
 const TRAIT_DIMENSIONS = [
   "Organizzazione e pianificazione",
   "Automotivazione",
-  "Affidabilità + autodisciplina",
+  "Affidabilità",
   "Sicurezza",
   "Stress",
   "Dinamismo",
@@ -369,11 +369,11 @@ const DIMENSION_DEFINITIONS = {
     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Indice di attendibilitÃ ": [
-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Affidabilità", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Principi", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "ContinuitÃ  professionale": [
-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Affidabilità", category: DIMENSION_CATEGORY.TRAIT },
     { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "ResponsabilitÃ  e ownership": [
@@ -463,8 +463,8 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
-  "Affidabilità + autodisciplina": "Affidabilità + autodisciplina",
+  "Affidabilità + autodisciplina": "Affidabilità",
+  "Affidabilità": "Affidabilità",
   "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
   "ResponsabilitÃ ": "Responsabilità",
   "EspansivitÃ ": "Espansività",
@@ -478,7 +478,7 @@ const DISPLAY_LABELS = {
 const DIMENSION_DESCRIPTIONS = {
   "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",
   "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo in campo professionale",
-  "Affidabilità + autodisciplina": "misura la coscienziosità della persona: senso di responsabilità, capacità di mantenere ciò che viene affidato, accuratezza, profondità e affidabilità",
+  "Affidabilità": "misura la coscienziosità della persona: senso di responsabilità, capacità di mantenere ciò che viene affidato, accuratezza, profondità e affidabilità",
   "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni",
   "Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
   "Gestione pressioni / Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
@@ -502,7 +502,7 @@ const DIMENSION_DESCRIPTIONS = {
 const ZPI_EVO_TRAIT_GUIDE = {
   "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "capacità di programmare a breve. Persona ordinata, precisa, pianifica il lavoro ed è puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva. A volte può avere confusione se ci sono molte cose da fare, ma in genere riesce a programmarsi" }, { min: 10, text: "ha bisogno di aiuto per organizzare il lavoro sotto forma di piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente. La persona non organizza bene il lavoro" }, { min: -100, text: "molto disorganizzata e dispersiva" }] },
   "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "persona fortemente motivata" }, { min: 40, text: "molto motivata e ambiziosa" }, { min: 0, text: "si automotiva, ma ha difficoltà ad accendere gli altri" }, { min: -30, text: "ha bisogno di essere motivata" }, { min: -100, text: "crede poco in se stessa" }] },
-  "Affidabilità + autodisciplina": { evo: "Autodisciplina", bands: [{ min: 60, text: "persona molto affidabile" }, { min: 40, text: "decisamente affidabile" }, { min: 20, text: "non cura fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "rimanda e lascia attività non completamente gestite" }, { min: -100, text: "ha bisogno di direttive chiare e controllo costante" }] },
+  "Affidabilità": { evo: "Autodisciplina", bands: [{ min: 60, text: "persona molto affidabile" }, { min: 40, text: "decisamente affidabile" }, { min: 20, text: "non cura fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "rimanda e lascia attività non completamente gestite" }, { min: -100, text: "ha bisogno di direttive chiare e controllo costante" }] },
   "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini" }, { min: 50, text: "molto coerente, difficile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma è disponibile a mettersi in discussione" }, { min: -20, text: "flessibile e aperta al cambiamento" }, { min: -100, text: "creativa ma fortemente incoerente e incostante" }] },
   "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
   "Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
@@ -683,6 +683,11 @@ function normalizeRoleKey(role) {
   return "altro";
 }
 
+function isDirectionOrEntrepreneurRole(role) {
+  return normalizeRoleKey(role) === "direzione";
+}
+
+
 const ROLE_FIT_WEIGHTS = {
   direzione: {
     "Automotivazione": 1.35,
@@ -699,7 +704,7 @@ const ROLE_FIT_WEIGHTS = {
   manager: {
     "ResponsabilitÃ ": 1.35,
     "Organizzazione e pianificazione": 1.25,
-    "AffidabilitÃ  + autodisciplina": 1.25,
+    "Affidabilità": 1.25,
     "Sicurezza": 1.1,
     "Ascolto attivo": 1.1,
     "Leadership naturale": 1.3,
@@ -731,7 +736,7 @@ const ROLE_FIT_WEIGHTS = {
   },
   amministrativo: {
     "Organizzazione e pianificazione": 1.45,
-    "AffidabilitÃ  + autodisciplina": 1.4,
+    "Affidabilità": 1.4,
     "ResponsabilitÃ ": 1.25,
     "Stress": 1.1,
     "Gestione prioritÃ ": 1.3,
@@ -743,7 +748,7 @@ const ROLE_FIT_WEIGHTS = {
   operations: {
     "Organizzazione e pianificazione": 1.35,
     "ResponsabilitÃ ": 1.3,
-    "AffidabilitÃ  + autodisciplina": 1.25,
+    "Affidabilità": 1.25,
     "Stress": 1.15,
     "Dinamismo": 1.1,
     "Gestione prioritÃ ": 1.35,
@@ -775,7 +780,7 @@ const ROLE_FIT_WEIGHTS = {
   },
   it_digital: {
     "Organizzazione e pianificazione": 1.25,
-    "AffidabilitÃ  + autodisciplina": 1.25,
+    "Affidabilità": 1.25,
     "Automotivazione": 1.2,
     "Stress": 1.1,
     "FlessibilitÃ  comunicativa": 1.05,
@@ -789,7 +794,7 @@ const ROLE_FIT_WEIGHTS = {
     // Fallback prudente per ruoli liberi: profilo equilibrato da impiegato/collaboratore generalista.
     // Evita interpretazioni troppo specialistiche quando il ruolo non rientra nei preset.
     "Organizzazione e pianificazione": 1.2,
-    "AffidabilitÃ  + autodisciplina": 1.2,
+    "Affidabilità": 1.2,
     "ResponsabilitÃ ": 1.15,
     "Gestione prioritÃ ": 1.15,
     "AttendibilitÃ ": 1.15,
@@ -814,7 +819,7 @@ const ROLE_FIT_WEIGHTS = {
 
 ROLE_FIT_WEIGHTS.segreteria = {
   "Organizzazione e pianificazione": 1.35,
-  "AffidabilitÃ  + autodisciplina": 1.35,
+  "Affidabilità": 1.35,
   "ResponsabilitÃ ": 1.15,
   "Ascolto attivo": 1.2,
   "Comprensione": 1.15,
@@ -828,7 +833,7 @@ ROLE_FIT_WEIGHTS.segreteria = {
 
 ROLE_FIT_WEIGHTS.segreteria_direzione = {
   "Organizzazione e pianificazione": 1.4,
-  "AffidabilitÃ  + autodisciplina": 1.35,
+  "Affidabilità": 1.35,
   "ResponsabilitÃ ": 1.25,
   "Sicurezza": 1.1,
   "Ascolto attivo": 1.15,
@@ -929,7 +934,7 @@ function buildManagementAdvice({ traits, roleFit }) {
     return "La risorsa puÃ² rendere meglio in contesti dinamici, con interazione, confronto e obiettivi visibili. Ãˆ utile canalizzare lâ€™energia relazionale su attivitÃ  con responsabilitÃ  definite, evitando che la spinta comunicativa si disperda in iniziative poco prioritarie.";
   }
 
-  if (top.includes("Organizzazione e pianificazione") || top.includes("AffidabilitÃ  + autodisciplina")) {
+  if (top.includes("Organizzazione e pianificazione") || top.includes("Affidabilità")) {
     return "La risorsa puÃ² essere gestita efficacemente con processi chiari, responsabilitÃ  definite e spazio per presidiare attivitÃ  operative o progettuali. Ãˆ utile affidarle obiettivi misurabili e riconoscere la continuitÃ  di esecuzione.";
   }
 
@@ -1126,7 +1131,7 @@ function buildSummary(traits, role) {
   let orientation = "profilo equilibrato";
   const topSet = new Set(top);
 
-  if (topSet.has("ResponsabilitÃ ") || topSet.has("AffidabilitÃ  + autodisciplina")) {
+  if (topSet.has("ResponsabilitÃ ") || topSet.has("Affidabilità")) {
     orientation = "orientamento manageriale / guida";
   } else if (
     topSet.has("EspansivitÃ ") ||
@@ -1134,7 +1139,7 @@ function buildSummary(traits, role) {
     topSet.has("Dinamismo")
   ) {
     orientation = "orientamento commerciale / relazione";
-  } else if (topSet.has("Organizzazione e pianificazione") || topSet.has("AffidabilitÃ  + autodisciplina")) {
+  } else if (topSet.has("Organizzazione e pianificazione") || topSet.has("Affidabilità")) {
     orientation = "orientamento organizzativo / metodo";
   } else if (topSet.has("Automotivazione") || topSet.has("Dinamismo")) {
     orientation = "orientamento evolutivo / progettuale";
@@ -1146,7 +1151,7 @@ function buildSummary(traits, role) {
   if (role === "manager") {
     roleComment =
       topSet.has("ResponsabilitÃ ") ||
-      topSet.has("AffidabilitÃ  + autodisciplina") ||
+      topSet.has("Affidabilità") ||
       topSet.has("Organizzazione e pianificazione")
         ? "Il profilo mostra elementi coerenti con un ruolo manageriale, soprattutto sul piano della guida, della responsabilitÃ  e della struttura operativa."
         : "Per un ruolo manageriale sarÃ  utile approfondire in particolare guida, responsabilitÃ , capacitÃ  organizzativa e tenuta nella gestione delle persone.";
@@ -1162,7 +1167,7 @@ function buildSummary(traits, role) {
     roleComment =
       topSet.has("Organizzazione e pianificazione") ||
       topSet.has("ResponsabilitÃ ") ||
-      topSet.has("AffidabilitÃ  + autodisciplina")
+      topSet.has("Affidabilità")
         ? "Il profilo mostra elementi coerenti con un ruolo amministrativo, soprattutto su metodo, affidabilitÃ , continuitÃ  e presidio operativo."
         : "Per un ruolo amministrativo sarÃ  utile approfondire soprattutto metodo, precisione, affidabilitÃ  e continuitÃ  nellâ€™esecuzione.";
   }
@@ -1437,7 +1442,7 @@ async function generateExpandedReportPayload({
   reliabilityFlags,
   roleFit,
   managementAdvice,
-  assessmentTitle = "ZPIâ„¢ â€“ Zenith Performance Index",
+  assessmentTitle = "ZPI™ – Zenith Performance Index",
   assessmentType = "zpi_hr"
 }) {
   if (!openai) {
@@ -1477,6 +1482,7 @@ async function generateExpandedReportPayload({
     ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
     : "";
   const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
+  const isDirectionRole = isDirectionOrEntrepreneurRole(role);
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1505,6 +1511,7 @@ CONTESTO
 ${theoreticalProfileNote ? `- Nota attendibilitÃ : ${theoreticalProfileNote}` : ""}
 ${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
 ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
+${isDirectionRole ? `- Regola speciale Direzione/Imprenditore: chi legge il report coincide con la persona valutata. Nel campo improvementPlan scrivi sempre in seconda persona singolare, rivolgendoti direttamente alla persona con "tu", "puoi", "ti conviene", "dovresti". Il campo skillAction verrà omesso nel report finale, quindi non deve contenere indicazioni rivolte a terzi.` : ""}
 
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
@@ -1562,6 +1569,7 @@ Per ogni tratto restituisci:
 - expandedText: vera analisi comportamentale del tratto, coerente con writingGuidance. Deve spiegare come la persona tende a funzionare, cosa puÃ² emergere nel lavoro e quali effetti operativi o relazionali puÃ² produrre. NON ripetere la definizione del campo description, perchÃ© verrÃ  giÃ  mostrata tra parentesi nel report. NON inserire consigli operativi in questo campo.
 - improvementPlan: rimedi pratici solo se il tratto Ã¨ sotto 40 su scala -100/+100. Se il tratto Ã¨ pari o superiore a 40, scrivi una frase breve di valorizzazione/consolidamento non correttiva, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale.
 - skillAction: indicazione gestionale solo se il tratto Ã¨ sotto 50 su scala -100/+100. Se il tratto Ã¨ da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale. Non deve contraddire expandedText.
+- Se il ruolo target è Direzione / Imprenditore, il campo improvementPlan deve parlare direttamente alla persona valutata, non a un responsabile che deve gestirla. Mantieni il contenuto pratico, ma usa tono diretto: "puoi", "ti conviene", "dovresti", "mantieni", "evita", "lavora su".
 
 STILE DI SCRITTURA
 - Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
@@ -1630,7 +1638,7 @@ function startExpandedReportJob({
   reliabilityFlags,
   roleFit,
   managementAdvice,
-  assessmentTitle = "ZPIâ„¢ â€“ Zenith Performance Index",
+  assessmentTitle = "ZPI™ – Zenith Performance Index",
   assessmentType = "zpi_hr"
 }) {
   if (!assessmentId) {
@@ -2055,6 +2063,7 @@ function normalizeDimensionNameForDisplay(name) {
   if (value === "Capacità di gestióne finanziaria") return "Capacità di gestione finanziaria";
 
   const sourceAliasToApproved = {
+    "Affidabilità + autodisciplina": "Affidabilità",
     "Responsabilità e ownership": "Responsabilità",
     "Stabilità emotiva e fiducia": "Sicurezza",
     "Fiducia relazionale e sicurezza sociale": "Sicurezza",
@@ -2064,7 +2073,7 @@ function normalizeDimensionNameForDisplay(name) {
     "Creatività e innovazione": "Dinamismo",
     "Indice di attendibilità": "Attendibilità",
     "Flessibilità e adattabilità": "Resistenza al cambiamento",
-    "Continuità professionale": "Affidabilità + autodisciplina",
+    "Continuità professionale": "Affidabilità",
     "Organizzazione e metodo": "Organizzazione e pianificazione",
     "Visione e orientamento al futuro": "Automotivazione",
     "Gestione della pressione": "Stress",
@@ -2141,14 +2150,72 @@ function normalizeNameList(list = []) {
     .filter((name, index, arr) => arr.indexOf(name) === index);
 }
 
-function getNormalizedAnalysis(payload = {}, requestedRole = "") {
+function countOutputDimensions(list = []) {
+  const normalized = mergeDimensionList(list);
+  const split = splitDimensions(normalized);
+
+  return {
+    total: normalized.length,
+    traits: split.traits.length,
+    additionalParameters: split.additionalParameters.length
+  };
+}
+
+function shouldRebuildZpiDimensions({ assessmentType, traits, answersJson }) {
+  if (assessmentType !== "zpi_hr") return false;
+  if (!answersJson || typeof answersJson !== "object") return false;
+
+  const answeredCount = Object.values(answersJson).filter(Boolean).length;
+  if (answeredCount === 0) return false;
+
+  const counts = countOutputDimensions(traits);
+  return counts.traits < TRAIT_DIMENSIONS.length || counts.additionalParameters < ADDITIONAL_PARAMETER_DIMENSIONS.length;
+}
+
+function chooseBestZpiDimensions(currentTraits, rebuiltTraits) {
+  const currentCounts = countOutputDimensions(currentTraits);
+  const rebuiltCounts = countOutputDimensions(rebuiltTraits);
+
+  const currentScore = currentCounts.traits + currentCounts.additionalParameters;
+  const rebuiltScore = rebuiltCounts.traits + rebuiltCounts.additionalParameters;
+
+  if (rebuiltCounts.traits >= currentCounts.traits && rebuiltCounts.additionalParameters >= currentCounts.additionalParameters && rebuiltScore > currentScore) {
+    return rebuiltTraits;
+  }
+
+  if (rebuiltCounts.traits === TRAIT_DIMENSIONS.length && rebuiltCounts.additionalParameters === ADDITIONAL_PARAMETER_DIMENSIONS.length) {
+    return rebuiltTraits;
+  }
+
+  return currentTraits;
+}
+
+function getNormalizedAnalysis(payload = {}, requestedRole = "", answersJson = null) {
+  const assessmentType = payload.assessmentType || "zpi_hr";
   const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
-  const traits = mergeDimensionList(rawTraits);
+  let traits = mergeDimensionList(rawTraits);
+
+  if (shouldRebuildZpiDimensions({ assessmentType, traits, answersJson })) {
+    const rebuiltTraits = mergeDimensionList(buildTraitsFromAnswers(answersJson, assessmentType));
+    const chosenTraits = chooseBestZpiDimensions(traits, rebuiltTraits);
+
+    if (chosenTraits !== traits) {
+      console.warn("[ZPI] traits rebuilt from answersJson because stored traitsJson was incomplete", {
+        stored: countOutputDimensions(traits),
+        rebuilt: countOutputDimensions(rebuiltTraits)
+      });
+      traits = chosenTraits;
+    }
+  }
+
   const split = splitDimensions(traits);
   const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
     .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
   const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
     .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
+
+  const normalizedMainTraits = split.traits.length > mainTraits.length ? split.traits : mainTraits;
+  const normalizedAdditionalParameters = split.additionalParameters.length > additionalParameters.length ? split.additionalParameters : additionalParameters;
   const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
   const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
@@ -2163,18 +2230,17 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
 
   return {
     traits,
-    mainTraits,
-    additionalParameters,
+    mainTraits: normalizedMainTraits,
+    additionalParameters: normalizedAdditionalParameters,
     roleFit,
     managementAdvice,
-    topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
-    weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
+    topTraits: normalizeNameList(payload.topTraits || normalizedMainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
+    weakTraits: normalizeNameList(payload.weakTraits || normalizedMainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
     reliabilityFlags,
     convictionChange,
     securityTheory
   };
 }
-
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
   const { traits, additionalParameters } = splitDimensions(dimensions);
 
@@ -2557,7 +2623,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
   const submissions = assessments.map((item) => {
     const payload = item.result?.traitsJson || {};
     const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, item.requestedRole);
+    const normalized = getNormalizedAnalysis(payload, item.requestedRole, item.result?.answersJson);
 
     return {
       assessmentType,
@@ -2637,7 +2703,7 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
 
       const payload = assessment.result.traitsJson || {};
       const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-      const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+      const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
       const traits = normalized.traits;
       const roleFit = normalized.roleFit;
       const managementAdvice = normalized.managementAdvice;
@@ -2711,7 +2777,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin,
 
     const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
     const managementAdvice = normalized.managementAdvice;
@@ -2768,7 +2834,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmi
 
     const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
     const managementAdvice = normalized.managementAdvice;
@@ -3340,10 +3406,11 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
 
   const payload = assessment.result.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result.expandedReportJson || null),
-    normalized
+    normalized,
+    { requestedRole: assessment.requestedRole }
   );
 
   const html = buildEditableWordHtml({ assessment, normalized, expanded });
@@ -3470,10 +3537,11 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
 
   const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized
+    normalized,
+    { requestedRole: assessment.requestedRole }
   );
 
   const submission = {
@@ -3560,7 +3628,57 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
-function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
+
+function lowerFirstLetter(value) {
+  const text = String(value || "").trim();
+  if (!text) return text;
+  return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+function makePracticalTextDirectForResource(text) {
+  let value = normalizeBrokenUtf8(String(text || "").trim());
+  if (!value) return value;
+
+  value = value
+    .replace(/\b[Ll]a risorsa\s+puÃ²\b/g, "Puoi")
+    .replace(/\b[Ll]a risorsa\s+può\b/g, "Puoi")
+    .replace(/\b[Ll]a persona\s+puÃ²\b/g, "Puoi")
+    .replace(/\b[Ll]a persona\s+può\b/g, "Puoi")
+    .replace(/\b[Ll]a risorsa\s+dovrebbe\b/g, "Dovresti")
+    .replace(/\b[Ll]a persona\s+dovrebbe\b/g, "Dovresti")
+    .replace(/\b[Ll]a risorsa\s+deve\b/g, "Devi")
+    .replace(/\b[Ll]a persona\s+deve\b/g, "Devi")
+    .replace(/\b[Ll]a risorsa\s+ha bisogno di\b/g, "Hai bisogno di")
+    .replace(/\b[Ll]a persona\s+ha bisogno di\b/g, "Hai bisogno di")
+    .replace(/\b[Ll]a risorsa\b/g, "tu")
+    .replace(/\b[Ll]a persona\b/g, "tu")
+    .replace(/\baffidarle\b/gi, "darti")
+    .replace(/\bassegnarle\b/gi, "assegnarti")
+    .replace(/\bseguirla\b/gi, "seguirti")
+    .replace(/\baffiancarla\b/gi, "affiancarti")
+    .replace(/\bgestirla\b/gi, "gestirti")
+    .replace(/\baiutarla\b/gi, "aiutarti")
+    .replace(/\bvalorizzarla\b/gi, "valorizzarti")
+    .replace(/\bsostenerla\b/gi, "sostenerti")
+    .replace(/\bverificarla\b/gi, "verificarti")
+    .replace(/\ble sue\b/gi, "le tue")
+    .replace(/\bi suoi\b/gi, "i tuoi")
+    .replace(/\bil suo\b/gi, "il tuo")
+    .replace(/\bla sua\b/gi, "la tua");
+
+  if (!/\b(tu|ti|puoi|dovresti|devi|hai bisogno|mantieni|evita|lavora|usa|concentrati)\b/i.test(value)) {
+    value = `Per lavorare su questo punto, puoi partire da questa indicazione: ${lowerFirstLetter(value)}`;
+  }
+
+  return value;
+}
+
+function isDirectionOutputContext(normalized, options = {}) {
+  if (normalized?.roleFit?.roleKey === "direzione") return true;
+  return isDirectionOrEntrepreneurRole(options.requestedRole || options.role || "");
+}
+
+function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized, options = {}) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     return expandedReportJson;
   }
@@ -3568,6 +3686,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
   const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const isDirectionRole = isDirectionOutputContext(normalized, options);
 
   const traits = Array.isArray(expandedReportJson.traits)
     ? expandedReportJson.traits.map((trait) => {
@@ -3629,13 +3748,18 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
           }
         }
 
+        const improvementPlan = isDirectionRole
+          ? makePracticalTextDirectForResource(trait.improvementPlan || "")
+          : trait.improvementPlan;
+
         return {
           ...trait,
           displayName,
           description,
           chartScore: value,
           showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: shouldShowSkillActionForChartValue(value),
+          showSkillAction: isDirectionRole ? false : shouldShowSkillActionForChartValue(value),
+          improvementPlan,
           expandedText
         };
       })
@@ -3719,13 +3843,14 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
-    normalized
+    normalized,
+    { requestedRole: assessment.requestedRole }
   );
   const validatedRevision = assessment.result?.isValidated
     ? latestValidatedRevisionFromAssessment(assessment)
