@@ -3603,6 +3603,17 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
     const displayName = displayDimensionName(canonicalName);
     const aiTrait = aiTraitByName.get(canonicalName) || {};
+
+    if (["Gestione priorità", "Capacità di gestione finanziaria", "Attendibilità"].includes(displayName)) {
+      console.log("[ZPI TRAIT MATCH DEBUG]", {
+        canonicalName,
+        displayName,
+        aiTraitFound: !!aiTraitByName.get(canonicalName),
+        aiTraitExpandedTextPreview: aiTrait?.expandedText ? String(aiTrait.expandedText).slice(0, 180) : null,
+        availableAiTraitNames: Array.from(aiTraitByName.keys())
+      });
+    }
+
     const value = chartScore(dimension?.score ?? 0);
     const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
