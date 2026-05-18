@@ -1475,6 +1475,50 @@ async function generateExpandedReportPayload({
 Sei un consulente organizzativo senior.
 Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario Ã¨ sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
 
+ISTRUZIONE OBBLIGATORIA E PRIORITARIA PER generalSummary
+Il campo generalSummary è l’unica sezione che deve parlare direttamente alla persona che ha compilato il test.
+
+generalSummary DEVE:
+- essere scritto SEMPRE in seconda persona singolare;
+- iniziare con una formula naturale come "Nel lavoro tendi a...", "Quando ti trovi...", "In questo ruolo puoi..." oppure "Per te può essere utile...";
+- usare formule dirette come "tu", "tendi", "puoi", "potresti", "per te", "la tua compatibilità", "ti aiuta";
+- mantenere un tono umano, concreto, osservativo e professionale;
+- parlare alla persona, non dellapersona;
+- citare compatibilità con il ruolo e indice di coerenza in modo naturale, sempre rivolgendosi direttamente alla persona.
+
+STILE OBBLIGATORIO DI generalSummary
+Scrivi con la stessa impostazione di questi esempi:
+- "Nel lavoro tendi a cercare ordine, priorità chiare e una buona gestione delle attività..."
+- "La tua compatibilità con il ruolo risulta alta..."
+- "Allo stesso tempo, per te può essere utile lavorare su..."
+- "Questo suggerisce di verificare sul campo..."
+
+generalSummary NON DEVE MAI usare:
+- "il profilo"
+- "il profilo mostra"
+- "il profilo evidenzia"
+- "la persona"
+- "la risorsa"
+- "il candidato"
+- "il soggetto"
+- "emerge"
+- "emergono"
+- "si osserva"
+- "si evidenzia"
+- "risulta utile approfondire"
+- "sarà utile approfondire"
+- "viene evidenziato"
+- formule impersonali, passive o da report HR aziendale.
+
+Se generalSummary contiene una di queste formule, la risposta è errata e deve essere riscritta in seconda persona.
+
+REGOLE DI TONO PER LE SEZIONI
+- generalSummary: seconda persona singolare, rivolto direttamente alla persona che ha compilato il test.
+- expandedText: tono consulenziale HR/organizzativo in terza persona.
+- improvementPlan: tono HR/organizzativo in terza persona, salvo ruolo direzione/imprenditore/titolare/CEO/founder.
+- skillAction: tono HR/organizzativo in terza persona.
+- Se il ruolo è direzione/imprenditore/titolare/CEO/founder, improvementPlan deve parlare direttamente alla persona e skillAction non deve contenere indicazioni su come gestirla.
+
 CONTESTO
 - Questionario: ${assessmentTitle}
 - Tipo assessment: ${assessmentType}
@@ -1538,7 +1582,7 @@ ISTRUZIONI GENERALI
 8. Non trasformare l'analisi del tratto in una lista di consigli: prima interpreta il comportamento, poi solo nei campi dedicati indica eventuali azioni pratiche coerenti.
 9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
 10. Compila generalManagementAdvice con un consiglio generale pratico, ma non contraddittorio rispetto ai tratti emersi.
-11. Nella relazione generale cita in modo naturale la compatibilitÃ  con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata.
+11. Nella relazione generale cita in modo naturale la compatibilitÃ  con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata e sempre in seconda persona.
 12. Non scrivere mai frasi come "La persona Ã¨ stata valutata in riferimento al ruolo di..." o "La risorsa Ã¨ stata valutata in riferimento al ruolo di...".
 
 ISTRUZIONI PER OGNI TRATTO
@@ -1548,7 +1592,9 @@ Per ogni tratto restituisci:
 - skillAction: indicazione gestionale solo se il tratto Ã¨ sotto 50 su scala -100/+100. Se il tratto Ã¨ da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale. Non deve contraddire expandedText.
 
 STILE DI SCRITTURA
-- Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
+- Per generalSummary scrivi come un consulente che restituisce il profilo direttamente alla persona che ha compilato il test.
+- Per expandedText, improvementPlan e skillAction scrivi invece come un consulente organizzativo che parla a imprenditore, manager o referente operativo.
+- Non usare tono da psicologo clinico o grande reparto HR.
 - Usa parole semplici e frasi brevi.
 - Non iniziare mai un approfondimento con frasi definitorie tipo "Misura...", "Valuta...", "Indica..." se ripetono la descrizione del tratto.
 - Evita formule ripetitive tra i tratti.
@@ -3555,16 +3601,23 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const traits = allApprovedDimensions.map((dimension) => {
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
-    const normalizedCanonicalName = normalizePdfVisibleText(canonicalName);
-    const displayName = displayDimensionName(normalizedCanonicalName);
-    const aiTrait =
-      aiTraitByName.get(canonicalName) ||
-      aiTraitByName.get(normalizedCanonicalName) ||
-      {};
+    const displayName = displayDimensionName(canonicalName);
+    const aiTrait = aiTraitByName.get(canonicalName) || {};
+
+    if (["Gestione priorità", "Capacità di gestione finanziaria", "Attendibilità"].includes(displayName)) {
+      console.log("[ZPI TRAIT MATCH DEBUG]", {
+        canonicalName,
+        displayName,
+        aiTraitFound: !!aiTraitByName.get(canonicalName),
+        aiTraitExpandedTextPreview: aiTrait?.expandedText ? String(aiTrait.expandedText).slice(0, 180) : null,
+        availableAiTraitNames: Array.from(aiTraitByName.keys())
+      });
+    }
+
     const value = chartScore(dimension?.score ?? 0);
-    const description = dimensionDescription(normalizedCanonicalName);
+    const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
-    const truthfulness = normalizedCanonicalName === "Attendibilità"
+    const truthfulness = canonicalName === "Attendibilità"
       ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) })
       : null;
 
@@ -3574,7 +3627,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     );
 
     if (!expandedText) {
-      if (normalizedCanonicalName === "Attendibilità" && truthfulness) {
+      if (canonicalName === "Attendibilità" && truthfulness) {
         expandedText = `${truthfulness.label}: ${truthfulness.text}`;
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
         expandedText = "Possono essere presenti fonti di pressione, distrazione o preoccupazione che influenzano il modo di lavorare. Questo dato va letto con esempi concreti: quali situazioni generano tensione, come vengono gestite le urgenze e quanto l’ambiente aiuta o ostacola la continuità operativa.";
@@ -3585,7 +3638,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (normalizedCanonicalName === "Attendibilità") {
+    if (canonicalName === "Attendibilità") {
       const statusText = `${truthfulness.label}: ${truthfulness.text}`;
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
@@ -3602,12 +3655,12 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (normalizedCanonicalName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
+    if (canonicalName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
       expandedText = expandedText ? `${expandedText} ${normalized.securityTheory.text}` : normalized.securityTheory.text;
     }
 
     if (
-      (normalizedCanonicalName === "Sicurezza" || normalizedCanonicalName === "Resistenza al cambiamento") &&
+      (canonicalName === "Sicurezza" || canonicalName === "Resistenza al cambiamento") &&
       normalized?.convictionChange &&
       !expandedText.includes(normalized.convictionChange.label)
     ) {
@@ -3616,24 +3669,24 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
     }
 
-    if (shouldAddResponsibilityNote && normalizedCanonicalName === "Responsabilità") {
+    if (shouldAddResponsibilityNote && canonicalName === "Responsabilità") {
       const note = responsibilityOpinionNote();
       if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
         expandedText = expandedText ? `${expandedText} ${note}` : note;
       }
     }
 
-    const fallbackImprovementPlan = normalizedCanonicalName === "Stress"
+    const fallbackImprovementPlan = canonicalName === "Stress"
       ? "Individuare le principali fonti di pressione e trasformarle in azioni semplici: priorità scritte, tempi realistici, pause operative e confronto tempestivo quando una situazione rischia di accumularsi."
       : "Collegare il miglioramento a obiettivi misurabili e a tappe brevi. Prevedere momenti di verifica dei progressi e riconoscimento dei risultati raggiunti.";
 
-    const fallbackSkillAction = normalizedCanonicalName === "Stress"
+    const fallbackSkillAction = canonicalName === "Stress"
       ? "Ridurre ambiguità e sovraccarichi, chiarendo priorità, responsabilità e tempi. Nei momenti più intensi è utile verificare spesso cosa sta bloccando il lavoro."
       : "Dare obiettivi concreti, visibili e ravvicinati. Evitare incarichi lunghi senza riscontro, perché potrebbero ridurre continuità e iniziativa.";
 
     return {
       ...aiTrait,
-      name: normalizedCanonicalName,
+      name: canonicalName,
       displayName,
       description,
       chartScore: value,
