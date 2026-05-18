@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import express from "express";
 import path from "path";
 import zlib from "zlib";
@@ -174,11 +174,84 @@ function normalizeTextPayload(value) {
   return value;
 }
 
+function normalizePdfVisibleText(text) {
+  // Correzione SOLO VISIVA per rendering PDF/Word: non va usata su nomi interni,
+  // mapping, scoring, filtri o JSON salvati. Serve solo a ripulire output già calcolato.
+  return normalizeBrokenUtf8(text)
+    .replace(/ResponsabilitÃ\b/g, "Responsabilità")
+    .replace(/ResponsabilitÃ\s/g, "Responsabilità ")
+    .replace(/ResponsabilitÃ$/g, "Responsabilità")
+    .replace(/EspansivitÃ\b/g, "Espansività")
+    .replace(/EspansivitÃ\s/g, "Espansività ")
+    .replace(/EspansivitÃ$/g, "Espansività")
+    .replace(/AttendibilitÃ\b/g, "Attendibilità")
+    .replace(/AttendibilitÃ\s/g, "Attendibilità ")
+    .replace(/AttendibilitÃ$/g, "Attendibilità")
+    .replace(/prioritÃ\b/g, "priorità")
+    .replace(/prioritÃ\s/g, "priorità ")
+    .replace(/prioritÃ$/g, "priorità")
+    .replace(/modalitÃ\b/g, "modalità")
+    .replace(/modalitÃ\s/g, "modalità ")
+    .replace(/modalitÃ$/g, "modalità")
+    .replace(/rigiditÃ\b/g, "rigidità")
+    .replace(/rigiditÃ\s/g, "rigidità ")
+    .replace(/rigiditÃ$/g, "rigidità")
+    .replace(/continuitÃ\b/g, "continuità")
+    .replace(/continuitÃ\s/g, "continuità ")
+    .replace(/continuitÃ$/g, "continuità")
+    .replace(/utilitÃ\b/g, "utilità")
+    .replace(/utilitÃ\s/g, "utilità ")
+    .replace(/utilitÃ$/g, "utilità")
+    .replace(/soliditÃ\b/g, "solidità")
+    .replace(/soliditÃ\s/g, "solidità ")
+    .replace(/soliditÃ$/g, "solidità")
+    .replace(/attivitÃ\b/g, "attività")
+    .replace(/attivitÃ\s/g, "attività ")
+    .replace(/attivitÃ$/g, "attività")
+    .replace(/capacitÃ\b/g, "capacità")
+    .replace(/capacitÃ\s/g, "capacità ")
+    .replace(/capacitÃ$/g, "capacità")
+    .replace(/compatibilitÃ\b/g, "compatibilità")
+    .replace(/compatibilitÃ\s/g, "compatibilità ")
+    .replace(/compatibilitÃ$/g, "compatibilità")
+    .replace(/EtÃ\b/g, "Età")
+    .replace(/EtÃ\s/g, "Età ")
+    .replace(/EtÃ$/g, "Età")
+    .replace(/puÃ²/g, "può")
+    .replace(/\bpu(?=\s+(essere|avere|risultare|dare|emergere|accettare|invece|percepire|mostrare|rendere|creare|succedere|portare|aiutare|diventare|funzionare|tradursi|richiedere|sostenere|modificare|generare|appoggiarsi|subire|fare|restare|variare|riuscire|preferire|mettere|vivere|accogliere|cercare|mantenere|apparire|offrire|produrre|facilitare|riflettere|indicare|rappresentare|rivelare|dipendere|servire)\b)/gi, "può")
+    .replace(/\bpi(?=\s+(efficace|chiaro|chiara|chiari|chiare|deciso|decisa|decisi|decise|solido|solida|solidi|solide|stabile|stabili|marcato|marcata|marcati|marcate|facile|facili|utile|utili|strutturato|strutturata|strutturati|strutturate|forte|forti|rapido|rapida|rapidi|rapide|complesso|complessa|complessi|complesse|profondo|profonda|profondi|profonde)\b)/gi, "più")
+    .replace(/\bgi(?=\s+(conosciuto|conosciuta|conosciuti|conosciute|presente|presenti|chiaro|chiara|chiari|chiare|visto|vista|visti|viste|fatto|fatta|fatti|fatte|stato|stata|stati|state|maturo|matura|maturi|mature)\b)/gi, "già")
+    .replace(/\bperch(?=\s)/gi, "perché")
+    .replace(/\bqualit(?=\s|$)/gi, "qualità")
+    .replace(/\bopportunit(?=\s|$)/gi, "opportunità")
+    .replace(/\bnecessit(?=\s|$)/gi, "necessità")
+    .replace(/\bdifficolt(?=\s|$)/gi, "difficoltà")
+    .replace(/\bambiguit(?=\s|$)/gi, "ambiguità")
+    .replace(/\bdisponibilit(?=\s|$)/gi, "disponibilità")
+    .replace(/\bvisibilit(?=\s|$)/gi, "visibilità")
+    .replace(/\btracciabilit(?=\s|$)/gi, "tracciabilità")
+    .replace(/\baffidabilit(?=\s|$)/gi, "affidabilità")
+    .replace(/\bResponsabilit(?=\s|$)/g, "Responsabilità")
+    .replace(/\bEspansivit(?=\s|$)/g, "Espansività")
+    .replace(/\bAttendibilit(?=\s|$)/g, "Attendibilità")
+    .replace(/\bpriorit(?=\s|$)/g, "priorità")
+    .replace(/\bmodalit(?=\s|$)/g, "modalità")
+    .replace(/\brigidit(?=\s|$)/g, "rigidità")
+    .replace(/\bcontinuit(?=\s|$)/g, "continuità")
+    .replace(/\butilit(?=\s|$)/g, "utilità")
+    .replace(/\bsolidit(?=\s|$)/g, "solidità")
+    .replace(/\battivit(?=\s|$)/g, "attività")
+    .replace(/\bcapacit(?=\s|$)/g, "capacità")
+    .replace(/\bcompatibilit(?=\s|$)/g, "compatibilità")
+    .replace(/\bEt(?=:|\s|$)/g, "Età")
+    .replace(/[\u0018\u0019]/g, "’");
+}
+
 function patchPdfTextNormalization(doc) {
   if (!doc || doc.__zpiTextNormalizationPatched) return doc;
 
   const originalText = doc.text.bind(doc);
-  doc.text = (text, ...args) => originalText(normalizeBrokenUtf8(text), ...args);
+  doc.text = (text, ...args) => originalText(normalizePdfVisibleText(text), ...args);
   doc.__zpiTextNormalizationPatched = true;
 
   return doc;
@@ -462,96 +535,11 @@ const HISTOGRAM_COLORS = {
 
 const ZENITH_INDIGO = "#2F4B7C";
 
-// Label SOLO VISUALI: usate per grafici, PDF e relazione.
-// Le chiavi interne restano invariate per scoring, mapping e filtri.
 const DISPLAY_LABELS = {
-  // Tratti
-  "Organizzazione e pianificazione": "Organizzazione",
-  "Automotivazione": "Automotivazione",
-  "Affidabilità + autodisciplina": "Autodisciplina/affidabilità",
-  "AffidabilitÃ  + autodisciplina": "Autodisciplina/affidabilità",
-  "Affidabilità": "Autodisciplina/affidabilità",
-  "AffidabilitÃ ": "Autodisciplina/affidabilità",
-  "Sicurezza": "Sicurezza",
-  "Stress": "Gestione pressioni",
-  "Gestione pressioni / Stress": "Gestione pressioni",
-  "Dinamismo": "Dinamismo",
-  "Ascolto attivo": "Ascolto attivo",
-  "Comprensione": "Comprensione",
-  "Flessibilità comunicativa": "Flessibilità comunicativa",
-  "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
-  "Responsabilità": "Responsabilità",
-  "ResponsabilitÃ ": "Responsabilità",
-  "Espansività": "Espansività",
-  "EspansivitÃ ": "Espansività",
-
-  // Parametri aggiuntivi
-  "Resistenza al cambiamento": "Resistenza al cambiamento",
-  "Management": "Management",
-  "Principi": "Principi",
-  "Gestione priorità": "Gestione priorità",
-  "Gestione prioritÃ ": "Gestione priorità",
-  "Attendibilità": "Attendibilità",
-  "AttendibilitÃ ": "Attendibilità",
-  "Leadership naturale": "Leadership naturale",
-  "Cooperazione": "Cooperazione",
-  "Vendite": "Vendite",
-  "Capacità di gestione finanziaria": "Capacità di gestione finanziaria",
-  "CapacitÃ  di gestione finanziaria": "Capacità di gestione finanziaria",
-  "CapacitÃ  di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria"
+  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
+  "Stress": "Gestione pressioni / Stress",
+  "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
-
-function canonicalDimensionName(name) {
-  const value = normalizeBrokenUtf8(String(name || "").trim())
-    .replace(/gestiÃ³ne/gi, "gestione")
-    .replace(/gestiÃ²ne/gi, "gestione")
-    .replace(/gestióne/gi, "gestione")
-    .replace(/gestiòne/gi, "gestione");
-
-  const lower = value.toLowerCase();
-
-  const aliases = new Map([
-    ["organizzazione", "Organizzazione e pianificazione"],
-    ["organizzazione e pianificazione", "Organizzazione e pianificazione"],
-    ["automotivazione", "Automotivazione"],
-    ["autodisciplina/affidabilità", "Affidabilità + autodisciplina"],
-    ["autodisciplina/affidabilita", "Affidabilità + autodisciplina"],
-    ["affidabilità", "Affidabilità + autodisciplina"],
-    ["affidabilita", "Affidabilità + autodisciplina"],
-    ["affidabilità + autodisciplina", "Affidabilità + autodisciplina"],
-    ["affidabilita + autodisciplina", "Affidabilità + autodisciplina"],
-    ["sicurezza", "Sicurezza"],
-    ["stress", "Stress"],
-    ["gestione pressioni", "Stress"],
-    ["gestione pressioni / stress", "Stress"],
-    ["dinamismo", "Dinamismo"],
-    ["ascolto attivo", "Ascolto attivo"],
-    ["comprensione", "Comprensione"],
-    ["flessibilità comunicativa", "Flessibilità comunicativa"],
-    ["flessibilita comunicativa", "Flessibilità comunicativa"],
-    ["responsabilità", "Responsabilità"],
-    ["responsabilita", "Responsabilità"],
-    ["espansività", "Espansività"],
-    ["espansivita", "Espansività"],
-    ["resistenza al cambiamento", "Resistenza al cambiamento"],
-    ["management", "Management"],
-    ["principi", "Principi"],
-    ["gestione priorità", "Gestione priorità"],
-    ["gestione priorita", "Gestione priorità"],
-    ["attendibilità", "Attendibilità"],
-    ["attendibilita", "Attendibilità"],
-    ["leadership naturale", "Leadership naturale"],
-    ["cooperazione", "Cooperazione"],
-    ["vendite", "Vendite"],
-    ["capacità di gestione finanziaria", "Capacità di gestione finanziaria"],
-    ["capacita di gestione finanziaria", "Capacità di gestione finanziaria"],
-    ["attuabilità", "Capacità di gestione finanziaria"],
-    ["attuabilita", "Capacità di gestione finanziaria"],
-    ["emotiva", "Cooperazione"]
-  ]);
-
-  return aliases.get(lower) || value;
-}
 
 const DIMENSION_DESCRIPTIONS = {
   "Organizzazione e pianificazione": "misura la capacitÃ  di programmare il lavoro nel breve e nel lungo periodo",
@@ -593,12 +581,8 @@ const ZPI_EVO_TRAIT_GUIDE = {
 };
 
 function evoGuideForDimension(name, score) {
-  const canonical = canonicalDimensionName(name);
   const displayName = displayDimensionName(name);
-  const guide =
-    ZPI_EVO_TRAIT_GUIDE[canonical] ||
-    ZPI_EVO_TRAIT_GUIDE[displayName] ||
-    ZPI_EVO_TRAIT_GUIDE[String(name || "").trim()];
+  const guide = ZPI_EVO_TRAIT_GUIDE[displayName];
   if (!guide) return null;
   const value = chartScore(score);
   const band = guide.bands.find((item) => value >= item.min) || guide.bands[guide.bands.length - 1];
@@ -621,19 +605,19 @@ function stripForbiddenGeneralRelationPhrases(text) {
 
 
 function displayDimensionName(name) {
-  const canonical = canonicalDimensionName(name);
-  return normalizeBrokenUtf8(DISPLAY_LABELS[canonical] || DISPLAY_LABELS[String(name || "").trim()] || canonical);
+  const value = normalizeBrokenUtf8(String(name || "").trim());
+  const normalizedValue = value
+    .replace(/gestiÃ³ne/gi, "gestione")
+    .replace(/gestiÃ²ne/gi, "gestione")
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione");
+
+  return normalizeBrokenUtf8(DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue);
 }
 
 function dimensionDescription(name) {
-  const canonical = canonicalDimensionName(name);
   const displayName = displayDimensionName(name);
-  return normalizeBrokenUtf8(
-    DIMENSION_DESCRIPTIONS[canonical] ||
-    DIMENSION_DESCRIPTIONS[displayName] ||
-    DIMENSION_DESCRIPTIONS[String(name || "").trim()] ||
-    ""
-  );
+  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
 }
 
 function withDisplayMeta(item) {
@@ -1418,7 +1402,7 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = canonicalDimensionName(trait.name) === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
@@ -1828,7 +1812,7 @@ function theoreticalSecuritySignal(dimensions = [], reliabilityFlags = []) {
 
 function shouldAddResponsibilityOpinionNote(normalized) {
   const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
-  const responsibility = dimensions.find((item) => canonicalDimensionName(item?.name) === "Responsabilità");
+  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "ResponsabilitÃ " || item?.name === "ResponsabilitÃ ");
   if (!responsibility) return false;
 
   const value = chartScore(responsibility.score);
@@ -2048,7 +2032,10 @@ function drawAdditionalParameterBars(doc, parameters) {
 }
 
 function normalizeDimensionNameForDisplay(name) {
-  return canonicalDimensionName(name);
+  const value = String(name || "").trim();
+  if (value === "AttuabilitÃ ") return "AttendibilitÃ ";
+  if (value === "Emotiva") return "Cooperazione";
+  return value;
 }
 
 function mergeDimensionList(list = []) {
@@ -3555,19 +3542,6 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
   const aiTraits = Array.isArray(expandedReportJson.traits) ? expandedReportJson.traits : [];
 
-  console.log(
-    "RAW TRAITS GPT:",
-    JSON.stringify(
-      aiTraits.map((t) => ({
-        name: t.name,
-        canonicalName: t.canonicalName,
-        score: t.score
-      })),
-      null,
-      2
-    )
-  );
-
   const aiTraitByName = new Map();
   aiTraits.forEach((trait) => {
     const canonical = normalizeDimensionNameForDisplay(normalizeTraitName(trait?.canonicalName || trait?.name));
@@ -3668,19 +3642,6 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     };
   });
 
-  console.log(
-    "NORMALIZED TRAITS:",
-    JSON.stringify(
-      traits.map((t) => ({
-        name: t.name,
-        displayName: t.displayName,
-        score: t.chartScore
-      })),
-      null,
-      2
-    )
-  );
-
   return normalizeTextPayload({
     ...expandedReportJson,
     generalSummary: cleanedGeneralSummary || expandedReportJson.generalSummary,
@@ -3718,7 +3679,7 @@ function drawSimpleSectionTitle(doc, title) {
 }
 
 function writeParagraphs(doc, text) {
-  String(normalizeBrokenUtf8(text) || "-")
+  String(normalizePdfVisibleText(text) || "-")
     .split(/\n\s*\n/g)
     .map((part) => part.trim())
     .filter(Boolean)
