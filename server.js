@@ -1361,6 +1361,82 @@ function buildReliability(answers, traits) {
   };
 }
 
+function buildRuntimeAnalysisPayload(assessment, storedPayload = {}) {
+  const payload = storedPayload && typeof storedPayload === "object" ? { ...storedPayload } : {};
+  const assessmentType = payload.assessmentType || assessment?.assessmentType || "zpi_hr";
+  const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
+  const answers = assessment?.result?.answersJson;
+
+  if (!answers || typeof answers !== "object" || Array.isArray(answers) || Object.keys(answers).length === 0) {
+    return {
+      ...payload,
+      assessmentType,
+      assessmentTitle
+    };
+  }
+
+  try {
+    const rebuiltTraits = buildTraitsFromAnswers(answers, assessmentType);
+
+    if (!Array.isArray(rebuiltTraits) || rebuiltTraits.length === 0) {
+      return {
+        ...payload,
+        assessmentType,
+        assessmentTitle
+      };
+    }
+
+    const { traits: mainTraits, additionalParameters } = splitDimensions(rebuiltTraits);
+    const requestedRole = assessment?.requestedRole || "non_specificato";
+    const summary = buildSummary(rebuiltTraits, requestedRole);
+    const roleFit = calculateRoleFit(rebuiltTraits, requestedRole);
+    const managementAdvice = buildManagementAdvice({ traits: rebuiltTraits, roleFit });
+
+    let reliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
+
+    if (assessmentType === "zpi_hr") {
+      try {
+        const rebuiltReliability = buildReliability(answers, rebuiltTraits);
+        reliabilityFlags = Array.isArray(rebuiltReliability.reliabilityFlags)
+          ? rebuiltReliability.reliabilityFlags
+          : reliabilityFlags;
+      } catch (reliabilityError) {
+        console.warn("[ZPI RUNTIME PAYLOAD] reliability rebuild skipped", {
+          assessmentId: assessment?.id,
+          message: reliabilityError?.message
+        });
+      }
+    }
+
+    return {
+      ...payload,
+      assessmentType,
+      assessmentTitle,
+      traits: rebuiltTraits,
+      mainTraits,
+      additionalParameters,
+      roleFit,
+      managementAdvice,
+      topTraits: summary.topTraits,
+      weakTraits: summary.weakTraits,
+      reliabilityFlags,
+      rebuiltFromAnswers: true
+    };
+  } catch (error) {
+    console.error("[ZPI RUNTIME PAYLOAD] failed to rebuild traits from answersJson", {
+      assessmentId: assessment?.id,
+      message: error?.message
+    });
+
+    return {
+      ...payload,
+      assessmentType,
+      assessmentTitle
+    };
+  }
+}
+
+
 async function withTimeout(promise, ms, label = "Operazione") {
   let timeoutId;
 
@@ -2710,7 +2786,8 @@ app.get("/admin", requireAdmin, async (req, res) => {
   });
 
   const submissions = assessments.map((item) => {
-    const payload = item.result?.traitsJson || {};
+    const storedPayload = item.result?.traitsJson || {};
+    const payload = buildRuntimeAnalysisPayload(item, storedPayload);
     const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
@@ -2790,7 +2867,8 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
         continue;
       }
 
-      const payload = assessment.result.traitsJson || {};
+      const storedPayload = assessment.result.traitsJson || {};
+      const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
       const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
       const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
       const traits = normalized.traits;
@@ -2864,7 +2942,8 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin,
       return res.redirect(`/admin/${assessment.id}`);
     }
 
-    const payload = assessment.result.traitsJson || {};
+    const storedPayload = assessment.result.traitsJson || {};
+    const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
@@ -2921,7 +3000,8 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmi
       return res.redirect(`/admin/${assessment.id}`);
     }
 
-    const payload = assessment.result.traitsJson || {};
+    const storedPayload = assessment.result.traitsJson || {};
+    const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
@@ -3493,7 +3573,8 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
     return res.status(404).send("Assessment non trovato");
   }
 
-  const payload = assessment.result.traitsJson || {};
+  const storedPayload = assessment.result.traitsJson || {};
+  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
@@ -3623,7 +3704,8 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     return res.status(404).send("Assessment non trovato");
   }
 
-  const payload = assessment.result?.traitsJson || {};
+  const storedPayload = assessment.result?.traitsJson || {};
+  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
@@ -3941,33 +4023,12 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     return res.status(404).send("Assessment non trovato");
   }
 
-  const payload = assessment.result?.traitsJson || {};
+  const storedPayload = assessment.result?.traitsJson || {};
+  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   logPdfDimensionInput(assessment.id, normalized);
-
-  console.log("[PDF NORMALIZED CHECK]", {
-    assessmentId: assessment.id,
-    respondent: assessment.respondentName,
-    mainTraits: (normalized.mainTraits || []).map((t) => ({
-      name: t.name,
-      displayName: typeof displayDimensionName === "function" ? displayDimensionName(t.name) : t.name,
-      score: t.score,
-      chartScore: typeof chartScore === "function" ? chartScore(t.score) : t.score,
-      questionCount: t.questionCount,
-      sourceTraits: [...new Set((t.items || []).map((i) => i.sourceTrait).filter(Boolean))]
-    })),
-    additionalParameters: (normalized.additionalParameters || []).map((t) => ({
-      name: t.name,
-      displayName: typeof displayDimensionName === "function" ? displayDimensionName(t.name) : t.name,
-      score: t.score,
-      chartScore: typeof chartScore === "function" ? chartScore(t.score) : t.score,
-      questionCount: t.questionCount,
-      sourceTraits: [...new Set((t.items || []).map((i) => i.sourceTrait).filter(Boolean))]
-    }))
-  });
-
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
