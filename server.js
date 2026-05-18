@@ -877,6 +877,7 @@ function buildManagementAdvice({ traits, roleFit }) {
   }
 
   return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide vanno presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
+}
 
 function isSuperAdmin(admin) {
   return String(admin?.role || "").toUpperCase() === "SUPER_ADMIN";
@@ -1400,22 +1401,6 @@ async function generateExpandedReportPayload({
   const input = `
 Sei un consulente organizzativo senior.
 Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario Ã¨ sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
-
-ISTRUZIONE OBBLIGATORIA E PRIORITARIA PER generalSummary
-- Il campo generalSummary deve essere scritto SEMPRE in seconda persona singolare.
-- Devi rivolgerti direttamente alla persona che ha compilato il test.
-- Questa regola vale per tutti i ruoli: risorsa, candidato, manager, direzione, imprenditore, titolare, CEO o founder.
-- Usa formule come: "nel lavoro tendi a", "potresti", "quando ti trovi", "hai costruito", "per te può essere utile", "puoi".
-- Non usare elenchi puntati nel campo generalSummary.
-- Non usare linguaggio clinico, diagnostico o motivazionale.
-- Mantieni un tono professionale, concreto, prudente e osservativo.
-- La relazione generale deve sembrare una restituzione personale, non una scheda HR esterna.
-
-DIVIETI ASSOLUTI PER generalSummary
-- Non iniziare mai con "Il profilo mostra", "Il profilo evidenzia", "Il profilo ZPI mostra", "La persona presenta", "La risorsa mostra", "Il candidato appare", "Il soggetto".
-- Non scrivere generalSummary in terza persona.
-- Non usare formule impersonali come "la compatibilità è presente" se puoi scrivere "per il ruolo emerge una compatibilità..." o "puoi trovare coerenza con il ruolo...".
-- Se generalSummary contiene un tono impersonale o frasi tipo "il profilo mostra", la risposta è da considerare errata.
 
 CONTESTO
 - Questionario: ${assessmentTitle}
@@ -2087,6 +2072,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     convictionChange,
     securityTheory
   };
+}
 
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
   const { traits, additionalParameters } = splitDimensions(dimensions);
@@ -3590,19 +3576,15 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   });
 }
 
-function isImpersonalGeneralSummary(text) {
-  return /(?:^|\n)\s*(Il profilo(?:\s+ZPI)?\s+(?:mostra|evidenzia|presenta)|La persona\s+(?:presenta|mostra|evidenzia)|La risorsa\s+(?:presenta|mostra|evidenzia)|Il candidato\s+(?:appare|presenta|mostra|evidenzia)|Il soggetto\s+)/i.test(
-    String(text || "")
-  );
-}
+function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
+  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
 
-function buildFallbackSecondPersonGeneralRelation({ normalized }) {
   const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
   const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
   const roleFitText = normalized?.roleFit?.score != null
-    ? `Per il ruolo ricoperto emerge una compatibilità pari al ${normalized.roleFit.score}%. `
+    ? `La compatibilità con il ruolo ricoperto è pari al ${normalized.roleFit.score}%. `
     : "";
   const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
   const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
@@ -3616,16 +3598,6 @@ function buildFallbackSecondPersonGeneralRelation({ normalized }) {
 Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
 Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
-}
-
-function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
-  const aiGeneralSummary = stripForbiddenGeneralRelationPhrases(expanded?.generalSummary || "");
-
-  if (aiGeneralSummary && !isImpersonalGeneralSummary(aiGeneralSummary)) {
-    return aiGeneralSummary;
-  }
-
-  return buildFallbackSecondPersonGeneralRelation({ normalized });
 }
 
 function drawSimpleSectionTitle(doc, title) {
