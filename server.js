@@ -1475,6 +1475,50 @@ async function generateExpandedReportPayload({
 Sei un consulente organizzativo senior.
 Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario Ã¨ sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
 
+ISTRUZIONE OBBLIGATORIA E PRIORITARIA PER generalSummary
+Il campo generalSummary è l’unica sezione che deve parlare direttamente alla persona che ha compilato il test.
+
+generalSummary DEVE:
+- essere scritto SEMPRE in seconda persona singolare;
+- iniziare con una formula naturale come "Nel lavoro tendi a...", "Quando ti trovi...", "In questo ruolo puoi..." oppure "Per te può essere utile...";
+- usare formule dirette come "tu", "tendi", "puoi", "potresti", "per te", "la tua compatibilità", "ti aiuta";
+- mantenere un tono umano, concreto, osservativo e professionale;
+- parlare alla persona, non dellapersona;
+- citare compatibilità con il ruolo e indice di coerenza in modo naturale, sempre rivolgendosi direttamente alla persona.
+
+STILE OBBLIGATORIO DI generalSummary
+Scrivi con la stessa impostazione di questi esempi:
+- "Nel lavoro tendi a cercare ordine, priorità chiare e una buona gestione delle attività..."
+- "La tua compatibilità con il ruolo risulta alta..."
+- "Allo stesso tempo, per te può essere utile lavorare su..."
+- "Questo suggerisce di verificare sul campo..."
+
+generalSummary NON DEVE MAI usare:
+- "il profilo"
+- "il profilo mostra"
+- "il profilo evidenzia"
+- "la persona"
+- "la risorsa"
+- "il candidato"
+- "il soggetto"
+- "emerge"
+- "emergono"
+- "si osserva"
+- "si evidenzia"
+- "risulta utile approfondire"
+- "sarà utile approfondire"
+- "viene evidenziato"
+- formule impersonali, passive o da report HR aziendale.
+
+Se generalSummary contiene una di queste formule, la risposta è errata e deve essere riscritta in seconda persona.
+
+REGOLE DI TONO PER LE SEZIONI
+- generalSummary: seconda persona singolare, rivolto direttamente alla persona che ha compilato il test.
+- expandedText: tono consulenziale HR/organizzativo in terza persona.
+- improvementPlan: tono HR/organizzativo in terza persona, salvo ruolo direzione/imprenditore/titolare/CEO/founder.
+- skillAction: tono HR/organizzativo in terza persona.
+- Se il ruolo è direzione/imprenditore/titolare/CEO/founder, improvementPlan deve parlare direttamente alla persona e skillAction non deve contenere indicazioni su come gestirla.
+
 CONTESTO
 - Questionario: ${assessmentTitle}
 - Tipo assessment: ${assessmentType}
@@ -1538,7 +1582,7 @@ ISTRUZIONI GENERALI
 8. Non trasformare l'analisi del tratto in una lista di consigli: prima interpreta il comportamento, poi solo nei campi dedicati indica eventuali azioni pratiche coerenti.
 9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
 10. Compila generalManagementAdvice con un consiglio generale pratico, ma non contraddittorio rispetto ai tratti emersi.
-11. Nella relazione generale cita in modo naturale la compatibilitÃ  con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata.
+11. Nella relazione generale cita in modo naturale la compatibilitÃ  con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata e sempre in seconda persona.
 12. Non scrivere mai frasi come "La persona Ã¨ stata valutata in riferimento al ruolo di..." o "La risorsa Ã¨ stata valutata in riferimento al ruolo di...".
 
 ISTRUZIONI PER OGNI TRATTO
@@ -1548,7 +1592,9 @@ Per ogni tratto restituisci:
 - skillAction: indicazione gestionale solo se il tratto Ã¨ sotto 50 su scala -100/+100. Se il tratto Ã¨ da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale. Non deve contraddire expandedText.
 
 STILE DI SCRITTURA
-- Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
+- Per generalSummary scrivi come un consulente che restituisce il profilo direttamente alla persona che ha compilato il test.
+- Per expandedText, improvementPlan e skillAction scrivi invece come un consulente organizzativo che parla a imprenditore, manager o referente operativo.
+- Non usare tono da psicologo clinico o grande reparto HR.
 - Usa parole semplici e frasi brevi.
 - Non iniziare mai un approfondimento con frasi definitorie tipo "Misura...", "Valuta...", "Indica..." se ripetono la descrizione del tratto.
 - Evita formule ripetitive tra i tratti.
