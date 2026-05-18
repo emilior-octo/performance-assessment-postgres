@@ -639,8 +639,25 @@ function withDisplayMeta(item) {
 }
 
 function normalizeDimensionDefinitions(originalTrait) {
-  return DIMENSION_DEFINITIONS[originalTrait] || [
-    { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
+  const rawTrait = String(originalTrait || "").trim();
+  const repairedTrait = normalizeBrokenUtf8(rawTrait);
+  const rawKey = dimensionAliasKey(rawTrait);
+  const repairedKey = dimensionAliasKey(repairedTrait);
+
+  const matchingDefinitionKey = Object.keys(DIMENSION_DEFINITIONS).find((key) => {
+    const definitionKey = dimensionAliasKey(key);
+    return definitionKey === rawKey || definitionKey === repairedKey;
+  });
+
+  const definitions =
+    DIMENSION_DEFINITIONS[rawTrait] ||
+    DIMENSION_DEFINITIONS[repairedTrait] ||
+    (matchingDefinitionKey ? DIMENSION_DEFINITIONS[matchingDefinitionKey] : null);
+
+  if (definitions) return definitions;
+
+  return [
+    { name: normalizeDimensionNameForDisplay(rawTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
   ];
 }
 
@@ -2112,7 +2129,9 @@ const CANONICAL_DIMENSION_ALIASES = new Map([
 
   // Chiave interna storica: NON usare la label visibile per scoring/mapping.
   ["autodisciplina affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["autodisciplina affidabilit", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilit", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita autodisciplina", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita e autodisciplina", "AffidabilitÃ  + autodisciplina"],
 
@@ -3726,9 +3745,14 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       });
     }
 
+    const lookupName =
+      displayName === "Autodisciplina/affidabilità"
+        ? "Affidabilità + autodisciplina"
+        : canonicalName;
+
     const value = chartScore(dimension?.score ?? 0);
-    const description = dimensionDescription(canonicalName);
-    const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
+    const description = dimensionDescription(lookupName);
+    const evoGuide = evoGuideForDimension(lookupName, dimension?.score ?? 0);
     const truthfulness = isAttendibilita
       ? truthfulnessStatusFromScore(value)
       : null;
