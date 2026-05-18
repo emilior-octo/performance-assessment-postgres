@@ -1,0 +1,268 @@
+warning: in the working copy of 'server.js', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/server.js b/server.js[m
+[1mindex 15c1e90..e9abb19 100644[m
+[1m--- a/server.js[m
+[1m+++ b/server.js[m
+[36m@@ -1,4 +1,4 @@[m
+[31m-﻿import "dotenv/config";[m
+[32m+[m[32mimport "dotenv/config";[m
+ import express from "express";[m
+ import path from "path";[m
+ import bcrypt from "bcrypt";[m
+[36m@@ -124,41 +124,8 @@[m [mapp.use([m
+   })[m
+ );[m
+ [m
+[31m-const ADMIN_ROLES = {[m
+[31m-  SUPER_ADMIN: "SUPER_ADMIN",[m
+[31m-  VIEWER: "VIEWER"[m
+[31m-};[m
+[31m-[m
+[31m-function normalizeAdminRole(role) {[m
+[31m-  return role === ADMIN_ROLES.SUPER_ADMIN ? ADMIN_ROLES.SUPER_ADMIN : ADMIN_ROLES.VIEWER;[m
+[31m-}[m
+[31m-[m
+[31m-function isSuperAdminSession(req) {[m
+[31m-  return normalizeAdminRole(req.session?.admin?.role) === ADMIN_ROLES.SUPER_ADMIN;[m
+[31m-}[m
+[31m-[m
+[31m-function escapeHtml(value) {[m
+[31m-  return String(value ?? "")[m
+[31m-    .replace(/&/g, "&amp;")[m
+[31m-    .replace(/</g, "&lt;")[m
+[31m-    .replace(/>/g, "&gt;")[m
+[31m-    .replace(/"/g, "&quot;")[m
+[31m-    .replace(/'/g, "&#39;");[m
+[31m-}[m
+[31m-[m
+[31m-function textToHtmlParagraphs(text) {[m
+[31m-  return String(text || "-")[m
+[31m-    .split(/\r?\n\s*\r?\n/g)[m
+[31m-    .map((part) => part.trim())[m
+[31m-    .filter(Boolean)[m
+[31m-    .map((part) => `<p>${escapeHtml(part).replace(/\r?\n/g, "<br>")}</p>`)[m
+[31m-    .join("\n");[m
+[31m-}[m
+[31m-[m
+ app.use((req, res, next) => {[m
+   res.locals.currentAdmin = req.session?.admin || null;[m
+[31m-  res.locals.currentAdminRole = normalizeAdminRole(req.session?.admin?.role);[m
+[31m-  res.locals.isSuperAdmin = isSuperAdminSession(req);[m
+   next();[m
+ });[m
+ [m
+[36m@@ -166,8 +133,8 @@[m [mapp.use((req, res, next) => {[m
+ const ASSESSMENT_TYPES = {[m
+   zpi_hr: {[m
+     key: "zpi_hr",[m
+[31m-    title: "ZPIâ„¢ â€“ Zenith Performance Index",[m
+[31m-    shortTitle: "ZPIâ„¢",[m
+[32m+[m[32m    title: "ZPI™ – Zenith Performance Index",[m
+[32m+[m[32m    shortTitle: "ZPI™",[m
+     publicPath: "/zenith-assessment",[m
+     qrDownloadPath: "/admin/qr/zenith/download",[m
+     tokenEnv: "ZENITH_ASSESSMENT_TOKEN",[m
+[36m@@ -259,15 +226,15 @@[m [mconst DIMENSION_CATEGORY = {[m
+ const TRAIT_DIMENSIONS = [[m
+   "Organizzazione e pianificazione",[m
+   "Automotivazione",[m
+[31m-  "AffidabilitÃ  + autodisciplina",[m
+[32m+[m[32m  "Affidabilità + autodisciplina",[m
+   "Sicurezza",[m
+   "Stress",[m
+   "Dinamismo",[m
+[31m-  "FlessibilitÃ  comunicativa",[m
+[31m-  "ResponsabilitÃ ",[m
+[32m+[m[32m  "Flessibilità comunicativa",[m
+[32m+[m[32m  "Responsabilità",[m
+   "Ascolto attivo",[m
+   "Comprensione",[m
+[31m-  "EspansivitÃ "[m
+[32m+[m[32m  "Espansività"[m
+ ];[m
+ [m
+ const ADDITIONAL_PARAMETER_DIMENSIONS = [[m
+[36m@@ -277,9 +244,9 @@[m [mconst ADDITIONAL_PARAMETER_DIMENSIONS = [[m
+   "Cooperazione",[m
+   "Principi",[m
+   "Vendite",[m
+[31m-  "Gestione prioritÃ ",[m
+[31m-  "CapacitÃ  di gestione finanziaria",[m
+[31m-  "AttendibilitÃ "[m
+[32m+[m[32m  "Gestione priorità",[m
+[32m+[m[32m  "Capacità di gestione finanziaria",[m
+[32m+[m[32m  "Attendibilità"[m
+ ];[m
+ [m
+ const DIMENSION_ORDER = new Map([m
+[36m@@ -289,31 +256,31 @@[m [mconst DIMENSION_ORDER = new Map([m
+ const DIMENSION_DEFINITIONS = {[m
+   "Organizzazione e metodo": [[m
+     { name: "Organizzazione e pianificazione", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "Gestione prioritÃ ", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+[31m-    { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+[32m+[m[32m    { name: "Gestione priorità", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+[32m+[m[32m    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+   "Visione e orientamento al futuro": [[m
+     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+[32m+[m[32m    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "Ambizione e competitivitÃ ": [[m
+[32m+[m[32m  "Ambizione e competitività": [[m
+     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "Indice di attendibilitÃ ": [[m
+[31m-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m  "Indice di attendibilità": [[m
+[32m+[m[32m    { name: "Affidabilità + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Principi", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "ContinuitÃ  professionale": [[m
+[31m-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+[32m+[m[32m  "Continuità professionale": [[m
+[32m+[m[32m    { name: "Affidabilità + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "ResponsabilitÃ  e ownership": [[m
+[31m-    { name: "ResponsabilitÃ ", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m  "Responsabilità e ownership": [[m
+[32m+[m[32m    { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Management", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+[31m-    { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+[32m+[m[32m    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "StabilitÃ  emotiva e fiducia": [[m
+[32m+[m[32m  "Stabilità emotiva e fiducia": [[m
+     { name: "Sicurezza", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[36m@@ -331,14 +298,14 @@[m [mconst DIMENSION_DEFINITIONS = {[m
+   ],[m
+   "Energia sociale e comunicazione": [[m
+     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "FlessibilitÃ  comunicativa", category: DIMENSION_CATEGORY.TRAIT }[m
+[32m+[m[32m    { name: "Flessibilità comunicativa", category: DIMENSION_CATEGORY.TRAIT }[m
+   ],[m
+[31m-  "FlessibilitÃ  e adattabilitÃ ": [[m
+[31m-    { name: "FlessibilitÃ  comunicativa", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m  "Flessibilità e adattabilità": [[m
+[32m+[m[32m    { name: "Flessibilità comunicativa", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Resistenza al cambiamento", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "AssertivitÃ  e negoziazione": [[m
+[31m-    { name: "FlessibilitÃ  comunicativa", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m  "Assertività e negoziazione": [[m
+[32m+[m[32m    { name: "Flessibilità comunicativa", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+   "Empatia e collaborazione": [[m
+[36m@@ -347,32 +314,32 @@[m [mconst DIMENSION_DEFINITIONS = {[m
+     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+   "Estroversione e networking": [[m
+[31m-    { name: "EspansivitÃ ", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m    { name: "Espansività", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+   "Leadership e influenza": [[m
+     { name: "Leadership naturale", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+     { name: "Management", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+[31m-    { name: "ResponsabilitÃ ", category: DIMENSION_CATEGORY.TRAIT }[m
+[32m+[m[32m    { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT }[m
+   ],[m
+   "Orientamento alla performance": [[m
+     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Management", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+     { name: "Principi", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "SensibilitÃ  al riconoscimento": [[m
+[32m+[m[32m  "Sensibilità al riconoscimento": [[m
+     { name: "Sicurezza", category: DIMENSION_CATEGORY.TRAIT },[m
+     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+   "Autonomia economica e iniziativa": [[m
+     { name: "Automotivazione", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "ResponsabilitÃ ", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "CapacitÃ  di gestione finanziaria", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+[31m-    { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+[32m+[m[32m    { name: "Responsabilità", category: DIMENSION_CATEGORY.TRAIT },[m
+[32m+[m[32m    { name: "Capacità di gestione finanziaria", category: DIMENSION_CATEGORY.ADDITIONAL },[m
+[32m+[m[32m    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+[31m-  "CreativitÃ  e innovazione": [[m
+[32m+[m[32m  "Creatività e innovazione": [[m
+     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT },[m
+[31m-    { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+[32m+[m[32m    { name: "Attendibilità", category: DIMENSION_CATEGORY.ADDITIONAL }[m
+   ],[m
+   "Comportamento generale": [[m
+     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }[m
+[36m@@ -395,48 +362,48 @@[m [mconst HISTOGRAM_COLORS = {[m
+ const ZENITH_INDIGO = "#2F4B7C";[m
+ [m
+ const DISPLAY_LABELS = {[m
+[31m-  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",[m
+[32m+[m[32m  "Affidabilità + autodisciplina": "Affidabilità",[m
+   "Stress": "Gestione pressioni / Stress",[m
+[31m-  "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"[m
+[32m+[m[32m  "Capacità di gestióne finanziaria": "Capacità di gestione finanziaria"[m
+ };[m
+ [m
+ const DIMENSION_DESCRIPTIONS = {[m
+[31m-  "Organizzazione e pianificazione": "misura la capacitÃ  di programmare il lavoro nel breve e nel lungo periodo",[m
+[31m-  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacitÃ  di avere successo",[m
+[31m-  "AffidabilitÃ  + autodisciplina": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",[m
+[31m-  "AffidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",[m
+[31m-  "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni, procedure e valutazioni",[m
+[31m-  "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",[m
+[31m-  "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",[m
+[31m-  "Dinamismo": "misura il livello di energia, movimento e prontezza nellâ€™iniziare le attivitÃ ",[m
+[31m-  "FlessibilitÃ  comunicativa": "misura determinazione, assertivitÃ , focus sul risultato e capacitÃ  di comunicare con decisione",[m
+[31m-  "ResponsabilitÃ ": "misura proattivitÃ , centralitÃ  e capacitÃ  di assumersi responsabilitÃ  senza subire gli eventi",[m
+[31m-  "Ascolto attivo": "misura la capacitÃ  di comprendere punti di vista diversi senza filtrarli attraverso pregiudizi",[m
+[31m-  "Comprensione": "misura la capacitÃ  di comprendere gli altri da un punto di vista emotivo e relazionale",[m
+[31m-  "EspansivitÃ ": "misura la qualitÃ  del primo approccio e la disponibilitÃ  a relazionarsi con apertura",[m
+[31m-  "Resistenza al cambiamento": "misura la disponibilitÃ  ad accettare cambiamenti, nuove procedure e nuove modalitÃ  di lavoro",[m
+[32m+[m[32m  "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",[m
+[32m+[m[32m  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo",[m
+[32m+[m[32m  "Affidabilità + autodisciplina": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",[m
+[32m+[m[32m  "Affidabilità": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",[m
+[32m+[m[32m  "Sicurezza": "misura la struttura delle convinzioni della persona: quanto è certa delle proprie idee, quanto le difende, quanto è disposta a metterle in discussione e quanto il suo punto di vista è concreto o teorico",[m
+[32m+[m[32m  "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",[m
+[32m+[m[32m  "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e lucidità",[m
+[32m+[m[32m  "Dinamismo": "misura il livello di energia, movimento e prontezza nell’iniziare le attività",[m
+[32m+[m[32m  "Flessibilità comunicativa": "misura determinazione, assertività, focus sul risultato e capacità di comunicare con decisione",[m
+[32m+[m[32m  "Responsabilità": "misura proattività, centralità e capacità di assumersi responsabilità senza subire gli eventi",[m
+[32m+[m[32m  "Ascolto attivo": "misura la capacità di comprendere punti di vista diversi senza filtrarli attraverso pregiudizi",[m
+[32m+[m[32m  "Comprensione": "misura la capacità di comprendere gli altri da un punto di vista emotivo e relazionale",[m
+[32m+[m[32m  "Espansività": "misura la qualità del primo approccio e la disponibilità a relazionarsi con apertura",[m
+[32m+[m[32m  "Resistenza al cambiamento": "misura la disponibilità ad accettare cambiamenti, nuove procedure e nuove modalità di lavoro",[m
+   "Leadership naturale": "misura la tendenza a coinvolgere, guidare e diventare punto di riferimento per gli altri",[m
+[31m-  "Management": "misura la capacitÃ  di organizzare persone, attivitÃ  e responsabilitÃ  in modo concreto",[m
+[31m-  "Cooperazione": "misura la capacitÃ  di collaborare, condividere informazioni e lavorare con continuitÃ  insieme agli altri",[m
+[32m+[m[32m  "Management": "misura la capacità di organizzare persone, attività e responsabilità in modo concreto",[m
+[32m+[m[32m  "Cooperazione": "misura la capacità di collaborare, condividere informazioni e lavorare con continuità insieme agli altri",[m
+   "Principi": "misura la coerenza con regole, valori aziendali e comportamenti professionali corretti",[m
+   "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",[m
+[31m-  "Gestione prioritÃ ": "misura la capacitÃ  di distinguere ciÃ² che Ã¨ importante da ciÃ² che Ã¨ solo urgente",[m
+[31m-  "CapacitÃ  di gestione finanziaria": "misura la capacitÃ  di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",[m
+[31m-  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"[m
+[32m+[m[32m  "Gestione priorità": "misura la capacità di distinguere ciò che è importante da ciò che è solo urgente",[m
+[32m+[m[32m  "Capacità di gestione finanziaria": "misura la capacità di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",[m
+[32m+[m[32m  "Attendibilità": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"[m
+ };[m
+ [m
+ const ZPI_EVO_TRAIT_GUIDE = {[m
+[31m-  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico Ã¨ alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro puÃ² non essere organizzato con continuitÃ " }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },[m
+[31m-  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacitÃ " }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma puÃ² non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltÃ " }, { min: -100, text: "crede poco in se stessa e puÃ² aver rinunciato a scopi o obiettivi importanti" }] },[m
+[31m-  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dÃ  peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "puÃ² non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attivitÃ  non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuitÃ " }] },[m
+[31m-  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini; puÃ² essere rigida" }, { min: 50, text: "molto coerente, non Ã¨ facile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma puÃ² mettersi in discussione se comprende alternative migliori" }, { min: -20, text: "flessibile e aperta al cambiamento, ma puÃ² cercare conferme esterne" }, { min: -100, text: "creativa ma incostante, con rischio di incoerenza e dispersione" }] },[m
+[31m-  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma puÃ² accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "puÃ² esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },[m
+[31m-  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciÃ² che deve fare" }, { min: 50, text: "attiva, preferisce attivitÃ  dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, puÃ² preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, puÃ² fare fatica ad avviare nuove attivitÃ " }, { min: -100, text: "bassa energia di azione e difficoltÃ  a mettersi in moto" }] },[m
+[31m-  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertivitÃ " }, { min: 20, text: "puÃ² manifestare lentezza produttiva o difficoltÃ  a incidere" }, { min: -100, text: "tende ad aggirare i problemi e puÃ² perdere focus sui risultati" }] },[m
+[31m-  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilitÃ  soprattutto per ciÃ² che dipende direttamente da lei" }, { min: -10, text: "puÃ² iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e puÃ² subire le situazioni" }] },[m
+[31m-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da piÃ¹ punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende puÃ² ini
