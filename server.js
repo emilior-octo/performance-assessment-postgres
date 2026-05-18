@@ -432,7 +432,6 @@ const DIMENSION_ORDER = new Map(
 const DIMENSION_DEFINITIONS = {
   "Organizzazione e metodo": [
     { name: "Organizzazione e pianificazione", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Gestione prioritÃ ", category: DIMENSION_CATEGORY.ADDITIONAL },
     { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
@@ -625,19 +624,8 @@ function displayDimensionName(name) {
 }
 
 function dimensionDescription(name) {
-  const rawName = String(name || "").trim();
-  const canonicalName = normalizeDimensionNameForDisplay(rawName);
-  const displayName = displayDimensionName(canonicalName);
-
-  return normalizeBrokenUtf8(
-    DIMENSION_DESCRIPTIONS[canonicalName] ||
-    DIMENSION_DESCRIPTIONS[displayName] ||
-    DIMENSION_DESCRIPTIONS[normalizeBrokenUtf8(canonicalName)] ||
-    DIMENSION_DESCRIPTIONS[normalizeBrokenUtf8(displayName)] ||
-    DIMENSION_DESCRIPTIONS[rawName] ||
-    DIMENSION_DESCRIPTIONS[normalizeBrokenUtf8(rawName)] ||
-    ""
-  );
+  const displayName = displayDimensionName(name);
+  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
 }
 
 function withDisplayMeta(item) {
@@ -2141,7 +2129,9 @@ const CANONICAL_DIMENSION_ALIASES = new Map([
 
   // Chiave interna storica: NON usare la label visibile per scoring/mapping.
   ["autodisciplina affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["autodisciplina affidabilit", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilit", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita autodisciplina", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita e autodisciplina", "AffidabilitÃ  + autodisciplina"],
 
@@ -3755,9 +3745,14 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       });
     }
 
+    const lookupName =
+      displayName === "Autodisciplina/affidabilità"
+        ? "Affidabilità + autodisciplina"
+        : canonicalName;
+
     const value = chartScore(dimension?.score ?? 0);
-    const description = dimensionDescription(canonicalName);
-    const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
+    const description = dimensionDescription(lookupName);
+    const evoGuide = evoGuideForDimension(lookupName, dimension?.score ?? 0);
     const truthfulness = isAttendibilita
       ? truthfulnessStatusFromScore(value)
       : null;
