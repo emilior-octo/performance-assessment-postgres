@@ -877,6 +877,7 @@ function buildManagementAdvice({ traits, roleFit }) {
   }
 
   return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide vanno presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
+}
 
 function isSuperAdmin(admin) {
   return String(admin?.role || "").toUpperCase() === "SUPER_ADMIN";
@@ -2071,6 +2072,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     convictionChange,
     securityTheory
   };
+}
 
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
   const { traits, additionalParameters } = splitDimensions(dimensions);
@@ -3596,6 +3598,7 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
 Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
 Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
+}
 
 function drawSimpleSectionTitle(doc, title) {
   doc.fontSize(18).fillColor("black").text(title);
