@@ -345,6 +345,91 @@ const DIMENSION_ORDER = new Map(
   [...TRAIT_DIMENSIONS, ...ADDITIONAL_PARAMETER_DIMENSIONS].map((name, index) => [name, index])
 );
 
+const APPROVED_DIMENSIONS = [...TRAIT_DIMENSIONS, ...ADDITIONAL_PARAMETER_DIMENSIONS];
+const APPROVED_DIMENSION_SET = new Set(APPROVED_DIMENSIONS);
+const TRAIT_DIMENSION_SET = new Set(TRAIT_DIMENSIONS);
+const ADDITIONAL_PARAMETER_DIMENSION_SET = new Set(ADDITIONAL_PARAMETER_DIMENSIONS);
+
+function canonicalDimensionName(name) {
+  const value = normalizeBrokenUtf8(String(name || "").trim());
+
+  const aliases = {
+    "AffidabilitÃ  + autodisciplina": "Affidabilità + autodisciplina",
+    "Affidabilità": "Affidabilità + autodisciplina",
+    "ResponsabilitÃ ": "Responsabilità",
+    "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
+    "EspansivitÃ ": "Espansività",
+    "Gestione prioritÃ ": "Gestione priorità",
+    "CapacitÃ  di gestione finanziaria": "Capacità di gestione finanziaria",
+    "CapacitÃ  di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria",
+    "AttendibilitÃ ": "Attendibilità",
+    "Gestione pressioni / Stress": "Stress",
+
+    "Organizzazione e metodo": "Organizzazione e pianificazione",
+    "Visione e orientamento al futuro": "Automotivazione",
+    "Ambizione e competitività": "Automotivazione",
+    "Ambizione e competitivitÃ ": "Automotivazione",
+    "Indice di attendibilità": "Attendibilità",
+    "Indice di attendibilitÃ ": "Attendibilità",
+    "Continuità professionale": "Affidabilità + autodisciplina",
+    "ContinuitÃ  professionale": "Affidabilità + autodisciplina",
+    "Responsabilità e ownership": "Responsabilità",
+    "ResponsabilitÃ  e ownership": "Responsabilità",
+    "Stabilità emotiva e fiducia": "Sicurezza",
+    "StabilitÃ  emotiva e fiducia": "Sicurezza",
+    "Fiducia relazionale e sicurezza sociale": "Sicurezza",
+    "Sensibilità al riconoscimento": "Sicurezza",
+    "SensibilitÃ  al riconoscimento": "Sicurezza",
+    "Gestione della pressione": "Stress",
+    "Autocontrollo e gestione emotiva": "Stress",
+    "Energia sociale e comunicazione": "Dinamismo",
+    "Flessibilità e adattabilità": "Resistenza al cambiamento",
+    "FlessibilitÃ  e adattabilitÃ ": "Resistenza al cambiamento",
+    "Assertività e negoziazione": "Flessibilità comunicativa",
+    "AssertivitÃ  e negoziazione": "Flessibilità comunicativa",
+    "Empatia e collaborazione": "Ascolto attivo",
+    "Estroversione e networking": "Espansività",
+    "Leadership e influenza": "Leadership naturale",
+    "Orientamento alla performance": "Management",
+    "Autonomia economica e iniziativa": "Capacità di gestione finanziaria",
+    "Creatività e innovazione": "Dinamismo",
+    "CreativitÃ  e innovazione": "Dinamismo",
+    "Comportamento generale": "Dinamismo"
+  };
+
+  return aliases[value] || value;
+}
+
+function displayNameForDimension(name) {
+  const canonical = canonicalDimensionName(name);
+  if (canonical === "Stress") return "Gestione pressioni / Stress";
+  return canonical;
+}
+
+function approvedCategoryForDimension(name) {
+  const canonical = canonicalDimensionName(name);
+  if (TRAIT_DIMENSION_SET.has(canonical)) return DIMENSION_CATEGORY.TRAIT;
+  if (ADDITIONAL_PARAMETER_DIMENSION_SET.has(canonical)) return DIMENSION_CATEGORY.ADDITIONAL;
+  return null;
+}
+
+function emptyApprovedDimension(name) {
+  const canonical = canonicalDimensionName(name);
+  const category = approvedCategoryForDimension(canonical);
+  if (!category) return null;
+
+  return {
+    name: canonical,
+    category,
+    score: 0,
+    range: range(0),
+    questionCount: 0,
+    items: []
+  };
+}
+
+
+
 const DIMENSION_DEFINITIONS = {
   "Organizzazione e metodo": [
     { name: "Organizzazione e pianificazione", category: DIMENSION_CATEGORY.TRAIT },
@@ -454,56 +539,48 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Affidabilità",
-  "Affidabilità + autodisciplina": "Affidabilità",
-  "Affidabilità": "Affidabilità",
-  "FlessibilitÃ  comunicativa": "Flessibilità comunicativa",
-  "ResponsabilitÃ ": "Responsabilità",
-  "EspansivitÃ ": "Espansività",
-  "Gestione prioritÃ ": "Gestione priorità",
-  "CapacitÃ  di gestione finanziaria": "Capacità di gestione finanziaria",
-  "CapacitÃ  di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria",
-  "AttendibilitÃ ": "Attendibilità",
-  "Stress": "Gestione pressioni / Stress"
+  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
+  "Stress": "Gestione pressioni / Stress",
+  "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
 
 const DIMENSION_DESCRIPTIONS = {
-  "Organizzazione e pianificazione": "misura la capacità di programmare il lavoro nel breve e nel lungo periodo",
-  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacità di avere successo in campo professionale",
-  "Affidabilità + autodisciplina": "misura la coscienziosità della persona: senso di responsabilità, capacità di mantenere ciò che viene affidato, accuratezza, profondità e affidabilità",
-  "Sicurezza": "misura quanto la persona ha certezza delle proprie convinzioni",
-  "Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
-  "Gestione pressioni / Stress": "misura l’ambiente della persona e la presenza di contrasti, pressioni o conflitti",
-  "Dinamismo": "indica il livello di energia e movimento della persona",
-  "Flessibilità comunicativa": "misura convinzione in se stessi, assertività e focus sul risultato",
-  "Responsabilità": "misura proattività o reattività",
-  "Ascolto attivo": "indica la capacità di comprendere punti di vista diversi",
-  "Comprensione": "indica la capacità di comprendere gli altri da un punto di vista emotivo",
-  "Espansività": "indica la qualità del primo approccio e la disponibilità a relazionarsi",
-  "Resistenza al cambiamento": "misura la disponibilità ad accettare cambiamenti, nuove procedure e nuove modalità di lavoro",
+  "Organizzazione e pianificazione": "misura la capacitÃ  di programmare il lavoro nel breve e nel lungo periodo",
+  "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacitÃ  di avere successo",
+  "AffidabilitÃ  + autodisciplina": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
+  "AffidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
+  "Sicurezza": "misura la struttura delle convinzioni della persona: quanto Ã¨ certa delle proprie idee, quanto le difende, quanto Ã¨ disposta a metterle in discussione e quanto il suo punto di vista Ã¨ concreto o teorico",
+  "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",
+  "Gestione pressioni / Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",
+  "Dinamismo": "misura il livello di energia, movimento e prontezza nellâ€™iniziare le attivitÃ ",
+  "FlessibilitÃ  comunicativa": "misura determinazione, assertivitÃ , focus sul risultato e capacitÃ  di comunicare con decisione",
+  "ResponsabilitÃ ": "misura proattivitÃ , centralitÃ  e capacitÃ  di assumersi responsabilitÃ  senza subire gli eventi",
+  "Ascolto attivo": "misura la capacitÃ  di comprendere punti di vista diversi senza filtrarli attraverso pregiudizi",
+  "Comprensione": "misura la capacitÃ  di comprendere gli altri da un punto di vista emotivo e relazionale",
+  "EspansivitÃ ": "misura la qualitÃ  del primo approccio e la disponibilitÃ  a relazionarsi con apertura",
+  "Resistenza al cambiamento": "misura la disponibilitÃ  ad accettare cambiamenti, nuove procedure e nuove modalitÃ  di lavoro",
   "Leadership naturale": "misura la tendenza a coinvolgere, guidare e diventare punto di riferimento per gli altri",
-  "Management": "misura la capacità di organizzare persone, attività e responsabilità in modo concreto",
-  "Cooperazione": "misura la capacità di collaborare, condividere informazioni e lavorare con continuità insieme agli altri",
+  "Management": "misura la capacitÃ  di organizzare persone, attivitÃ  e responsabilitÃ  in modo concreto",
+  "Cooperazione": "misura la capacitÃ  di collaborare, condividere informazioni e lavorare con continuitÃ  insieme agli altri",
   "Principi": "misura la coerenza con regole, valori aziendali e comportamenti professionali corretti",
   "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
-  "Gestione priorità": "misura la capacità di distinguere ciò che è importante da ciò che è solo urgente",
-  "Capacità di gestione finanziaria": "misura la capacità di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
-  "Attendibilità": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
+  "Gestione prioritÃ ": "misura la capacitÃ  di distinguere ciÃ² che Ã¨ importante da ciÃ² che Ã¨ solo urgente",
+  "CapacitÃ  di gestione finanziaria": "misura la capacitÃ  di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
+  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
 };
 
 const ZPI_EVO_TRAIT_GUIDE = {
-  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "capacità di programmare a breve. Persona ordinata, precisa, pianifica il lavoro ed è puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva. A volte può avere confusione se ci sono molte cose da fare, ma in genere riesce a programmarsi" }, { min: 10, text: "ha bisogno di aiuto per organizzare il lavoro sotto forma di piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente. La persona non organizza bene il lavoro" }, { min: -100, text: "molto disorganizzata e dispersiva" }] },
-  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "persona fortemente motivata" }, { min: 40, text: "molto motivata e ambiziosa" }, { min: 0, text: "si automotiva, ma ha difficoltà ad accendere gli altri" }, { min: -30, text: "ha bisogno di essere motivata" }, { min: -100, text: "crede poco in se stessa" }] },
-  "Affidabilità + autodisciplina": { evo: "Autodisciplina", bands: [{ min: 60, text: "persona molto affidabile" }, { min: 40, text: "decisamente affidabile" }, { min: 20, text: "non cura fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "rimanda e lascia attività non completamente gestite" }, { min: -100, text: "ha bisogno di direttive chiare e controllo costante" }] },
-  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "molto ancorata a convinzioni, procedure e abitudini" }, { min: 50, text: "molto coerente, difficile farle cambiare idea" }, { min: 10, text: "mantiene coerenza ma è disponibile a mettersi in discussione" }, { min: -20, text: "flessibile e aperta al cambiamento" }, { min: -100, text: "creativa ma fortemente incoerente e incostante" }] },
-  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
-  "Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma accetta compromessi" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "presenza di persona o situazione che crea preoccupazioni" }, { min: -30, text: "situazioni di conflitto o influenza negativa" }, { min: -70, text: "forte condizione di stress" }, { min: -100, text: "persona fortemente agitata" }] },
-  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica" }, { min: 50, text: "persona attiva" }, { min: 30, text: "attiva ma non troppo" }, { min: 0, text: "poco attiva" }, { min: -100, text: "bassa energia di azione" }] },
-  "Flessibilità comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole e diretta" }, { min: 60, text: "concreta e assertiva" }, { min: 40, text: "buon focus sul risultato" }, { min: 20, text: "lentezza produttiva" }, { min: -100, text: "tende ad aggirare i problemi" }] },
-  "Responsabilità": { evo: "Centralità", bands: [{ min: 60, text: "persona propositiva" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilità solo delle cose strettamente dipendenti da lei" }, { min: -10, text: "inizia a ragionare da effetto" }, { min: -100, text: "si sente effetto degli eventi" }] },
-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende tende a criticare" }, { min: -100, text: "comunicazione critica e poco motivante" }] },
-  "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio" }, { min: 20, text: "persona calorosa e disponibile" }, { min: -20, text: "manifestazioni di freddezza e distacco" }, { min: -100, text: "generalmente distaccata e fredda" }] },
-  "Espansività": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata e calorosa" }, { min: 40, text: "aperta e cordiale" }, { min: 20, text: "selettiva e formale" }, { min: 0, text: "traspare un po’ di timidezza" }, { min: -40, text: "non fa il primo passo" }, { min: -100, text: "chiusa e impacciata" }] }
+  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico Ã¨ alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro puÃ² non essere organizzato con continuitÃ " }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
+  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacitÃ " }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma puÃ² non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltÃ " }, { min: -100, text: "crede poco in se stessa e puÃ² aver rinunciato a scopi o obiettivi importanti" }] },
+  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dÃ  peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "puÃ² non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attivitÃ  non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuitÃ " }] },
+  "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "convinzioni molto radicate: puÃ² avere una visione d'insieme forte, ma rischia di diventare teorica o rigida se non verifica le idee nell'azione" }, { min: 50, text: "convinzioni strutturate e stabili: tende a sostituire se stessa con dati e criteri, ma puÃ² essere poco facile farle cambiare idea" }, { min: 10, text: "mantiene un punto di vista abbastanza stabile, pur potendo metterlo in discussione davanti a dati o alternative migliori" }, { min: -20, text: "puÃ² mettere facilmente in discussione le proprie idee e cercare riferimenti esterni, con rischio di influenzabilitÃ " }, { min: -100, text: "convinzioni poco stabili: puÃ² essere vittima di ciÃ² che non conosce, cercando sicurezza fuori da sÃ©" }] },
+  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma puÃ² accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "puÃ² esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
+  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciÃ² che deve fare" }, { min: 50, text: "attiva, preferisce attivitÃ  dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, puÃ² preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, puÃ² fare fatica ad avviare nuove attivitÃ " }, { min: -100, text: "bassa energia di azione e difficoltÃ  a mettersi in moto" }] },
+  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertivitÃ " }, { min: 20, text: "puÃ² manifestare lentezza produttiva o difficoltÃ  a incidere" }, { min: -100, text: "tende ad aggirare i problemi e puÃ² perdere focus sui risultati" }] },
+  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilitÃ  soprattutto per ciÃ² che dipende direttamente da lei" }, { min: -10, text: "puÃ² iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e puÃ² subire le situazioni" }] },
+  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da piÃ¹ punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende puÃ² iniziare a criticare o valutare parzialmente" }, { min: -100, text: "comunicazione critica e poco motivante, con difficoltÃ  a comprendere punti di vista diversi" }] },
+  "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio e coglie bene stati dâ€™animo e bisogni" }, { min: 20, text: "calorosa, disponibile e attenta agli altri" }, { min: -20, text: "puÃ² mostrare freddezza o distacco, soprattutto in situazioni di disaccordo" }, { min: -100, text: "generalmente distaccata e fredda, con rischio di risultare poco sensibile" }] },
+  "EspansivitÃ ": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata, disinibita e calorosa nellâ€™approccio" }, { min: 40, text: "aperta e cordiale nel primo approccio" }, { min: 20, text: "selettiva e formale, ma capace di approcciare se necessario" }, { min: 0, text: "traspare un poâ€™ di timidezza con persone nuove" }, { min: -40, text: "non fa facilmente il primo passo e puÃ² restare sulle sue" }, { min: -100, text: "chiusa, ritirata o impacciata con persone che non conosce" }] }
 };
 
 function evoGuideForDimension(name, score) {
@@ -561,19 +638,18 @@ function stripForbiddenGeneralRelationPhrases(text) {
 
 
 function displayDimensionName(name) {
-  const value = normalizeDimensionNameForDisplay(name);
-  const normalizedValue = value
-    .replace(/gestiÃ³ne/gi, "gestione")
-    .replace(/gestiÃ²ne/gi, "gestione")
-    .replace(/gestióne/gi, "gestione")
-    .replace(/gestiòne/gi, "gestione");
-
-  return normalizeBrokenUtf8(DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue);
+  return normalizeBrokenUtf8(displayNameForDimension(name));
 }
 
 function dimensionDescription(name) {
-  const displayName = displayDimensionName(name);
-  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
+  const canonical = canonicalDimensionName(name);
+  const displayName = displayDimensionName(canonical);
+  return normalizeBrokenUtf8(
+    DIMENSION_DESCRIPTIONS[canonical] ||
+    DIMENSION_DESCRIPTIONS[displayName] ||
+    DIMENSION_DESCRIPTIONS[String(name || "").trim()] ||
+    ""
+  );
 }
 
 function withDisplayMeta(item) {
@@ -587,19 +663,53 @@ function withDisplayMeta(item) {
 }
 
 function normalizeDimensionDefinitions(originalTrait) {
-  const key = findDimensionDefinitionKey(originalTrait);
+  const rawValue = String(originalTrait || "").trim();
+  const value = normalizeBrokenUtf8(rawValue);
 
-  if (key) {
-    return DIMENSION_DEFINITIONS[key].map((dimension) => ({
-      ...dimension,
-      name: canonicalOutputName(dimension.name),
-      category: approvedCategoryForName(dimension.name, dimension.category)
-    })).filter((dimension) => isApprovedOutputName(dimension.name));
+  const sourceKeyAliases = {
+    "Organizzazione e metodo": "Organizzazione e metodo",
+    "Visione e orientamento al futuro": "Visione e orientamento al futuro",
+    "Ambizione e competitività": "Ambizione e competitivitÃ ",
+    "Indice di attendibilità": "Indice di attendibilitÃ ",
+    "Continuità professionale": "ContinuitÃ  professionale",
+    "Responsabilità e ownership": "ResponsabilitÃ  e ownership",
+    "Stabilità emotiva e fiducia": "StabilitÃ  emotiva e fiducia",
+    "Fiducia relazionale e sicurezza sociale": "Fiducia relazionale e sicurezza sociale",
+    "Gestione della pressione": "Gestione della pressione",
+    "Autocontrollo e gestione emotiva": "Autocontrollo e gestione emotiva",
+    "Energia sociale e comunicazione": "Energia sociale e comunicazione",
+    "Flessibilità e adattabilità": "FlessibilitÃ  e adattabilitÃ ",
+    "Assertività e negoziazione": "AssertivitÃ  e negoziazione",
+    "Empatia e collaborazione": "Empatia e collaborazione",
+    "Estroversione e networking": "Estroversione e networking",
+    "Leadership e influenza": "Leadership e influenza",
+    "Orientamento alla performance": "Orientamento alla performance",
+    "Sensibilità al riconoscimento": "SensibilitÃ  al riconoscimento",
+    "Autonomia economica e iniziativa": "Autonomia economica e iniziativa",
+    "Creatività e innovazione": "CreativitÃ  e innovazione",
+    "Comportamento generale": "Comportamento generale",
+    "Contesto ruolo": "Contesto ruolo"
+  };
+
+  const definitionKey = sourceKeyAliases[value] || sourceKeyAliases[rawValue] || value;
+  const definitions = DIMENSION_DEFINITIONS[definitionKey];
+
+  if (Array.isArray(definitions)) {
+    return definitions
+      .map((dimension) => {
+        const name = canonicalDimensionName(dimension.name);
+        const category = approvedCategoryForDimension(name);
+        return category ? { name, category } : null;
+      })
+      .filter(Boolean);
   }
 
-  return [
-    { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
-  ];
+  const canonical = canonicalDimensionName(value);
+  const category = approvedCategoryForDimension(canonical);
+
+  return category
+    ? [{ name: canonical, category }]
+    : [{ name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }];
 }
 
 function histogramColor(score) {
@@ -613,8 +723,8 @@ function splitDimensions(dimensions) {
   const list = Array.isArray(dimensions) ? dimensions : [];
 
   return {
-    traits: list.filter((item) => item.category === DIMENSION_CATEGORY.TRAIT),
-    additionalParameters: list.filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL)
+    traits: list.filter((item) => approvedCategoryForDimension(item?.name) === DIMENSION_CATEGORY.TRAIT),
+    additionalParameters: list.filter((item) => approvedCategoryForDimension(item?.name) === DIMENSION_CATEGORY.ADDITIONAL)
   };
 }
 
@@ -846,7 +956,7 @@ function calculateRoleFit(dimensions, requestedRole) {
   const weights = ROLE_FIT_WEIGHTS[roleKey] || ROLE_FIT_WEIGHTS.altro;
   const byName = new Map(
     (Array.isArray(dimensions) ? dimensions : []).map((item) => [
-      displayDimensionName(normalizeDimensionNameForDisplay(item.name)),
+      canonicalDimensionName(item.name),
       item
     ])
   );
@@ -856,7 +966,7 @@ function calculateRoleFit(dimensions, requestedRole) {
   const details = [];
 
   Object.entries(weights).forEach(([name, weight]) => {
-    const normalizedName = displayDimensionName(normalizeDimensionNameForDisplay(name));
+    const normalizedName = canonicalDimensionName(name);
     const dimension = byName.get(normalizedName);
     if (!dimension) return;
 
@@ -865,7 +975,7 @@ function calculateRoleFit(dimensions, requestedRole) {
     weightTotal += weight;
 
     details.push({
-      name: normalizedName,
+      name: displayDimensionName(normalizedName),
       score: dimension.score,
       percent: score,
       weight
@@ -1045,17 +1155,19 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
       : normalizeDimensionDefinitions(sourceTrait);
 
     dimensions.forEach((dimension) => {
-      if (!dimension?.name || !dimension?.category) return;
+      const name = canonicalDimensionName(dimension?.name);
+      const category = approvedCategoryForDimension(name) || dimension?.category;
+      if (!name || !category) return;
 
-      if (!groups.has(dimension.name)) {
-        groups.set(dimension.name, {
-          name: dimension.name,
-          category: dimension.category,
+      if (!groups.has(name)) {
+        groups.set(name, {
+          name,
+          category,
           items: []
         });
       }
 
-      groups.get(dimension.name).items.push({
+      groups.get(name).items.push({
         questionKey: question.key,
         questionId: question.id,
         sourceTrait,
@@ -1066,7 +1178,7 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
     });
   });
 
-  return Array.from(groups.values())
+  const list = Array.from(groups.values())
     .map((dimension) => {
       const values = dimension.items.map((item) => item.value);
       const finalScore = avg(values);
@@ -1079,14 +1191,11 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
         questionCount: dimension.items.length,
         items: dimension.items
       };
-    })
-    .sort((a, b) => {
-      const nameA = normalizeDimensionNameForDisplay(a.name);
-      const nameB = normalizeDimensionNameForDisplay(b.name);
-      const orderA = DIMENSION_ORDER.has(nameA) ? DIMENSION_ORDER.get(nameA) : 999;
-      const orderB = DIMENSION_ORDER.has(nameB) ? DIMENSION_ORDER.get(nameB) : 999;
-      return orderA - orderB;
     });
+
+  return assessmentType === "sport_performance"
+    ? list
+    : mergeDimensionList(list, { includeMissingApproved: true });
 }
 
 function buildSummary(traits, role) {
@@ -1327,67 +1436,75 @@ function cleanExpandedReport(expandedReportJson) {
     return expandedReportJson;
   }
 
-  const seenNames = new Set();
-  const cleanTraits = Array.isArray(expandedReportJson.traits)
-    ? expandedReportJson.traits
-        .map((trait) => ({
-          ...trait,
-          name: canonicalOutputName(normalizeTraitName(trait?.name))
-        }))
-        .filter((trait) => {
-          const name = normalizeTraitName(trait?.name);
-          if (!name) return false;
-          if (!isApprovedOutputName(name)) return false;
-          if (seenNames.has(name.toLowerCase())) return false;
-          if (/duplicato controllo/i.test(String(trait?.name || ""))) return false;
-          if (isPlaceholderText(JSON.stringify(trait || {}))) return false;
+  const byName = new Map();
 
-          seenNames.add(name.toLowerCase());
-          return true;
-        })
-        .map((trait) => ({
-          ...trait,
-          displayName: displayDimensionName(trait.name),
-          description: dimensionDescription(trait.name)
-        }))
-    : [];
+  if (Array.isArray(expandedReportJson.traits)) {
+    expandedReportJson.traits.forEach((trait) => {
+      const name = canonicalDimensionName(normalizeTraitName(trait?.canonicalName || trait?.name || trait?.displayName));
+      if (!APPROVED_DIMENSION_SET.has(name)) return;
+      if (/duplicato controllo/i.test(String(trait?.name || ""))) return;
+      if (isPlaceholderText(JSON.stringify(trait || {}))) return;
 
-  return {
+      if (!byName.has(name)) {
+        byName.set(name, {
+          ...trait,
+          name,
+          displayName: displayDimensionName(name),
+          description: dimensionDescription(name)
+        });
+      }
+    });
+  }
+
+  const cleanTraits = APPROVED_DIMENSIONS.map((name) => {
+    const existing = byName.get(name);
+    if (existing) {
+      return {
+        ...existing,
+        name,
+        displayName: displayDimensionName(name),
+        description: dimensionDescription(name)
+      };
+    }
+
+    return {
+      name,
+      displayName: displayDimensionName(name),
+      description: dimensionDescription(name),
+      expandedText: "",
+      improvementPlan: "",
+      skillAction: ""
+    };
+  });
+
+  return normalizeTextPayload({
     ...expandedReportJson,
     traits: cleanTraits
-  };
+  });
 }
 
 function buildAiTraitsForPrompt(traits, reliabilityFlags = []) {
-  const seenNames = new Set();
+  const byName = new Map(
+    (Array.isArray(traits) ? traits : [])
+      .map((trait) => [canonicalDimensionName(trait?.name), trait])
+  );
 
-  return (Array.isArray(traits) ? traits : [])
-    .map((trait) => ({
-      ...trait,
-      name: canonicalOutputName(normalizeTraitName(trait?.name))
-    }))
-    .filter((trait) => {
-      const name = normalizeTraitName(trait?.name);
-      if (!name) return false;
-      if (!isApprovedOutputName(name)) return false;
-      if (seenNames.has(name.toLowerCase())) return false;
-      if (/duplicato controllo/i.test(String(trait?.name || ""))) return false;
-      seenNames.add(name.toLowerCase());
-      return true;
-    })
+  return APPROVED_DIMENSIONS
+    .map((approvedName) => byName.get(approvedName) || emptyApprovedDimension(approvedName))
+    .filter(Boolean)
     .map((trait) => {
-      const canonicalName = canonicalOutputName(trait.name);
-      const name = displayDimensionName(canonicalName);
+      const name = canonicalDimensionName(trait.name);
+      const displayName = displayDimensionName(name);
       const value = chartScore(trait.score);
-      const evoGuide = evoGuideForDimension(canonicalName, trait.score);
-      const truthfulness = canonicalName === "Attendibilità"
+      const evoGuide = evoGuideForDimension(name, trait.score);
+      const truthfulness = name === "Attendibilità"
         ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(reliabilityFlags) })
         : null;
 
       return {
-        name,
-        canonicalName,
-        description: dimensionDescription(canonicalName),
+        name: displayName,
+        canonicalName: name,
+        description: dimensionDescription(name),
         category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
         score: trait.score,
         chartScore: value,
@@ -1697,9 +1814,9 @@ function shouldShowSkillActionForChartValue(value) {
 }
 
 function findDimensionByDisplayName(dimensions, name) {
-  const target = displayDimensionName(name);
+  const target = canonicalDimensionName(name);
   return (Array.isArray(dimensions) ? dimensions : []).find((item) => {
-    return displayDimensionName(item?.name) === target || item?.name === name;
+    return canonicalDimensionName(item?.name) === target || displayDimensionName(item?.name) === displayDimensionName(target);
   }) || null;
 }
 
@@ -1730,9 +1847,9 @@ function scoreGuidanceForPrompt(score) {
 }
 
 function dimensionByName(dimensions, name) {
-  const target = displayDimensionName(name);
+  const target = canonicalDimensionName(name);
   return (Array.isArray(dimensions) ? dimensions : []).find((item) => {
-    return displayDimensionName(item?.name) === target || item?.name === name;
+    return canonicalDimensionName(item?.name) === target || displayDimensionName(item?.name) === displayDimensionName(target);
   }) || null;
 }
 
@@ -1816,8 +1933,15 @@ function responsibilityOpinionNote() {
 function stripLeadingTruthfulnessStatus(text) {
   let value = String(text || "").trim();
 
+  // Evita duplicazioni tipo:
+  // "AttendibilitÃ  SÃ¬: ... AttendibilitÃ  SÃ¬. Le risposte ..."
+  // L'AI puÃ² usare due formati:
+  // - AttendibilitÃ  SÃŒ: testo...
+  // - AttendibilitÃ  SÃ¬. Le risposte...
+  // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
+  // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
   const truthfulnessPattern =
-    /^Attendibilit[àÃ ]+\s+(SÃŒ|SI|SÃ¬|SÌ|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilit[àÃ ]+\s+(SÃŒ|SI|SÃ¬|SÌ|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -2015,82 +2139,17 @@ function drawAdditionalParameterBars(doc, parameters) {
 }
 
 function normalizeDimensionNameForDisplay(name) {
-  const value = normalizeBrokenUtf8(String(name || "").trim());
-
-  if (value === "Attuabilità") return "Attendibilità";
-  if (value === "Emotiva") return "Cooperazione";
-  if (value === "Capacità di gestióne finanziaria") return "Capacità di gestione finanziaria";
-  if (value === "Affidabilità") return "Affidabilità + autodisciplina";
-  if (value === "AffidabilitÃ ") return "Affidabilità + autodisciplina";
-
-  const sourceAliasToApproved = {
-    "Responsabilità e ownership": "Responsabilità",
-    "Stabilità emotiva e fiducia": "Sicurezza",
-    "Fiducia relazionale e sicurezza sociale": "Sicurezza",
-    "Sensibilità al riconoscimento": "Sicurezza",
-    "Assertività e negoziazione": "Flessibilità comunicativa",
-    "Ambizione e competitività": "Automotivazione",
-    "Creatività e innovazione": "Dinamismo",
-    "Indice di attendibilità": "Affidabilità + autodisciplina",
-    "Flessibilità e adattabilità": "Resistenza al cambiamento",
-    "Continuità professionale": "Affidabilità + autodisciplina",
-    "Organizzazione e metodo": "Organizzazione e pianificazione",
-    "Visione e orientamento al futuro": "Automotivazione",
-    "Gestione della pressione": "Stress",
-    "Autocontrollo e gestione emotiva": "Stress",
-    "Energia sociale e comunicazione": "Dinamismo",
-    "Empatia e collaborazione": "Ascolto attivo",
-    "Estroversione e networking": "Espansività",
-    "Leadership e influenza": "Leadership naturale",
-    "Orientamento alla performance": "Management",
-    "Autonomia economica e iniziativa": "Capacità di gestione finanziaria",
-    "Comportamento generale": "Dinamismo"
-  };
-
-  return sourceAliasToApproved[value] || DISPLAY_LABELS[value] || value;
+  return canonicalDimensionName(name);
 }
 
-
-function canonicalOutputName(name) {
-  const value = normalizeDimensionNameForDisplay(name);
-
-  if (value === "Gestione pressioni / Stress") return "Stress";
-
-  return value;
-}
-
-function isApprovedOutputName(name) {
-  const canonical = canonicalOutputName(name);
-  return TRAIT_DIMENSIONS.includes(canonical) || ADDITIONAL_PARAMETER_DIMENSIONS.includes(canonical);
-}
-
-function approvedCategoryForName(name, fallbackCategory = null) {
-  const canonical = canonicalOutputName(name);
-  if (TRAIT_DIMENSIONS.includes(canonical)) return DIMENSION_CATEGORY.TRAIT;
-  if (ADDITIONAL_PARAMETER_DIMENSIONS.includes(canonical)) return DIMENSION_CATEGORY.ADDITIONAL;
-  return fallbackCategory;
-}
-
-function findDimensionDefinitionKey(originalTrait) {
-  const rawValue = String(originalTrait || "").trim();
-  const value = normalizeBrokenUtf8(rawValue);
-
-  if (DIMENSION_DEFINITIONS[rawValue]) return rawValue;
-  if (DIMENSION_DEFINITIONS[value]) return value;
-
-  return Object.keys(DIMENSION_DEFINITIONS).find((key) => {
-    return normalizeBrokenUtf8(key) === value || key === rawValue;
-  }) || null;
-}
-
-function mergeDimensionList(list = []) {
+function mergeDimensionList(list = [], options = {}) {
   const groups = new Map();
 
   (Array.isArray(list) ? list : []).forEach((item) => {
-    const name = canonicalOutputName(item?.name);
-    if (!name || !isApprovedOutputName(name)) return;
+    const name = canonicalDimensionName(item?.name);
+    const category = approvedCategoryForDimension(name);
+    if (!name || !category) return;
 
-    const approvedCategory = approvedCategoryForName(name, item.category);
     const existing = groups.get(name);
     const items = Array.isArray(item.items) ? item.items : [];
     const score = Number(item.score || 0);
@@ -2100,8 +2159,9 @@ function mergeDimensionList(list = []) {
       groups.set(name, {
         ...item,
         name,
-        category: approvedCategory,
+        category,
         score,
+        range: range(score),
         questionCount,
         items: [...items]
       });
@@ -2111,70 +2171,89 @@ function mergeDimensionList(list = []) {
     const oldWeight = Number(existing.questionCount || existing.items?.length || 1);
     const newWeight = questionCount || 1;
     const totalWeight = oldWeight + newWeight;
+
     existing.score = Math.round(((Number(existing.score || 0) * oldWeight) + (score * newWeight)) / totalWeight);
     existing.range = range(existing.score);
     existing.questionCount = totalWeight;
     existing.items = [...(existing.items || []), ...items];
   });
 
+  if (options.includeMissingApproved) {
+    APPROVED_DIMENSIONS.forEach((name) => {
+      if (!groups.has(name)) {
+        const empty = emptyApprovedDimension(name);
+        if (empty) groups.set(name, empty);
+      }
+    });
+  }
+
   return Array.from(groups.values()).sort((a, b) => {
-    const nameA = canonicalOutputName(a.name);
-    const nameB = canonicalOutputName(b.name);
-    const orderA = DIMENSION_ORDER.has(nameA) ? DIMENSION_ORDER.get(nameA) : 999;
-    const orderB = DIMENSION_ORDER.has(nameB) ? DIMENSION_ORDER.get(nameB) : 999;
+    const orderA = DIMENSION_ORDER.has(a.name) ? DIMENSION_ORDER.get(a.name) : 999;
+    const orderB = DIMENSION_ORDER.has(b.name) ? DIMENSION_ORDER.get(b.name) : 999;
     return orderA - orderB;
   });
 }
 
 function normalizeNameList(list = []) {
   return (Array.isArray(list) ? list : [])
-    .map((name) => displayDimensionName(normalizeDimensionNameForDisplay(name)))
+    .map((name) => displayDimensionName(canonicalDimensionName(name)))
     .filter(Boolean)
     .filter((name, index, arr) => arr.indexOf(name) === index);
 }
 
-function countOutputDimensions(dimensions = []) {
-  const split = splitDimensions(mergeDimensionList(dimensions));
-  return {
-    traits: split.traits.length,
-    additionalParameters: split.additionalParameters.length,
-    total: split.traits.length + split.additionalParameters.length
-  };
-}
-
-function getNormalizedAnalysis(payload = {}, requestedRole = "", answersJson = null) {
-  const assessmentType = payload.assessmentType || "zpi_hr";
+function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
-  let traits = mergeDimensionList(rawTraits);
-
-  if (assessmentType === "zpi_hr" && answersJson && typeof answersJson === "object") {
-    const answeredCount = Object.values(answersJson).filter(Boolean).length;
-
-    if (answeredCount >= 200) {
-      const rebuiltTraits = mergeDimensionList(buildTraitsFromAnswers(answersJson, assessmentType));
-      const rebuiltCounts = countOutputDimensions(rebuiltTraits);
-      const storedCounts = countOutputDimensions(traits);
-
-      if (
-        rebuiltCounts.traits > storedCounts.traits ||
-        rebuiltCounts.additionalParameters > storedCounts.additionalParameters ||
-        (rebuiltCounts.traits === TRAIT_DIMENSIONS.length && rebuiltCounts.additionalParameters === ADDITIONAL_PARAMETER_DIMENSIONS.length)
-      ) {
-        console.warn("[ZPI] using dimensions rebuilt from answersJson", {
-          answeredCount,
-          stored: storedCounts,
-          rebuilt: rebuiltCounts
-        });
-        traits = rebuiltTraits;
-      }
-    }
-  }
-
+  const traits = mergeDimensionList(rawTraits, { includeMissingApproved: true });
   const split = splitDimensions(traits);
-  const mainTraits = split.traits;
-  const additionalParameters = split.additionalParameters;
-  const roleFit = calculateRoleFit(traits, requestedRole);
-  const managementAdvice = buildManagementAdvice({ traits, roleFit });
+
+  const mainTraits = mergeDimensionList(
+    Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits,
+    { includeMissingApproved: false }
+  ).filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
+
+  const additionalParameters = mergeDimensionList(
+    Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters,
+    { includeMissingApproved: false }
+  ).filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
+
+  const fullMainTraits = TRAIT_DIMENSIONS.map((name) => mainTraits.find((item) => item.name === name) || traits.find((item) => item.name === name) || emptyApprovedDimension(name)).filter(Boolean);
+  const fullAdditionalParameters = ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => additionalParameters.find((item) => item.name === name) || traits.find((item) => item.name === name) || emptyApprovedDimension(name)).filter(Boolean);
+  const fullTraits = [...fullMainTraits, ...fullAdditionalParameters];
+
+  const roleFit = payload.roleFit || calculateRoleFit(fullTraits, requestedRole);
+  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits: fullTraits, roleFit });
+
+  const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
+  const theoreticalSignal = getTheoreticalProfileSignal(fullTraits);
+  const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
+  const reliabilityFlags = theoreticalFlag && !hasTheoreticalProfileFlag(existingReliabilityFlags)
+    ? [...existingReliabilityFlags, theoreticalFlag]
+    : existingReliabilityFlags;
+  const convictionChange = convictionChangePattern(fullTraits);
+  const securityTheory = theoreticalSecuritySignal(fullTraits, reliabilityFlags);
+
+  return {
+    traits: fullTraits,
+    mainTraits: fullMainTraits,
+    additionalParameters: fullAdditionalParameters,
+    roleFit,
+    managementAdvice,
+    topTraits: normalizeNameList(payload.topTraits || fullMainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
+    weakTraits: normalizeNameList(payload.weakTraits || fullMainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
+    reliabilityFlags,
+    convictionChange,
+    securityTheory
+  };
+}, requestedRole = "") {
+  const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
+  const traits = mergeDimensionList(rawTraits);
+  const split = splitDimensions(traits);
+  const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
+    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
+  const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
+    .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
+  const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
+  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
 
   const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
   const theoreticalSignal = getTheoreticalProfileSignal(traits);
@@ -2581,7 +2660,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
   const submissions = assessments.map((item) => {
     const payload = item.result?.traitsJson || {};
     const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, item.requestedRole, item.result?.answersJson || null);
+    const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
     return {
       assessmentType,
@@ -2661,7 +2740,7 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
 
       const payload = assessment.result.traitsJson || {};
       const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-      const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson || null);
+      const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
       const traits = normalized.traits;
       const roleFit = normalized.roleFit;
       const managementAdvice = normalized.managementAdvice;
@@ -2735,7 +2814,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin,
 
     const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson || null);
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
     const managementAdvice = normalized.managementAdvice;
@@ -2792,7 +2871,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmi
 
     const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
-    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson || null);
+    const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
     const roleFit = normalized.roleFit;
     const managementAdvice = normalized.managementAdvice;
@@ -3101,7 +3180,7 @@ function decodeBasicHtmlEntities(value) {
 }
 
 function htmlToPlainText(html) {
-  return decodeBasicHtmlEntities(String(html || "")
+  return normalizeBrokenUtf8(decodeBasicHtmlEntities(String(html || "")
     .replace(/<\s*style[\s\S]*?<\s*\/\s*style\s*>/gi, " ")
     .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, " ")
     .replace(/<\s*\/\s*(p|div|h1|h2|h3|h4|li|tr)\s*>/gi, "\n\n")
@@ -3110,7 +3189,7 @@ function htmlToPlainText(html) {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
-    .trim());
+    .trim()));
 }
 
 function xmlToPlainText(xml) {
@@ -3121,12 +3200,12 @@ function xmlToPlainText(xml) {
     .replace(/<\/w:tr>/g, "\n")
     .replace(/<\/w:tc>/g, " ");
 
-  return decodeBasicHtmlEntities(withBreaks
+  return normalizeBrokenUtf8(decodeBasicHtmlEntities(withBreaks
     .replace(/<[^>]+>/g, "")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
-    .trim());
+    .trim()));
 }
 
 function findZipEntryBuffer(zipBuffer, targetName) {
@@ -3364,7 +3443,7 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
 
   const payload = assessment.result.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson || null);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result.expandedReportJson || null),
     normalized
@@ -3494,7 +3573,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
 
   const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson || null);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
     cleanExpandedReport(assessment.result?.expandedReportJson || null),
     normalized
@@ -3584,31 +3663,6 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
-
-function buildFallbackExpandedTraitFromDimension(dimension) {
-  const canonicalName = canonicalOutputName(dimension?.name);
-  const displayName = displayDimensionName(canonicalName);
-  const value = chartScore(dimension?.score ?? 0);
-  const evoGuide = evoGuideForDimension(canonicalName, dimension?.score);
-  const description = dimensionDescription(canonicalName);
-
-  const baseText = evoGuide?.interpretation
-    ? `Il parametro indica che ${evoGuide.interpretation}. Questa lettura va verificata nel lavoro quotidiano e confrontata con esempi concreti.`
-    : `${description || "Questo indicatore va letto come tendenza comportamentale da verificare nel contesto operativo."}. La lettura va confrontata con colloquio, osservazione ed esempi concreti.`;
-
-  return {
-    name: canonicalName,
-    displayName,
-    description,
-    chartScore: value,
-    expandedText: baseText,
-    improvementPlan: "Verificare questo indicatore con esempi concreti di lavoro e confronto diretto.",
-    skillAction: "Osservare il comportamento nel contesto operativo e definire eventuali azioni di supporto.",
-    showRemedies: shouldShowRemediesForChartValue(value),
-    showSkillAction: shouldShowSkillActionForChartValue(value)
-  };
-}
-
 function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     return expandedReportJson;
@@ -3617,98 +3671,83 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
   const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
-  const seenExpandedNames = new Set();
 
   const traits = Array.isArray(expandedReportJson.traits)
-    ? expandedReportJson.traits
-        .map((trait) => {
-          const canonicalName = canonicalOutputName(trait?.name);
-          const displayName = displayDimensionName(canonicalName);
-          const dimension = findDimensionByDisplayName(normalizedDimensions, canonicalName || displayName);
-          const value = chartScore(dimension?.score ?? trait?.score ?? 0);
-          const description = dimensionDescription(canonicalName || displayName);
+    ? expandedReportJson.traits.map((trait) => {
+        const canonicalName = canonicalDimensionName(trait?.name);
+        const displayName = displayDimensionName(canonicalName);
+        const dimension = findDimensionByDisplayName(normalizedDimensions, canonicalName || trait?.name || displayName);
+        const value = chartScore(dimension?.score ?? trait?.score ?? 0);
+        const description = dimensionDescription(trait?.name || displayName);
 
-          let expandedText = stripLeadingDefinitionSentence(
-            String(trait.expandedText || "").trim(),
-            description
-          );
+        let expandedText = stripLeadingDefinitionSentence(
+          String(trait.expandedText || "").trim(),
+          description
+        );
 
-          if (canonicalName === "Attendibilità") {
-            const truthfulness = truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) });
-            const statusText = `${truthfulness.label}: ${truthfulness.text}`;
-            const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+        if (!expandedText) {
+          expandedText = `Questo indicatore va letto come parte del profilo complessivo. Il punteggio emerso richiede una verifica pratica nel contesto di lavoro, collegando il dato a esempi concreti, colloquio e osservazione sul campo.`;
+        }
 
-            expandedText = stripLeadingTruthfulnessStatus(expandedText);
+        if (canonicalName === "Attendibilità") {
+          const truthfulness = truthfulnessStatusFromScore(value);
+          const statusText = `${truthfulness.label}: ${truthfulness.text}`;
+          const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
+          expandedText = stripLeadingTruthfulnessStatus(expandedText);
+
+          // Evita incoerenze verbali tipo:
+          // "AttendibilitÃ  FORZATA..." + "l'indice resta adeguato".
+          // La lettura deve rimanere prudente e utilizzabile, non "adeguata" in senso pieno.
+          expandedText = expandedText
+            .replace(/L[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "Lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
+            .replace(/L[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "Lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
+            .replace(/l[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
+            .replace(/l[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "lâ€™indice resta utilizzabile, ma richiede una lettura prudente.");
+
+          if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
             expandedText = expandedText
-              .replace(/L[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
-              .replace(/L[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
-              .replace(/l[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.")
-              .replace(/l[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.");
-
-            if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
-              expandedText = expandedText
-                ? `${statusText} ${theoreticalNote} ${expandedText}`
-                : `${statusText} ${theoreticalNote}`;
-            } else {
-              expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
-            }
+              ? `${statusText} ${theoreticalNote} ${expandedText}`
+              : `${statusText} ${theoreticalNote}`;
+          } else {
+            expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
           }
+        }
 
-          if (canonicalName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
-            expandedText = expandedText
-              ? `${expandedText} ${normalized.securityTheory.text}`
-              : normalized.securityTheory.text;
+        if (canonicalName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
+          expandedText = expandedText
+            ? `${expandedText} ${normalized.securityTheory.text}`
+            : normalized.securityTheory.text;
+        }
+
+        if (
+          (canonicalName === "Sicurezza" || canonicalName === "Resistenza al cambiamento") &&
+          normalized?.convictionChange &&
+          !expandedText.includes(normalized.convictionChange.label)
+        ) {
+          expandedText = expandedText
+            ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
+            : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
+        }
+
+        if (shouldAddResponsibilityNote && canonicalName === "Responsabilità") {
+          const note = responsibilityOpinionNote();
+          if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
+            expandedText = expandedText ? `${expandedText} ${note}` : note;
           }
+        }
 
-          if (
-            (canonicalName === "Sicurezza" || canonicalName === "Resistenza al cambiamento") &&
-            normalized?.convictionChange &&
-            !expandedText.includes(normalized.convictionChange.label)
-          ) {
-            expandedText = expandedText
-              ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
-              : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
-          }
-
-          if (shouldAddResponsibilityNote && canonicalName === "Responsabilità") {
-            const note = responsibilityOpinionNote();
-            if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
-              expandedText = expandedText ? `${expandedText} ${note}` : note;
-            }
-          }
-
-          seenExpandedNames.add(canonicalName);
-
-          return {
-            ...trait,
-            name: canonicalName,
-            displayName,
-            description,
-            chartScore: value,
-            showRemedies: shouldShowRemediesForChartValue(value),
-            showSkillAction: shouldShowSkillActionForChartValue(value),
-            expandedText
-          };
-        })
-        .filter((trait) => isApprovedOutputName(trait.name))
+        return {
+          ...trait,
+          displayName,
+          description,
+          chartScore: value,
+          showRemedies: shouldShowRemediesForChartValue(value),
+          showSkillAction: shouldShowSkillActionForChartValue(value),
+          expandedText
+        };
+      })
     : [];
-
-  normalizedDimensions.forEach((dimension) => {
-    const canonicalName = canonicalOutputName(dimension?.name);
-    if (!isApprovedOutputName(canonicalName)) return;
-    if (seenExpandedNames.has(canonicalName)) return;
-    traits.push(buildFallbackExpandedTraitFromDimension(dimension));
-    seenExpandedNames.add(canonicalName);
-  });
-
-  traits.sort((a, b) => {
-    const nameA = canonicalOutputName(a.name);
-    const nameB = canonicalOutputName(b.name);
-    const orderA = DIMENSION_ORDER.has(nameA) ? DIMENSION_ORDER.get(nameA) : 999;
-    const orderB = DIMENSION_ORDER.has(nameB) ? DIMENSION_ORDER.get(nameB) : 999;
-    return orderA - orderB;
-  });
 
   return normalizeTextPayload({
     ...expandedReportJson,
@@ -3742,6 +3781,31 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
 Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
 Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
+}) {
+  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+
+  const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
+  const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
+  const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
+  const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
+  const roleFitText = normalized?.roleFit?.score != null
+    ? `CompatibilitÃ  con il ruolo ricoperto: ${normalized.roleFit.score}%. `
+    : "";
+  const reliabilityText = assessment.result?.reliabilityScore != null
+    ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
+    : "";
+  const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+  const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
+  const securityTheoryText = normalized?.securityTheory ? `${normalized.securityTheory.text} ` : "";
+  const convictionChangeText = normalized?.convictionChange
+    ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
+    : "";
+
+  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuitÃ  al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilitÃ  ben definite.
+
+Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nellâ€™osservazione sul campo. In una PMI Ã¨ importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali prioritÃ  chiarire e in quali situazioni affiancarla.
+
+Questa valutazione Ã¨ indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
@@ -3788,7 +3852,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
-  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole, assessment.result?.answersJson || null);
+  const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
