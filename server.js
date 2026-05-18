@@ -90,6 +90,34 @@ function buildAdminQueryString(filters = {}) {
 }
 
 
+function normalizeBrokenUtf8(text) {
+  const value = String(text ?? "");
+  if (!/[ÃÂâ�]/.test(value)) return value;
+  return value
+    .replace(/Ã€/g, "À").replace(/Ãˆ/g, "È").replace(/Ã‰/g, "É").replace(/ÃŒ/g, "Ì").replace(/Ã’/g, "Ò").replace(/Ã™/g, "Ù")
+    .replace(/Ã[  ]/g, "à").replace(/Ã¡/g, "á").replace(/Ã¨/g, "è").replace(/Ã©/g, "é").replace(/Ã¬/g, "ì").replace(/Ã­/g, "í")
+    .replace(/Ã²/g, "ò").replace(/Ã³/g, "ó").replace(/Ã¹/g, "ù").replace(/Ãº/g, "ú").replace(/Ã§/g, "ç")
+    .replace(/Â/g, "").replace(/â€™/g, "’").replace(/â€˜/g, "‘").replace(/â€œ/g, "“").replace(/â€/g, "”")
+    .replace(/â€“/g, "–").replace(/â€”/g, "—").replace(/â€¦/g, "…").replace(/â€¢/g, "•").replace(/â„¢/g, "™").replace(/â‚¬/g, "€")
+    .replace(/�/g, "");
+}
+
+function normalizeTextPayload(value) {
+  if (Array.isArray(value)) return value.map((item) => normalizeTextPayload(item));
+  if (value && typeof value === "object" && !(value instanceof Date) && !Buffer.isBuffer(value)) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeTextPayload(item)]));
+  }
+  return typeof value === "string" ? normalizeBrokenUtf8(value) : value;
+}
+
+function patchPdfTextNormalization(doc) {
+  if (!doc || doc.__zpiTextNormalizationPatched) return doc;
+  const originalText = doc.text.bind(doc);
+  doc.text = (text, ...args) => originalText(normalizeBrokenUtf8(text), ...args);
+  doc.__zpiTextNormalizationPatched = true;
+  return doc;
+}
+
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -159,7 +187,12 @@ const ASSESSMENT_TYPES = {
 };
 
 function getAssessmentConfig(type = "zpi_hr") {
-  return ASSESSMENT_TYPES[type] || ASSESSMENT_TYPES.zpi_hr;
+  const config = ASSESSMENT_TYPES[type] || ASSESSMENT_TYPES.zpi_hr;
+  return {
+    ...config,
+    title: normalizeBrokenUtf8(config.title),
+    shortTitle: normalizeBrokenUtf8(config.shortTitle)
+  };
 }
 
 function inferAssessmentTypeFromToken(token = "") {
@@ -813,29 +846,6 @@ function buildManagementAdvice({ traits, roleFit }) {
   }
 
   return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide vanno presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
-}) {
-  const { traits: mainTraits } = splitDimensions(traits);
-  const byName = new Map(mainTraits.map((trait) => [trait.name, trait]));
-  const top = [...mainTraits].sort((a, b) => b.score - a.score).slice(0, 3).map((trait) => trait.name);
-  const low = [...mainTraits].sort((a, b) => a.score - b.score).slice(0, 3).map((trait) => trait.name);
-
-  if (roleFit?.score >= 75) {
-    return "La risorsa puÃ² essere gestita con obiettivi chiari, margini progressivi di autonomia e momenti di confronto periodici. Il profilo suggerisce una buona coerenza con il ruolo: Ã¨ utile valorizzare i tratti piÃ¹ solidi assegnando responsabilitÃ  osservabili e indicatori di risultato condivisi.";
-  }
-
-  if (low.includes("Stress") || (byName.get("Stress")?.score ?? 0) < 0) {
-    return "Ãˆ consigliabile inserire la risorsa in un contesto con prioritÃ  chiare, feedback frequenti e carichi progressivi. Nelle fasi piÃ¹ intense conviene evitare ambiguitÃ  operative e prevedere punti di controllo ravvicinati, cosÃ¬ da ridurre dispersione e pressione non necessaria.";
-  }
-
-  if (top.includes("EspansivitÃ ") || top.includes("Dinamismo")) {
-    return "La risorsa puÃ² rendere meglio in contesti dinamici, con interazione, confronto e obiettivi visibili. Ãˆ utile canalizzare lâ€™energia relazionale su attivitÃ  con responsabilitÃ  definite, evitando che la spinta comunicativa si disperda in iniziative poco prioritarie.";
-  }
-
-  if (top.includes("Organizzazione e pianificazione") || top.includes("AffidabilitÃ  + autodisciplina")) {
-    return "La risorsa puÃ² essere gestita efficacemente con processi chiari, responsabilitÃ  definite e spazio per presidiare attivitÃ  operative o progettuali. Ãˆ utile affidarle obiettivi misurabili e riconoscere la continuitÃ  di esecuzione.";
-  }
-
-  return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide andrebbero presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilitÃ  concrete.";
 }
 
 function isSuperAdmin(admin) {
@@ -2093,38 +2103,6 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     managementAdvice,
     topTraits: normalizeNameList(payload.topTraits || fullMainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
     weakTraits: normalizeNameList(payload.weakTraits || fullMainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
-    reliabilityFlags,
-    convictionChange,
-    securityTheory
-  };
-}, requestedRole = "") {
-  const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
-  const traits = mergeDimensionList(rawTraits);
-  const split = splitDimensions(traits);
-  const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
-    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
-  const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
-    .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
-  const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
-  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
-
-  const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
-  const theoreticalSignal = getTheoreticalProfileSignal(traits);
-  const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
-  const reliabilityFlags = theoreticalFlag && !hasTheoreticalProfileFlag(existingReliabilityFlags)
-    ? [...existingReliabilityFlags, theoreticalFlag]
-    : existingReliabilityFlags;
-  const convictionChange = convictionChangePattern(traits);
-  const securityTheory = theoreticalSecuritySignal(traits, reliabilityFlags);
-
-  return {
-    traits,
-    mainTraits,
-    additionalParameters,
-    roleFit,
-    managementAdvice,
-    topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
-    weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
     reliabilityFlags,
     convictionChange,
     securityTheory
@@ -3651,31 +3629,6 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
 Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
 Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
-}) {
-  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
-
-  const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
-  const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
-  const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
-  const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
-  const roleFitText = normalized?.roleFit?.score != null
-    ? `CompatibilitÃ  con il ruolo ricoperto: ${normalized.roleFit.score}%. `
-    : "";
-  const reliabilityText = assessment.result?.reliabilityScore != null
-    ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
-    : "";
-  const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
-  const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
-  const securityTheoryText = normalized?.securityTheory ? `${normalized.securityTheory.text} ` : "";
-  const convictionChangeText = normalized?.convictionChange
-    ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
-    : "";
-
-  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuitÃ  al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilitÃ  ben definite.
-
-Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nellâ€™osservazione sul campo. In una PMI Ã¨ importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali prioritÃ  chiarire e in quali situazioni affiancarla.
-
-Questa valutazione Ã¨ indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
@@ -3684,7 +3637,7 @@ function drawSimpleSectionTitle(doc, title) {
 }
 
 function writeParagraphs(doc, text) {
-  String(text || "-")
+  String(normalizeBrokenUtf8(text) || "-")
     .split(/\n\s*\n/g)
     .map((part) => part.trim())
     .filter(Boolean)
@@ -3737,10 +3690,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     ? extractValidatedWordPlainText(validatedRevision)
     : "";
 
-  const doc = new PDFDocument({
+  const doc = patchPdfTextNormalization(new PDFDocument({
     margin: 50,
     size: "A4"
-  });
+  }));
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
