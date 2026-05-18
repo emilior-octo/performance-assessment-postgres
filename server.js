@@ -3946,6 +3946,28 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   logPdfDimensionInput(assessment.id, normalized);
+
+  console.log("[PDF NORMALIZED CHECK]", {
+    assessmentId: assessment.id,
+    respondent: assessment.respondentName,
+    mainTraits: (normalized.mainTraits || []).map((t) => ({
+      name: t.name,
+      displayName: typeof displayDimensionName === "function" ? displayDimensionName(t.name) : t.name,
+      score: t.score,
+      chartScore: typeof chartScore === "function" ? chartScore(t.score) : t.score,
+      questionCount: t.questionCount,
+      sourceTraits: [...new Set((t.items || []).map((i) => i.sourceTrait).filter(Boolean))]
+    })),
+    additionalParameters: (normalized.additionalParameters || []).map((t) => ({
+      name: t.name,
+      displayName: typeof displayDimensionName === "function" ? displayDimensionName(t.name) : t.name,
+      score: t.score,
+      chartScore: typeof chartScore === "function" ? chartScore(t.score) : t.score,
+      questionCount: t.questionCount,
+      sourceTraits: [...new Set((t.items || []).map((i) => i.sourceTrait).filter(Boolean))]
+    }))
+  });
+
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
