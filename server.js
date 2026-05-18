@@ -3589,9 +3589,31 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const aiTraits = Array.isArray(expandedReportJson.traits) ? expandedReportJson.traits : [];
 
   const aiTraitByName = new Map();
+
+  function addAiTraitAlias(name, trait) {
+    const key = String(name || "").trim();
+    if (key && !aiTraitByName.has(key)) aiTraitByName.set(key, trait);
+  }
+
   aiTraits.forEach((trait) => {
     const canonical = normalizeDimensionNameForDisplay(normalizeTraitName(trait?.canonicalName || trait?.name));
-    if (canonical && !aiTraitByName.has(canonical)) aiTraitByName.set(canonical, trait);
+    const utfCanonical = normalizeBrokenUtf8(canonical);
+    const visibleName = displayDimensionName(canonical);
+
+    addAiTraitAlias(canonical, trait);
+    addAiTraitAlias(utfCanonical, trait);
+    addAiTraitAlias(visibleName, trait);
+
+    // Alias chirurgici SOLO per il lookup del testo AI.
+    // Non modificano nomi interni, scoring, mapping, DB o JSON salvati.
+    if (/attendibilit|attendibilitÃ|truthfulness|reliability/i.test(String(canonical || "")) || visibleName === "Attendibilità") {
+      addAiTraitAlias("Attendibilità", trait);
+      addAiTraitAlias("Attendibilita", trait);
+      addAiTraitAlias("AttendibilitÃ ", trait);
+      addAiTraitAlias("AttendibilitÃ", trait);
+      addAiTraitAlias("reliability", trait);
+      addAiTraitAlias("truthfulness", trait);
+    }
   });
 
   const allApprovedDimensions = [
@@ -3601,19 +3623,23 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const traits = allApprovedDimensions.map((dimension) => {
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
+    const utfCanonicalName = normalizeBrokenUtf8(canonicalName);
     const displayName = displayDimensionName(canonicalName);
+    const isAttendibilita = displayName === "Attendibilità" || utfCanonicalName === "Attendibilità" || canonicalName === "AttendibilitÃ ";
 
     // Fallback chirurgico UTF-safe SOLO per il lookup del testo AI.
     // Non modifica nomi interni, scoring, mapping, DB o JSON salvati.
     const aiTrait =
       aiTraitByName.get(canonicalName) ||
-      aiTraitByName.get(normalizeBrokenUtf8(canonicalName)) ||
+      aiTraitByName.get(utfCanonicalName) ||
       aiTraitByName.get(displayName) ||
+      (isAttendibilita ? aiTraitByName.get("Attendibilità") : null) ||
       {};
 
     if (["Gestione priorità", "Capacità di gestione finanziaria", "Attendibilità"].includes(displayName)) {
       console.log("[ZPI TRAIT MATCH DEBUG]", {
         canonicalName,
+        utfCanonicalName,
         displayName,
         aiTraitFound: !!aiTrait.expandedText,
         aiTraitExpandedTextPreview: aiTrait?.expandedText ? String(aiTrait.expandedText).slice(0, 180) : null,
@@ -3624,8 +3650,8 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     const value = chartScore(dimension?.score ?? 0);
     const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
-    const truthfulness = canonicalName === "Attendibilità"
-      ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) })
+    const truthfulness = isAttendibilita
+      ? truthfulnessStatusFromScore(value)
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
@@ -3634,7 +3660,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     );
 
     if (!expandedText) {
-      if (canonicalName === "Attendibilità" && truthfulness) {
+      if (isAttendibilita && truthfulness) {
         expandedText = `${truthfulness.label}: ${truthfulness.text}`;
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
         expandedText = "Possono essere presenti fonti di pressione, distrazione o preoccupazione che influenzano il modo di lavorare. Questo dato va letto con esempi concreti: quali situazioni generano tensione, come vengono gestite le urgenze e quanto l’ambiente aiuta o ostacola la continuità operativa.";
@@ -3645,7 +3671,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (canonicalName === "Attendibilità") {
+    if (isAttendibilita) {
       const statusText = `${truthfulness.label}: ${truthfulness.text}`;
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
