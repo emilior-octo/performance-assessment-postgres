@@ -624,8 +624,39 @@ function displayDimensionName(name) {
 }
 
 function dimensionDescription(name) {
-  const displayName = displayDimensionName(name);
-  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
+  const rawName = String(name || "").trim();
+  const canonicalName = normalizeDimensionNameForDisplay(rawName);
+  const utfCanonicalName = normalizeBrokenUtf8(canonicalName);
+  const displayName = displayDimensionName(canonicalName);
+
+  const candidates = [
+    rawName,
+    normalizeBrokenUtf8(rawName),
+    canonicalName,
+    utfCanonicalName,
+    displayName,
+    normalizeBrokenUtf8(displayName)
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (DIMENSION_DESCRIPTIONS[candidate]) {
+      return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[candidate]);
+    }
+  }
+
+  const candidateKeys = new Set(candidates.map((candidate) => dimensionAliasKey(candidate)));
+  const matchingEntry = Object.entries(DIMENSION_DESCRIPTIONS).find(([key]) => {
+    const keyAliases = [
+      key,
+      normalizeBrokenUtf8(key),
+      displayDimensionName(key),
+      normalizeDimensionNameForDisplay(key)
+    ].map((value) => dimensionAliasKey(value));
+
+    return keyAliases.some((keyAlias) => candidateKeys.has(keyAlias));
+  });
+
+  return normalizeBrokenUtf8(matchingEntry?.[1] || "");
 }
 
 function withDisplayMeta(item) {
@@ -4020,7 +4051,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
         const displayName = displayDimensionName(t.name || "Tratto");
-        const description = dimensionDescription(t.name);
+        const description = t.description || dimensionDescription(t.name || t.displayName);
         doc.fontSize(14).text(displayName);
         if (description) {
           doc.moveDown(0.1);
