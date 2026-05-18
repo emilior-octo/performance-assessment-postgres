@@ -632,48 +632,6 @@ function isDirectionalExecutiveRole(role) {
 function isDirectionalExecutiveNormalized(normalized = {}) {
   return isDirectionalExecutiveRole(normalized?.roleFit?.roleKey || normalized?.requestedRole || "");
 }
-function isEntrepreneurialAssessment(assessment, normalized = {}) {
-  return isDirectionalExecutiveRole(
-    assessment?.requestedRole ||
-    normalized?.requestedRole ||
-    normalized?.roleFit?.roleKey ||
-    ""
-  );
-}
-
-function toSecondPersonForEntrepreneurRemedies(text) {
-  return normalizeBrokenUtf8(String(text || ""))
-    .replace(/\bLa persona può\b/g, "Puoi")
-    .replace(/\bla persona può\b/g, "puoi")
-    .replace(/\bLa persona dovrebbe\b/g, "Dovresti")
-    .replace(/\bla persona dovrebbe\b/g, "dovresti")
-    .replace(/\bLa persona tende\b/g, "Tendi")
-    .replace(/\bla persona tende\b/g, "tendi")
-    .replace(/\bLa persona\b/g, "Tu")
-    .replace(/\bla persona\b/g, "tu")
-    .replace(/\bIl candidato può\b/g, "Puoi")
-    .replace(/\bil candidato può\b/g, "puoi")
-    .replace(/\bIl candidato dovrebbe\b/g, "Dovresti")
-    .replace(/\bil candidato dovrebbe\b/g, "dovresti")
-    .replace(/\bIl candidato\b/g, "Tu")
-    .replace(/\bil candidato\b/g, "tu")
-    .replace(/\bLa risorsa può\b/g, "Puoi")
-    .replace(/\bla risorsa può\b/g, "puoi")
-    .replace(/\bLa risorsa dovrebbe\b/g, "Dovresti")
-    .replace(/\bla risorsa dovrebbe\b/g, "dovresti")
-    .replace(/\bLa risorsa\b/g, "Tu")
-    .replace(/\bla risorsa\b/g, "tu")
-    .replace(/\bassegnargli\b/g, "assegnarti")
-    .replace(/\bassegnarle\b/g, "assegnarti")
-    .replace(/\bcoinvolgerlo\b/g, "coinvolgerti")
-    .replace(/\bcoinvolgerla\b/g, "coinvolgerti")
-    .replace(/\baiutarlo\b/g, "aiutarti")
-    .replace(/\baiutarla\b/g, "aiutarti")
-    .replace(/\bmonitorarlo\b/g, "monitorarti")
-    .replace(/\bmonitorarla\b/g, "monitorarti")
-    .replace(/\baffiancarlo\b/g, "affiancarti")
-    .replace(/\baffiancarla\b/g, "affiancarti");
-}
 const ROLE_FIT_WEIGHTS = {
   direzione: {
     "Automotivazione": 1.35,
@@ -919,7 +877,6 @@ function buildManagementAdvice({ traits, roleFit }) {
   }
 
   return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide vanno presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
-}
 
 function isSuperAdmin(admin) {
   return String(admin?.role || "").toUpperCase() === "SUPER_ADMIN";
@@ -1443,6 +1400,22 @@ async function generateExpandedReportPayload({
   const input = `
 Sei un consulente organizzativo senior.
 Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario Ã¨ sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
+
+ISTRUZIONE OBBLIGATORIA E PRIORITARIA PER generalSummary
+- Il campo generalSummary deve essere scritto SEMPRE in seconda persona singolare.
+- Devi rivolgerti direttamente alla persona che ha compilato il test.
+- Questa regola vale per tutti i ruoli: risorsa, candidato, manager, direzione, imprenditore, titolare, CEO o founder.
+- Usa formule come: "nel lavoro tendi a", "potresti", "quando ti trovi", "hai costruito", "per te può essere utile", "puoi".
+- Non usare elenchi puntati nel campo generalSummary.
+- Non usare linguaggio clinico, diagnostico o motivazionale.
+- Mantieni un tono professionale, concreto, prudente e osservativo.
+- La relazione generale deve sembrare una restituzione personale, non una scheda HR esterna.
+
+DIVIETI ASSOLUTI PER generalSummary
+- Non iniziare mai con "Il profilo mostra", "Il profilo evidenzia", "Il profilo ZPI mostra", "La persona presenta", "La risorsa mostra", "Il candidato appare", "Il soggetto".
+- Non scrivere generalSummary in terza persona.
+- Non usare formule impersonali come "la compatibilità è presente" se puoi scrivere "per il ruolo emerge una compatibilità..." o "puoi trovare coerenza con il ruolo...".
+- Se generalSummary contiene un tono impersonale o frasi tipo "il profilo mostra", la risposta è da considerare errata.
 
 CONTESTO
 - Questionario: ${assessmentTitle}
@@ -2114,7 +2087,6 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     convictionChange,
     securityTheory
   };
-}
 
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
   const { traits, additionalParameters } = splitDimensions(dimensions);
@@ -2886,16 +2858,12 @@ function buildEditableWordHtml({ assessment, normalized, expanded }) {
   const title = assessment.result?.traitsJson?.assessmentTitle || getAssessmentConfig(assessment.assessmentType).title;
   const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
   const traits = Array.isArray(expanded?.traits) ? expanded.traits : [];
-  const entrepreneurialAssessment = isEntrepreneurialAssessment(assessment, normalized);
 
   const traitHtml = traits.map((trait) => {
     const title = trait.displayName || trait.name || "Tratto";
     const description = trait.description ? `<p><em>(${escapeHtml(trait.description)})</em></p>` : "";
-    const remediesText = entrepreneurialAssessment
-      ? toSecondPersonForEntrepreneurRemedies(trait.improvementPlan || "-")
-      : (trait.improvementPlan || "-");
-    const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(remediesText)}</p>` : "";
-    const action = !entrepreneurialAssessment && trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
+    const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(trait.improvementPlan || "-")}</p>` : "";
+    const action = trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
 
     return `
       <h2>${escapeHtml(title)}</h2>
@@ -3622,15 +3590,19 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   });
 }
 
-function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
-  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+function isImpersonalGeneralSummary(text) {
+  return /(?:^|\n)\s*(Il profilo(?:\s+ZPI)?\s+(?:mostra|evidenzia|presenta)|La persona\s+(?:presenta|mostra|evidenzia)|La risorsa\s+(?:presenta|mostra|evidenzia)|Il candidato\s+(?:appare|presenta|mostra|evidenzia)|Il soggetto\s+)/i.test(
+    String(text || "")
+  );
+}
 
+function buildFallbackSecondPersonGeneralRelation({ normalized }) {
   const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
   const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
   const roleFitText = normalized?.roleFit?.score != null
-    ? `La compatibilità con il ruolo ricoperto è pari al ${normalized.roleFit.score}%. `
+    ? `Per il ruolo ricoperto emerge una compatibilità pari al ${normalized.roleFit.score}%. `
     : "";
   const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
   const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
@@ -3644,6 +3616,16 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
 Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
 Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
+}
+
+function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
+  const aiGeneralSummary = stripForbiddenGeneralRelationPhrases(expanded?.generalSummary || "");
+
+  if (aiGeneralSummary && !isImpersonalGeneralSummary(aiGeneralSummary)) {
+    return aiGeneralSummary;
+  }
+
+  return buildFallbackSecondPersonGeneralRelation({ normalized });
 }
 
 function drawSimpleSectionTitle(doc, title) {
@@ -3720,7 +3702,6 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   const roleFit = normalized.roleFit;
   const managementAdvice = normalized.managementAdvice;
-  const entrepreneurialAssessment = isEntrepreneurialAssessment(assessment, normalized);
 
   // PAGINA 1: istogrammi principali e parametri aggiuntivi.
   if (traits.length) {
@@ -3773,7 +3754,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.moveDown(0.6);
   }
 
-  if (!entrepreneurialAssessment) {
+  if (!isDirectionalExecutiveRole(assessment.requestedRole)) {
     doc.moveDown(0.2);
     doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
     doc.moveDown(0.2);
@@ -3810,15 +3791,11 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
         doc.moveDown(0.3);
 
         if (t.showRemedies !== false) {
-          const remediesText = entrepreneurialAssessment
-            ? toSecondPersonForEntrepreneurRemedies(t.improvementPlan || "-")
-            : (t.improvementPlan || "-");
-
-          doc.fontSize(11).text(`Rimedi pratici: ${remediesText}`);
+          doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
           doc.moveDown(0.3);
         }
 
-        if (!entrepreneurialAssessment && t.showSkillAction !== false) {
+        if (t.showSkillAction !== false) {
           doc.fontSize(11).text(
             `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
           );
