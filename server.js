@@ -1,4 +1,4 @@
-import "dotenv/config";
+﻿import "dotenv/config";
 import express from "express";
 import path from "path";
 import zlib from "zlib";
@@ -178,8 +178,6 @@ function normalizePdfVisibleText(text) {
   // Correzione SOLO VISIVA per rendering PDF/Word: non va usata su nomi interni,
   // mapping, scoring, filtri o JSON salvati. Serve solo a ripulire output già calcolato.
   return normalizeBrokenUtf8(text)
-    .replace(/Affidabilità \+ autodisciplina/g, "Autodisciplina/affidabilità")
-    .replace(/AffidabilitÃ  \+ autodisciplina/g, "Autodisciplina/affidabilità")
     .replace(/ResponsabilitÃ\b/g, "Responsabilità")
     .replace(/ResponsabilitÃ\s/g, "Responsabilità ")
     .replace(/ResponsabilitÃ$/g, "Responsabilità")
@@ -538,7 +536,7 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Autodisciplina/affidabilità",
+  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
   "Stress": "Gestione pressioni / Stress",
   "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
@@ -583,14 +581,8 @@ const ZPI_EVO_TRAIT_GUIDE = {
 };
 
 function evoGuideForDimension(name, score) {
-  const canonicalName = normalizeDimensionNameForDisplay(name);
-  const displayName = displayDimensionName(canonicalName);
-  const legacyName = normalizeBrokenUtf8(canonicalName);
-  const guide =
-    ZPI_EVO_TRAIT_GUIDE[displayName] ||
-    ZPI_EVO_TRAIT_GUIDE[legacyName] ||
-    (displayName === "Autodisciplina/affidabilità" ? ZPI_EVO_TRAIT_GUIDE["Affidabilità"] : null) ||
-    (displayName === "Gestione pressioni / Stress" ? ZPI_EVO_TRAIT_GUIDE["Gestione pressioni / Stress"] : null);
+  const displayName = displayDimensionName(name);
+  const guide = ZPI_EVO_TRAIT_GUIDE[displayName];
   if (!guide) return null;
   const value = chartScore(score);
   const band = guide.bands.find((item) => value >= item.min) || guide.bands[guide.bands.length - 1];
@@ -639,25 +631,8 @@ function withDisplayMeta(item) {
 }
 
 function normalizeDimensionDefinitions(originalTrait) {
-  const rawTrait = String(originalTrait || "").trim();
-  const repairedTrait = normalizeBrokenUtf8(rawTrait);
-  const rawKey = dimensionAliasKey(rawTrait);
-  const repairedKey = dimensionAliasKey(repairedTrait);
-
-  const matchingDefinitionKey = Object.keys(DIMENSION_DEFINITIONS).find((key) => {
-    const definitionKey = dimensionAliasKey(key);
-    return definitionKey === rawKey || definitionKey === repairedKey;
-  });
-
-  const definitions =
-    DIMENSION_DEFINITIONS[rawTrait] ||
-    DIMENSION_DEFINITIONS[repairedTrait] ||
-    (matchingDefinitionKey ? DIMENSION_DEFINITIONS[matchingDefinitionKey] : null);
-
-  if (definitions) return definitions;
-
-  return [
-    { name: normalizeDimensionNameForDisplay(rawTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
+  return DIMENSION_DEFINITIONS[originalTrait] || [
+    { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
   ];
 }
 
@@ -919,14 +894,14 @@ function roleFitLabel(score) {
 function calculateRoleFit(dimensions, requestedRole) {
   const roleKey = normalizeRoleKey(requestedRole);
   const weights = ROLE_FIT_WEIGHTS[roleKey] || ROLE_FIT_WEIGHTS.altro;
-  const byName = new Map((Array.isArray(dimensions) ? dimensions : []).map((item) => [normalizeDimensionNameForDisplay(item.name), item]));
+  const byName = new Map((Array.isArray(dimensions) ? dimensions : []).map((item) => [item.name, item]));
 
   let weightedTotal = 0;
   let weightTotal = 0;
   const details = [];
 
   Object.entries(weights).forEach(([name, weight]) => {
-    const dimension = byName.get(normalizeDimensionNameForDisplay(name));
+    const dimension = byName.get(name);
     if (!dimension) return;
 
     const score = scoreToPercent(dimension.score);
@@ -1427,7 +1402,7 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = displayDimensionName(normalizeDimensionNameForDisplay(trait.name)) === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
@@ -1562,14 +1537,6 @@ ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
-REGOLA OBBLIGATORIA DI COMPLETEZZA DEI TRATTI
-- Devi restituire SEMPRE una voce nell'array traits per OGNI elemento ricevuto in TRATTI E PARAMETRI VALUTATI.
-- Non saltare mai tratti o parametri con punteggio basso, neutro, zero o apparentemente poco informativo.
-- Ogni name restituito in traits deve corrispondere esattamente a uno dei name ricevuti nel JSON TRATTI E PARAMETRI VALUTATI.
-- L'array traits della risposta deve avere lo stesso numero di elementi del JSON TRATTI E PARAMETRI VALUTATI.
-- Se manca anche un solo tratto o parametro, la risposta è errata.
-- Anche per punteggi pari a zero devi scrivere una vera analisi comportamentale coerente con writingGuidance, non un testo generico o placeholder.
-
 MAPPATURA EVO E PARAMETRIZZAZIONE
 - Sicurezza deve essere interpretata come Convinzioni: non Ã¨ semplice autostima, ma modo in cui la persona costruisce, difende o mette in discussione le proprie idee.
 - Se Sicurezza Ã¨ alta, valuta il rischio di rigiditÃ , punto di osservazione troppo distante o sicurezza teorica, soprattutto se Ã¨ presente Profilo teorico.
@@ -1649,7 +1616,6 @@ IMPORTANTE
 - Non usare espressioni come â€œKPIâ€, â€œstakeholderâ€, â€œperformance reviewâ€, â€œcoachingâ€, â€œdebriefingâ€, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
 - Non scrivere mai REPEAT_PLACEHOLDER o testi provvisori.
-- Non usare mai testi generici come "Questo indicatore va letto come una traccia operativa da verificare..." al posto dell'analisi del tratto.
 `;
 
   console.log("[EXPANDED] OpenAI call start", {
@@ -1892,7 +1858,7 @@ function theoreticalSecuritySignal(dimensions = [], reliabilityFlags = []) {
 
 function shouldAddResponsibilityOpinionNote(normalized) {
   const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
-  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "Responsabilità" || normalizeDimensionNameForDisplay(item?.name) === "ResponsabilitÃ ");
+  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "ResponsabilitÃ " || item?.name === "ResponsabilitÃ ");
   if (!responsibility) return false;
 
   const value = chartScore(responsibility.score);
@@ -2111,75 +2077,11 @@ function drawAdditionalParameterBars(doc, parameters) {
   doc.fillColor("black");
 }
 
-function dimensionAliasKey(name) {
-  return normalizeBrokenUtf8(String(name || ""))
-    .replace(/gesti[Ãòó]ne/gi, "gestione")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[’'`´]/g, "")
-    .replace(/[^a-z0-9]+/gi, " ")
-    .trim()
-    .toLowerCase();
-}
-
-const CANONICAL_DIMENSION_ALIASES = new Map([
-  ["organizzazione", "Organizzazione e pianificazione"],
-  ["organizzazione e pianificazione", "Organizzazione e pianificazione"],
-  ["automotivazione", "Automotivazione"],
-
-  // Chiave interna storica: NON usare la label visibile per scoring/mapping.
-  ["autodisciplina affidabilita", "AffidabilitÃ  + autodisciplina"],
-  ["autodisciplina affidabilit", "AffidabilitÃ  + autodisciplina"],
-  ["affidabilita", "AffidabilitÃ  + autodisciplina"],
-  ["affidabilit", "AffidabilitÃ  + autodisciplina"],
-  ["affidabilita autodisciplina", "AffidabilitÃ  + autodisciplina"],
-  ["affidabilita e autodisciplina", "AffidabilitÃ  + autodisciplina"],
-
-  ["sicurezza", "Sicurezza"],
-  ["stress", "Stress"],
-  ["gestione pressioni", "Stress"],
-  ["gestione pressioni stress", "Stress"],
-
-  ["dinamismo", "Dinamismo"],
-  ["flessibilita comunicativa", "FlessibilitÃ  comunicativa"],
-  ["responsabilita", "ResponsabilitÃ "],
-  ["ascolto attivo", "Ascolto attivo"],
-  ["comprensione", "Comprensione"],
-  ["espansivita", "EspansivitÃ "],
-
-  ["resistenza al cambiamento", "Resistenza al cambiamento"],
-  ["leadership naturale", "Leadership naturale"],
-  ["management", "Management"],
-  ["cooperazione", "Cooperazione"],
-  ["principi", "Principi"],
-  ["vendite", "Vendite"],
-  ["gestione priorita", "Gestione prioritÃ "],
-  ["capacita di gestione finanziaria", "CapacitÃ  di gestione finanziaria"],
-  ["capacita di gestione finanziaria", "CapacitÃ  di gestione finanziaria"],
-  ["attendibilita", "AttendibilitÃ "],
-
-  // Alias legacy/cliente.
-  ["attuabilita", "AttendibilitÃ "],
-  ["emotiva", "Cooperazione"]
-]);
-
 function normalizeDimensionNameForDisplay(name) {
-  const rawValue = String(name || "").trim();
-  const repairedValue = normalizeBrokenUtf8(rawValue)
-    .replace(/gestiÃ³ne/gi, "gestione")
-    .replace(/gestiÃ²ne/gi, "gestione")
-    .replace(/gestióne/gi, "gestione")
-    .replace(/gestiòne/gi, "gestione")
-    .trim();
-
-  const repairedKey = dimensionAliasKey(repairedValue);
-  const rawKey = dimensionAliasKey(rawValue);
-
-  return (
-    CANONICAL_DIMENSION_ALIASES.get(repairedKey) ||
-    CANONICAL_DIMENSION_ALIASES.get(rawKey) ||
-    rawValue
-  );
+  const value = String(name || "").trim();
+  if (value === "AttuabilitÃ ") return "AttendibilitÃ ";
+  if (value === "Emotiva") return "Cooperazione";
+  return value;
 }
 
 function mergeDimensionList(list = []) {
@@ -2233,14 +2135,25 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const traits = mergeDimensionList(rawTraits);
   const split = splitDimensions(traits);
 
-  const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
+  // Source of truth: payload.traits ricostruisce i punteggi reali.
+  // payload.mainTraits/additionalParameters può contenere fallback/label visuali salvate da versioni precedenti.
+  // Lo usiamo solo se payload.traits non è disponibile.
+  const mainTraitSource = split.traits.length
+    ? split.traits
+    : (Array.isArray(payload.mainTraits) ? payload.mainTraits : []);
+
+  const additionalParameterSource = split.additionalParameters.length
+    ? split.additionalParameters
+    : (Array.isArray(payload.additionalParameters) ? payload.additionalParameters : []);
+
+  const mainTraits = mergeDimensionList(mainTraitSource)
     .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
 
-  const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
+  const additionalParameters = mergeDimensionList(additionalParameterSource)
     .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
 
   const fullMainTraits = TRAIT_DIMENSIONS.map((name) => {
-    return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
+    return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === name) || {
       name,
       category: DIMENSION_CATEGORY.TRAIT,
       score: 0,
@@ -2251,7 +2164,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   });
 
   const fullAdditionalParameters = ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => {
-    return additionalParameters.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
+    return additionalParameters.find((item) => normalizeDimensionNameForDisplay(item.name) === name) || {
       name,
       category: DIMENSION_CATEGORY.ADDITIONAL,
       score: 0,
@@ -3745,14 +3658,9 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       });
     }
 
-    const lookupName =
-      displayName === "Autodisciplina/affidabilità"
-        ? "Affidabilità + autodisciplina"
-        : canonicalName;
-
     const value = chartScore(dimension?.score ?? 0);
-    const description = dimensionDescription(lookupName);
-    const evoGuide = evoGuideForDimension(lookupName, dimension?.score ?? 0);
+    const description = dimensionDescription(canonicalName);
+    const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
     const truthfulness = isAttendibilita
       ? truthfulnessStatusFromScore(value)
       : null;
@@ -3984,7 +3892,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     writeParagraphs(doc, generalRelation);
   }
 
-  if (roleFit?.score != null && !isDirectionalExecutiveRole(assessment.requestedRole)) {
+  if (roleFit?.score != null) {
     doc.moveDown(0.1);
     doc.fontSize(12).fillColor("black").text(`CompatibilitÃ  con il ruolo ricoperto: ${roleFit.score}%`, {
       align: "left"
