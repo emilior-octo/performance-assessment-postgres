@@ -222,6 +222,7 @@ function normalizePdfVisibleText(text) {
     .replace(/puÃ²/g, "può")
     .replace(/\bpu(?=\s+(essere|avere|risultare|dare|emergere|accettare|invece|percepire|mostrare|rendere|creare|succedere|portare|aiutare|diventare|funzionare|tradursi|richiedere|sostenere|modificare|generare|appoggiarsi|subire|fare|restare|variare|riuscire|preferire|mettere|vivere|accogliere|cercare|mantenere|apparire|offrire|produrre|facilitare|riflettere|indicare|rappresentare|rivelare|dipendere|servire)\b)/gi, "può")
     .replace(/\bpi(?=\s+(efficace|chiaro|chiara|chiari|chiare|deciso|decisa|decisi|decise|solido|solida|solidi|solide|stabile|stabili|marcato|marcata|marcati|marcate|facile|facili|utile|utili|strutturato|strutturata|strutturati|strutturate|forte|forti|rapido|rapida|rapidi|rapide|complesso|complessa|complessi|complesse|profondo|profonda|profondi|profonde)\b)/gi, "più")
+    .replace(/\bpo(?=\s+(chi|che|più|meno|tardi|volte|probabile|probabili|facile|facili)\b)/gi, "può")
     .replace(/\bgi(?=\s+(conosciuto|conosciuta|conosciuti|conosciute|presente|presenti|chiaro|chiara|chiari|chiare|visto|vista|visti|viste|fatto|fatta|fatti|fatte|stato|stata|stati|state|maturo|matura|maturi|mature)\b)/gi, "già")
     .replace(/\bperch(?=\s)/gi, "perché")
     .replace(/\bqualit(?=\s|$)/gi, "qualità")
