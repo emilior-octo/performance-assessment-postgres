@@ -3602,13 +3602,20 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const traits = allApprovedDimensions.map((dimension) => {
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
     const displayName = displayDimensionName(canonicalName);
-    const aiTrait = aiTraitByName.get(canonicalName) || {};
+
+    // Fallback chirurgico UTF-safe SOLO per il lookup del testo AI.
+    // Non modifica nomi interni, scoring, mapping, DB o JSON salvati.
+    const aiTrait =
+      aiTraitByName.get(canonicalName) ||
+      aiTraitByName.get(normalizeBrokenUtf8(canonicalName)) ||
+      aiTraitByName.get(displayName) ||
+      {};
 
     if (["Gestione priorità", "Capacità di gestione finanziaria", "Attendibilità"].includes(displayName)) {
       console.log("[ZPI TRAIT MATCH DEBUG]", {
         canonicalName,
         displayName,
-        aiTraitFound: !!aiTraitByName.get(canonicalName),
+        aiTraitFound: !!aiTrait.expandedText,
         aiTraitExpandedTextPreview: aiTrait?.expandedText ? String(aiTrait.expandedText).slice(0, 180) : null,
         availableAiTraitNames: Array.from(aiTraitByName.keys())
       });
