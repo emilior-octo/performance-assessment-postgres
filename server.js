@@ -2090,10 +2090,61 @@ function drawAdditionalParameterBars(doc, parameters) {
 }
 
 function normalizeDimensionNameForDisplay(name) {
-  const value = String(name || "").trim();
-  if (value === "AttuabilitÃ ") return "AttendibilitÃ ";
-  if (value === "Emotiva") return "Cooperazione";
-  return value;
+  const rawValue = String(name || "").trim();
+  const value = normalizeBrokenUtf8(rawValue)
+    .replace(/gestiÃ³ne/gi, "gestione")
+    .replace(/gestiÃ²ne/gi, "gestione")
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione")
+    .trim();
+
+  // Canonicalizzazione SOLO per nomi dimensione interni.
+  // Mantiene le chiavi storiche usate da scoring, pesi ruolo e istogrammi,
+  // evitando che label UTF/display producano fallback a score 0.
+  const aliases = new Map([
+    ["Organizzazione", "Organizzazione e pianificazione"],
+    ["Organizzazione e pianificazione", "Organizzazione e pianificazione"],
+    ["Automotivazione", "Automotivazione"],
+    ["Autodisciplina/affidabilità", "AffidabilitÃ  + autodisciplina"],
+    ["Autodisciplina / affidabilità", "AffidabilitÃ  + autodisciplina"],
+    ["Autodisciplina + affidabilità", "AffidabilitÃ  + autodisciplina"],
+    ["Affidabilità", "AffidabilitÃ  + autodisciplina"],
+    ["Affidabilità + autodisciplina", "AffidabilitÃ  + autodisciplina"],
+    ["AffidabilitÃ ", "AffidabilitÃ  + autodisciplina"],
+    ["AffidabilitÃ  + autodisciplina", "AffidabilitÃ  + autodisciplina"],
+    ["Sicurezza", "Sicurezza"],
+    ["Stress", "Stress"],
+    ["Gestione pressioni", "Stress"],
+    ["Gestione pressioni / Stress", "Stress"],
+    ["Dinamismo", "Dinamismo"],
+    ["Flessibilità comunicativa", "FlessibilitÃ  comunicativa"],
+    ["FlessibilitÃ  comunicativa", "FlessibilitÃ  comunicativa"],
+    ["Responsabilità", "ResponsabilitÃ "],
+    ["ResponsabilitÃ ", "ResponsabilitÃ "],
+    ["Ascolto attivo", "Ascolto attivo"],
+    ["Comprensione", "Comprensione"],
+    ["Espansività", "EspansivitÃ "],
+    ["EspansivitÃ ", "EspansivitÃ "],
+    ["Resistenza al cambiamento", "Resistenza al cambiamento"],
+    ["Leadership naturale", "Leadership naturale"],
+    ["Management", "Management"],
+    ["Cooperazione", "Cooperazione"],
+    ["Principi", "Principi"],
+    ["Vendite", "Vendite"],
+    ["Gestione priorità", "Gestione prioritÃ "],
+    ["Gestione prioritÃ ", "Gestione prioritÃ "],
+    ["Capacità di gestione finanziaria", "CapacitÃ  di gestione finanziaria"],
+    ["CapacitÃ  di gestione finanziaria", "CapacitÃ  di gestione finanziaria"],
+    ["CapacitÃ  di gestiÃ³ne finanziaria", "CapacitÃ  di gestione finanziaria"],
+    ["Attendibilità", "AttendibilitÃ "],
+    ["Attendibilita", "AttendibilitÃ "],
+    ["AttendibilitÃ ", "AttendibilitÃ "],
+    ["Attuabilità", "AttendibilitÃ "],
+    ["AttuabilitÃ ", "AttendibilitÃ "],
+    ["Emotiva", "Cooperazione"]
+  ]);
+
+  return aliases.get(value) || aliases.get(rawValue) || rawValue;
 }
 
 function mergeDimensionList(list = []) {
