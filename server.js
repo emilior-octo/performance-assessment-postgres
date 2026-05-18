@@ -632,6 +632,48 @@ function isDirectionalExecutiveRole(role) {
 function isDirectionalExecutiveNormalized(normalized = {}) {
   return isDirectionalExecutiveRole(normalized?.roleFit?.roleKey || normalized?.requestedRole || "");
 }
+function isEntrepreneurialAssessment(assessment, normalized = {}) {
+  return isDirectionalExecutiveRole(
+    assessment?.requestedRole ||
+    normalized?.requestedRole ||
+    normalized?.roleFit?.roleKey ||
+    ""
+  );
+}
+
+function toSecondPersonForEntrepreneurRemedies(text) {
+  return normalizeBrokenUtf8(String(text || ""))
+    .replace(/\bLa persona può\b/g, "Puoi")
+    .replace(/\bla persona può\b/g, "puoi")
+    .replace(/\bLa persona dovrebbe\b/g, "Dovresti")
+    .replace(/\bla persona dovrebbe\b/g, "dovresti")
+    .replace(/\bLa persona tende\b/g, "Tendi")
+    .replace(/\bla persona tende\b/g, "tendi")
+    .replace(/\bLa persona\b/g, "Tu")
+    .replace(/\bla persona\b/g, "tu")
+    .replace(/\bIl candidato può\b/g, "Puoi")
+    .replace(/\bil candidato può\b/g, "puoi")
+    .replace(/\bIl candidato dovrebbe\b/g, "Dovresti")
+    .replace(/\bil candidato dovrebbe\b/g, "dovresti")
+    .replace(/\bIl candidato\b/g, "Tu")
+    .replace(/\bil candidato\b/g, "tu")
+    .replace(/\bLa risorsa può\b/g, "Puoi")
+    .replace(/\bla risorsa può\b/g, "puoi")
+    .replace(/\bLa risorsa dovrebbe\b/g, "Dovresti")
+    .replace(/\bla risorsa dovrebbe\b/g, "dovresti")
+    .replace(/\bLa risorsa\b/g, "Tu")
+    .replace(/\bla risorsa\b/g, "tu")
+    .replace(/\bassegnargli\b/g, "assegnarti")
+    .replace(/\bassegnarle\b/g, "assegnarti")
+    .replace(/\bcoinvolgerlo\b/g, "coinvolgerti")
+    .replace(/\bcoinvolgerla\b/g, "coinvolgerti")
+    .replace(/\baiutarlo\b/g, "aiutarti")
+    .replace(/\baiutarla\b/g, "aiutarti")
+    .replace(/\bmonitorarlo\b/g, "monitorarti")
+    .replace(/\bmonitorarla\b/g, "monitorarti")
+    .replace(/\baffiancarlo\b/g, "affiancarti")
+    .replace(/\baffiancarla\b/g, "affiancarti");
+}
 const ROLE_FIT_WEIGHTS = {
   direzione: {
     "Automotivazione": 1.35,
@@ -2844,12 +2886,16 @@ function buildEditableWordHtml({ assessment, normalized, expanded }) {
   const title = assessment.result?.traitsJson?.assessmentTitle || getAssessmentConfig(assessment.assessmentType).title;
   const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
   const traits = Array.isArray(expanded?.traits) ? expanded.traits : [];
+  const entrepreneurialAssessment = isEntrepreneurialAssessment(assessment, normalized);
 
   const traitHtml = traits.map((trait) => {
     const title = trait.displayName || trait.name || "Tratto";
     const description = trait.description ? `<p><em>(${escapeHtml(trait.description)})</em></p>` : "";
-    const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(trait.improvementPlan || "-")}</p>` : "";
-    const action = trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
+    const remediesText = entrepreneurialAssessment
+      ? toSecondPersonForEntrepreneurRemedies(trait.improvementPlan || "-")
+      : (trait.improvementPlan || "-");
+    const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(remediesText)}</p>` : "";
+    const action = !entrepreneurialAssessment && trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
 
     return `
       <h2>${escapeHtml(title)}</h2>
@@ -3674,6 +3720,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   const roleFit = normalized.roleFit;
   const managementAdvice = normalized.managementAdvice;
+  const entrepreneurialAssessment = isEntrepreneurialAssessment(assessment, normalized);
 
   // PAGINA 1: istogrammi principali e parametri aggiuntivi.
   if (traits.length) {
@@ -3726,7 +3773,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.moveDown(0.6);
   }
 
-  if (!isDirectionalExecutiveRole(assessment.requestedRole)) {
+  if (!entrepreneurialAssessment) {
     doc.moveDown(0.2);
     doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
     doc.moveDown(0.2);
@@ -3763,11 +3810,15 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
         doc.moveDown(0.3);
 
         if (t.showRemedies !== false) {
-          doc.fontSize(11).text(`Rimedi pratici: ${t.improvementPlan || "-"}`);
+          const remediesText = entrepreneurialAssessment
+            ? toSecondPersonForEntrepreneurRemedies(t.improvementPlan || "-")
+            : (t.improvementPlan || "-");
+
+          doc.fontSize(11).text(`Rimedi pratici: ${remediesText}`);
           doc.moveDown(0.3);
         }
 
-        if (t.showSkillAction !== false) {
+        if (!entrepreneurialAssessment && t.showSkillAction !== false) {
           doc.fontSize(11).text(
             `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
           );
