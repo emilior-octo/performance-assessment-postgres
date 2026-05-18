@@ -587,37 +587,17 @@ function withDisplayMeta(item) {
 }
 
 function normalizeDimensionDefinitions(originalTrait) {
-  const rawValue = String(originalTrait || "").trim();
-  const value = normalizeBrokenUtf8(rawValue);
+  const key = findDimensionDefinitionKey(originalTrait);
 
-  const aliases = {
-    "Organizzazione e metodo": "Organizzazione e metodo",
-    "Visione e orientamento al futuro": "Visione e orientamento al futuro",
-    "Ambizione e competitività": "Ambizione e competitività",
-    "Indice di attendibilità": "Indice di attendibilità",
-    "Continuità professionale": "Continuità professionale",
-    "Responsabilità e ownership": "Responsabilità e ownership",
-    "Stabilità emotiva e fiducia": "Stabilità emotiva e fiducia",
-    "Fiducia relazionale e sicurezza sociale": "Fiducia relazionale e sicurezza sociale",
-    "Gestione della pressione": "Gestione della pressione",
-    "Autocontrollo e gestione emotiva": "Autocontrollo e gestione emotiva",
-    "Energia sociale e comunicazione": "Energia sociale e comunicazione",
-    "Flessibilità e adattabilità": "Flessibilità e adattabilità",
-    "Assertività e negoziazione": "Assertività e negoziazione",
-    "Empatia e collaborazione": "Empatia e collaborazione",
-    "Estroversione e networking": "Estroversione e networking",
-    "Leadership e influenza": "Leadership e influenza",
-    "Orientamento alla performance": "Orientamento alla performance",
-    "Sensibilità al riconoscimento": "Sensibilità al riconoscimento",
-    "Autonomia economica e iniziativa": "Autonomia economica e iniziativa",
-    "Creatività e innovazione": "Creatività e innovazione",
-    "Comportamento generale": "Comportamento generale",
-    "Contesto ruolo": "Contesto ruolo"
-  };
+  if (key) {
+    return DIMENSION_DEFINITIONS[key].map((dimension) => ({
+      ...dimension,
+      name: canonicalOutputName(dimension.name),
+      category: approvedCategoryForName(dimension.name, dimension.category)
+    })).filter((dimension) => isApprovedOutputName(dimension.name));
+  }
 
-  const key = aliases[value] || aliases[rawValue] || value;
-
-  return DIMENSION_DEFINITIONS[key] || [
+  return [
     { name: "Dinamismo", category: DIMENSION_CATEGORY.TRAIT }
   ];
 }
@@ -1352,12 +1332,12 @@ function cleanExpandedReport(expandedReportJson) {
     ? expandedReportJson.traits
         .map((trait) => ({
           ...trait,
-          name: displayDimensionName(normalizeDimensionNameForDisplay(normalizeTraitName(trait?.name)))
+          name: canonicalOutputName(normalizeTraitName(trait?.name))
         }))
         .filter((trait) => {
           const name = normalizeTraitName(trait?.name);
           if (!name) return false;
-          if (!TRAIT_DIMENSIONS.includes(name) && !ADDITIONAL_PARAMETER_DIMENSIONS.includes(name)) return false;
+          if (!isApprovedOutputName(name)) return false;
           if (seenNames.has(name.toLowerCase())) return false;
           if (/duplicato controllo/i.test(String(trait?.name || ""))) return false;
           if (isPlaceholderText(JSON.stringify(trait || {}))) return false;
@@ -1384,28 +1364,30 @@ function buildAiTraitsForPrompt(traits, reliabilityFlags = []) {
   return (Array.isArray(traits) ? traits : [])
     .map((trait) => ({
       ...trait,
-      name: displayDimensionName(normalizeDimensionNameForDisplay(normalizeTraitName(trait?.name)))
+      name: canonicalOutputName(normalizeTraitName(trait?.name))
     }))
     .filter((trait) => {
       const name = normalizeTraitName(trait?.name);
       if (!name) return false;
-      if (!TRAIT_DIMENSIONS.includes(name) && !ADDITIONAL_PARAMETER_DIMENSIONS.includes(name)) return false;
+      if (!isApprovedOutputName(name)) return false;
       if (seenNames.has(name.toLowerCase())) return false;
       if (/duplicato controllo/i.test(String(trait?.name || ""))) return false;
       seenNames.add(name.toLowerCase());
       return true;
     })
     .map((trait) => {
-      const name = displayDimensionName(normalizeTraitName(trait.name));
+      const canonicalName = canonicalOutputName(trait.name);
+      const name = displayDimensionName(canonicalName);
       const value = chartScore(trait.score);
-      const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "Attendibilità"
+      const evoGuide = evoGuideForDimension(canonicalName, trait.score);
+      const truthfulness = canonicalName === "Attendibilità"
         ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(reliabilityFlags) })
         : null;
 
       return {
         name,
-        description: dimensionDescription(trait.name),
+        canonicalName,
+        description: dimensionDescription(canonicalName),
         category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
         score: trait.score,
         chartScore: value,
@@ -1834,15 +1816,8 @@ function responsibilityOpinionNote() {
 function stripLeadingTruthfulnessStatus(text) {
   let value = String(text || "").trim();
 
-  // Evita duplicazioni tipo:
-  // "AttendibilitÃ  SÃ¬: ... AttendibilitÃ  SÃ¬. Le risposte ..."
-  // L'AI puÃ² usare due formati:
-  // - AttendibilitÃ  SÃŒ: testo...
-  // - AttendibilitÃ  SÃ¬. Le risposte...
-  // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
-  // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
   const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+    /^Attendibilit[àÃ ]+\s+(SÃŒ|SI|SÃ¬|SÌ|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilit[àÃ ]+\s+(SÃŒ|SI|SÃ¬|SÌ|YES|ZERO|FORCED|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -2075,24 +2050,47 @@ function normalizeDimensionNameForDisplay(name) {
   return sourceAliasToApproved[value] || DISPLAY_LABELS[value] || value;
 }
 
+
+function canonicalOutputName(name) {
+  const value = normalizeDimensionNameForDisplay(name);
+
+  if (value === "Gestione pressioni / Stress") return "Stress";
+
+  return value;
+}
+
+function isApprovedOutputName(name) {
+  const canonical = canonicalOutputName(name);
+  return TRAIT_DIMENSIONS.includes(canonical) || ADDITIONAL_PARAMETER_DIMENSIONS.includes(canonical);
+}
+
+function approvedCategoryForName(name, fallbackCategory = null) {
+  const canonical = canonicalOutputName(name);
+  if (TRAIT_DIMENSIONS.includes(canonical)) return DIMENSION_CATEGORY.TRAIT;
+  if (ADDITIONAL_PARAMETER_DIMENSIONS.includes(canonical)) return DIMENSION_CATEGORY.ADDITIONAL;
+  return fallbackCategory;
+}
+
+function findDimensionDefinitionKey(originalTrait) {
+  const rawValue = String(originalTrait || "").trim();
+  const value = normalizeBrokenUtf8(rawValue);
+
+  if (DIMENSION_DEFINITIONS[rawValue]) return rawValue;
+  if (DIMENSION_DEFINITIONS[value]) return value;
+
+  return Object.keys(DIMENSION_DEFINITIONS).find((key) => {
+    return normalizeBrokenUtf8(key) === value || key === rawValue;
+  }) || null;
+}
+
 function mergeDimensionList(list = []) {
   const groups = new Map();
 
   (Array.isArray(list) ? list : []).forEach((item) => {
-    const name = normalizeDimensionNameForDisplay(item?.name);
-    if (!name) return;
+    const name = canonicalOutputName(item?.name);
+    if (!name || !isApprovedOutputName(name)) return;
 
-    const approvedCategory = TRAIT_DIMENSIONS.includes(name)
-      ? DIMENSION_CATEGORY.TRAIT
-      : ADDITIONAL_PARAMETER_DIMENSIONS.includes(name)
-        ? DIMENSION_CATEGORY.ADDITIONAL
-        : item.category;
-
-    // Drop anything that still is not part of the approved output model.
-    if (!TRAIT_DIMENSIONS.includes(name) && !ADDITIONAL_PARAMETER_DIMENSIONS.includes(name)) {
-      return;
-    }
-
+    const approvedCategory = approvedCategoryForName(name, item.category);
     const existing = groups.get(name);
     const items = Array.isArray(item.items) ? item.items : [];
     const score = Number(item.score || 0);
@@ -2120,8 +2118,8 @@ function mergeDimensionList(list = []) {
   });
 
   return Array.from(groups.values()).sort((a, b) => {
-    const nameA = normalizeDimensionNameForDisplay(a.name);
-    const nameB = normalizeDimensionNameForDisplay(b.name);
+    const nameA = canonicalOutputName(a.name);
+    const nameB = canonicalOutputName(b.name);
     const orderA = DIMENSION_ORDER.has(nameA) ? DIMENSION_ORDER.get(nameA) : 999;
     const orderB = DIMENSION_ORDER.has(nameB) ? DIMENSION_ORDER.get(nameB) : 999;
     return orderA - orderB;
@@ -3586,6 +3584,31 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
+
+function buildFallbackExpandedTraitFromDimension(dimension) {
+  const canonicalName = canonicalOutputName(dimension?.name);
+  const displayName = displayDimensionName(canonicalName);
+  const value = chartScore(dimension?.score ?? 0);
+  const evoGuide = evoGuideForDimension(canonicalName, dimension?.score);
+  const description = dimensionDescription(canonicalName);
+
+  const baseText = evoGuide?.interpretation
+    ? `Il parametro indica che ${evoGuide.interpretation}. Questa lettura va verificata nel lavoro quotidiano e confrontata con esempi concreti.`
+    : `${description || "Questo indicatore va letto come tendenza comportamentale da verificare nel contesto operativo."}. La lettura va confrontata con colloquio, osservazione ed esempi concreti.`;
+
+  return {
+    name: canonicalName,
+    displayName,
+    description,
+    chartScore: value,
+    expandedText: baseText,
+    improvementPlan: "Verificare questo indicatore con esempi concreti di lavoro e confronto diretto.",
+    skillAction: "Osservare il comportamento nel contesto operativo e definire eventuali azioni di supporto.",
+    showRemedies: shouldShowRemediesForChartValue(value),
+    showSkillAction: shouldShowSkillActionForChartValue(value)
+  };
+}
+
 function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     return expandedReportJson;
@@ -3594,78 +3617,98 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
   const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
   const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const seenExpandedNames = new Set();
 
   const traits = Array.isArray(expandedReportJson.traits)
-    ? expandedReportJson.traits.map((trait) => {
-        const displayName = displayDimensionName(trait?.name);
-        const dimension = findDimensionByDisplayName(normalizedDimensions, trait?.name || displayName);
-        const value = chartScore(dimension?.score ?? trait?.score ?? 0);
-        const description = dimensionDescription(trait?.name || displayName);
+    ? expandedReportJson.traits
+        .map((trait) => {
+          const canonicalName = canonicalOutputName(trait?.name);
+          const displayName = displayDimensionName(canonicalName);
+          const dimension = findDimensionByDisplayName(normalizedDimensions, canonicalName || displayName);
+          const value = chartScore(dimension?.score ?? trait?.score ?? 0);
+          const description = dimensionDescription(canonicalName || displayName);
 
-        let expandedText = stripLeadingDefinitionSentence(
-          String(trait.expandedText || "").trim(),
-          description
-        );
+          let expandedText = stripLeadingDefinitionSentence(
+            String(trait.expandedText || "").trim(),
+            description
+          );
 
-        if (displayName === "AttendibilitÃ ") {
-          const truthfulness = truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) });
-          const statusText = `${truthfulness.label}: ${truthfulness.text}`;
-          const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+          if (canonicalName === "Attendibilità") {
+            const truthfulness = truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) });
+            const statusText = `${truthfulness.label}: ${truthfulness.text}`;
+            const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
-          expandedText = stripLeadingTruthfulnessStatus(expandedText);
+            expandedText = stripLeadingTruthfulnessStatus(expandedText);
 
-          // Evita incoerenze verbali tipo:
-          // "AttendibilitÃ  FORZATA..." + "l'indice resta adeguato".
-          // La lettura deve rimanere prudente e utilizzabile, non "adeguata" in senso pieno.
-          expandedText = expandedText
-            .replace(/L[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "Lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/L[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "Lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/l[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/l[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "lâ€™indice resta utilizzabile, ma richiede una lettura prudente.");
-
-          if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
             expandedText = expandedText
-              ? `${statusText} ${theoreticalNote} ${expandedText}`
-              : `${statusText} ${theoreticalNote}`;
-          } else {
-            expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
+              .replace(/L[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
+              .replace(/L[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
+              .replace(/l[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.")
+              .replace(/l[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "l’indice resta utilizzabile, ma richiede una lettura prudente.");
+
+            if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
+              expandedText = expandedText
+                ? `${statusText} ${theoreticalNote} ${expandedText}`
+                : `${statusText} ${theoreticalNote}`;
+            } else {
+              expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
+            }
           }
-        }
 
-        if (displayName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
-          expandedText = expandedText
-            ? `${expandedText} ${normalized.securityTheory.text}`
-            : normalized.securityTheory.text;
-        }
-
-        if (
-          (displayName === "Sicurezza" || displayName === "Resistenza al cambiamento") &&
-          normalized?.convictionChange &&
-          !expandedText.includes(normalized.convictionChange.label)
-        ) {
-          expandedText = expandedText
-            ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
-            : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
-        }
-
-        if (shouldAddResponsibilityNote && displayName === "ResponsabilitÃ ") {
-          const note = responsibilityOpinionNote();
-          if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
-            expandedText = expandedText ? `${expandedText} ${note}` : note;
+          if (canonicalName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
+            expandedText = expandedText
+              ? `${expandedText} ${normalized.securityTheory.text}`
+              : normalized.securityTheory.text;
           }
-        }
 
-        return {
-          ...trait,
-          displayName,
-          description,
-          chartScore: value,
-          showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: shouldShowSkillActionForChartValue(value),
-          expandedText
-        };
-      })
+          if (
+            (canonicalName === "Sicurezza" || canonicalName === "Resistenza al cambiamento") &&
+            normalized?.convictionChange &&
+            !expandedText.includes(normalized.convictionChange.label)
+          ) {
+            expandedText = expandedText
+              ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
+              : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
+          }
+
+          if (shouldAddResponsibilityNote && canonicalName === "Responsabilità") {
+            const note = responsibilityOpinionNote();
+            if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
+              expandedText = expandedText ? `${expandedText} ${note}` : note;
+            }
+          }
+
+          seenExpandedNames.add(canonicalName);
+
+          return {
+            ...trait,
+            name: canonicalName,
+            displayName,
+            description,
+            chartScore: value,
+            showRemedies: shouldShowRemediesForChartValue(value),
+            showSkillAction: shouldShowSkillActionForChartValue(value),
+            expandedText
+          };
+        })
+        .filter((trait) => isApprovedOutputName(trait.name))
     : [];
+
+  normalizedDimensions.forEach((dimension) => {
+    const canonicalName = canonicalOutputName(dimension?.name);
+    if (!isApprovedOutputName(canonicalName)) return;
+    if (seenExpandedNames.has(canonicalName)) return;
+    traits.push(buildFallbackExpandedTraitFromDimension(dimension));
+    seenExpandedNames.add(canonicalName);
+  });
+
+  traits.sort((a, b) => {
+    const nameA = canonicalOutputName(a.name);
+    const nameB = canonicalOutputName(b.name);
+    const orderA = DIMENSION_ORDER.has(nameA) ? DIMENSION_ORDER.get(nameA) : 999;
+    const orderB = DIMENSION_ORDER.has(nameB) ? DIMENSION_ORDER.get(nameB) : 999;
+    return orderA - orderB;
+  });
 
   return normalizeTextPayload({
     ...expandedReportJson,
