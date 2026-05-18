@@ -536,13 +536,9 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Autodisciplina/affidabilità",
-  "Affidabilità + autodisciplina": "Autodisciplina/affidabilità",
-  "Autodisciplina + affidabilità": "Autodisciplina/affidabilità",
-  "Autodisciplina/affidabilità": "Autodisciplina/affidabilità",
+  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
   "Stress": "Gestione pressioni / Stress",
-  "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria",
-  "Capacità di gestiÃ³ne finanziaria": "Capacità di gestione finanziaria"
+  "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
 
 const DIMENSION_DESCRIPTIONS = {
@@ -619,6 +615,22 @@ function displayDimensionName(name) {
   return normalizeBrokenUtf8(DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue);
 }
 
+function visibleReportDimensionName(name) {
+  // Label SOLO cosmetica/output: non usarla per mapping, scoring, lookup AI o filtri.
+  const value = normalizeBrokenUtf8(String(name || "").trim());
+
+  if (
+    value === "Affidabilità" ||
+    value === "Affidabilità + autodisciplina" ||
+    value === "Autodisciplina + affidabilità" ||
+    value === "Autodisciplina/affidabilità"
+  ) {
+    return "Autodisciplina/affidabilità";
+  }
+
+  return value;
+}
+
 function dimensionDescription(name) {
   const displayName = displayDimensionName(name);
   return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
@@ -628,7 +640,7 @@ function withDisplayMeta(item) {
   const displayName = displayDimensionName(item?.name);
   return {
     ...item,
-    displayName,
+    displayName: visibleReportDimensionName(displayName),
     description: dimensionDescription(item?.name),
     chartScore: chartScore(item?.score)
   };
@@ -1948,7 +1960,7 @@ function drawTraitsVerticalChart(doc, traits) {
     // Label verticale, come reference.
     doc.save();
     doc.rotate(-90, { origin: [x + barWidth / 2, chartBottom + labelHeight - 2] });
-    doc.fontSize(6.9).fillColor("#333333").text(displayDimensionName(trait.name), x + barWidth / 2, chartBottom + labelHeight - 2, {
+    doc.fontSize(6.9).fillColor("#333333").text(visibleReportDimensionName(displayDimensionName(trait.name)), x + barWidth / 2, chartBottom + labelHeight - 2, {
       width: labelHeight,
       align: "right",
       lineBreak: false
@@ -3634,7 +3646,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     return {
       ...aiTrait,
       name: canonicalName,
-      displayName,
+      displayName: visibleReportDimensionName(displayName),
       description,
       chartScore: value,
       score: dimension?.score ?? 0,
@@ -3826,7 +3838,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
-        const displayName = displayDimensionName(t.name || "Tratto");
+        const displayName = visibleReportDimensionName(displayDimensionName(t.name || "Tratto"));
         const description = dimensionDescription(t.name);
         doc.fontSize(14).text(displayName);
         if (description) {
