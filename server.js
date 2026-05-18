@@ -1539,6 +1539,14 @@ ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
+REGOLA OBBLIGATORIA DI COMPLETEZZA DEI TRATTI
+- Devi restituire SEMPRE una voce nell'array traits per OGNI elemento ricevuto in TRATTI E PARAMETRI VALUTATI.
+- Non saltare mai tratti o parametri con punteggio basso, neutro, zero o apparentemente poco informativo.
+- Ogni name restituito in traits deve corrispondere esattamente a uno dei name ricevuti nel JSON TRATTI E PARAMETRI VALUTATI.
+- L'array traits della risposta deve avere lo stesso numero di elementi del JSON TRATTI E PARAMETRI VALUTATI.
+- Se manca anche un solo tratto o parametro, la risposta è errata.
+- Anche per punteggi pari a zero devi scrivere una vera analisi comportamentale coerente con writingGuidance, non un testo generico o placeholder.
+
 MAPPATURA EVO E PARAMETRIZZAZIONE
 - Sicurezza deve essere interpretata come Convinzioni: non Ã¨ semplice autostima, ma modo in cui la persona costruisce, difende o mette in discussione le proprie idee.
 - Se Sicurezza Ã¨ alta, valuta il rischio di rigiditÃ , punto di osservazione troppo distante o sicurezza teorica, soprattutto se Ã¨ presente Profilo teorico.
@@ -1618,6 +1626,7 @@ IMPORTANTE
 - Non usare espressioni come â€œKPIâ€, â€œstakeholderâ€, â€œperformance reviewâ€, â€œcoachingâ€, â€œdebriefingâ€, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
 - Non scrivere mai REPEAT_PLACEHOLDER o testi provvisori.
+- Non usare mai testi generici come "Questo indicatore va letto come una traccia operativa da verificare..." al posto dell'analisi del tratto.
 `;
 
   console.log("[EXPANDED] OpenAI call start", {
