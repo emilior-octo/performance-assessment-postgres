@@ -1140,7 +1140,7 @@ function dimensionsForScoredQuestion(question, assessmentType = "zpi_hr", source
     const isActiveListeningItem =
       tags.includes("criticita relazionale") ||
       tags.includes("auto mapped") ||
-      /comprend|punti di vista|intenzion|desidera comunicarmi|imparzial|giudiz|carattere difficile|motivat/.test(textKey);
+      /comprend|comprensione|ascolt|motivaz|punti di vista|prospettiv|intenzion|desidera comunicarmi|imparzial|giudiz|pregiudiz|carattere difficile|feedback|interpret|confront|dialog|spieg|capire gli altri/.test(textKey);
 
     return [
       {
