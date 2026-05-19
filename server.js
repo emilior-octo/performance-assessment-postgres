@@ -492,7 +492,7 @@ const DIMENSION_DEFINITIONS = {
     { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT }
   ],
   "Empatia e collaborazione": [
-    { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Ascolto attivo", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Estroversione e networking": [
@@ -1997,21 +1997,37 @@ function responsibilityOpinionNote() {
 }
 
 function stripLeadingTruthfulnessStatus(text) {
-  let value = String(text || "").trim();
+  let value = normalizeBrokenUtf8(String(text || "")).trim();
 
-  // Evita duplicazioni tipo:
-  // "AttendibilitÃ  SÃ¬: ... AttendibilitÃ  SÃ¬. Le risposte ..."
-  // L'AI puÃ² usare due formati:
-  // - AttendibilitÃ  SÃŒ: testo...
-  // - AttendibilitÃ  SÃ¬. Le risposte...
-  // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
-  // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
-  const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+  // Rimuove SOLO eventuali prefissi/stati di attendibilità generati dall'AI.
+  // Serve a evitare output tipo:
+  // "Attendibilità FORZATA: ... Attendibilità S. ..."
+  // Il prefisso ufficiale viene sempre ricostruito da codice più sotto.
+  const statusBlockPattern = /^Attendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
+  const nextStatusPattern = /\bAttendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
 
-  while (truthfulnessPattern.test(value)) {
-    value = value.replace(truthfulnessPattern, "").trim();
+  // Se il testo inizia con uno status, taglia quel blocco fino al prossimo status
+  // oppure fino alla fine della prima frase. Ripete al massimo poche volte per sicurezza.
+  for (let i = 0; i < 5 && statusBlockPattern.test(value); i += 1) {
+    const afterPrefix = value.replace(statusBlockPattern, "").trim();
+    const nextStatus = afterPrefix.search(nextStatusPattern);
+
+    if (nextStatus >= 0) {
+      value = afterPrefix.slice(nextStatus).trim();
+      continue;
+    }
+
+    const firstSentence = afterPrefix.match(/^(.{1,700}?[.!?])\s*/s);
+    value = firstSentence
+      ? afterPrefix.slice(firstSentence[0].length).trim()
+      : "";
   }
+
+  // Rimuove eventuali stati rimasti nel mezzo del testo, senza cancellare il contenuto utile.
+  value = value
+    .replace(nextStatusPattern, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
   return value;
 }
