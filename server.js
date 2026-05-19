@@ -492,7 +492,7 @@ const DIMENSION_DEFINITIONS = {
     { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT }
   ],
   "Empatia e collaborazione": [
-    { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Ascolto attivo", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Estroversione e networking": [
@@ -1115,47 +1115,6 @@ function collectAnswers(body, assessmentType = "zpi_hr") {
   );
 }
 
-function dimensionsForScoredQuestion(question, assessmentType = "zpi_hr", sourceTrait = "") {
-  if (assessmentType === "sport_performance") {
-    return [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }];
-  }
-
-  const sourceKey = dimensionAliasKey(sourceTrait);
-  const tags = Array.isArray(question?.tags)
-    ? question.tags.map((tag) => dimensionAliasKey(tag))
-    : [];
-  const textKey = dimensionAliasKey(question?.text || "");
-
-  // Patch chirurgica ZPI:
-  // nel questionario reale non esiste una sorgente separata "Empatia".
-  // Le domande arrivano come "Empatia e collaborazione", ma nel report finale
-  // dobbiamo separare:
-  // - Ascolto attivo = comprensione cognitiva, assenza di giudizio/pregiudizio, lettura dei punti di vista;
-  // - Comprensione = componente empatica, emotiva e relazionale;
-  // - Cooperazione = parametro aggiuntivo collegato alla stessa area relazionale.
-  //
-  // Questo evita che "Comprensione" resti a 0 senza tornare al mapping unico
-  // che rendeva Ascolto attivo e Comprensione sempre identici.
-  if (sourceKey === "empatia e collaborazione") {
-    const isActiveListeningItem =
-      tags.includes("criticita relazionale") ||
-      /comprend|motivazion|punti di vista|intenzion|desidera comunicarmi|imparzial|giudiz|carattere difficile/.test(textKey);
-
-    return [
-      {
-        name: isActiveListeningItem ? "Ascolto attivo" : "Comprensione",
-        category: DIMENSION_CATEGORY.TRAIT
-      },
-      {
-        name: "Cooperazione",
-        category: DIMENSION_CATEGORY.ADDITIONAL
-      }
-    ];
-  }
-
-  return normalizeDimensionDefinitions(sourceTrait);
-}
-
 function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
   const groups = new Map();
   const config = getAssessmentConfig(assessmentType);
@@ -1167,7 +1126,9 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
 
     const sourceTrait = question.trait || "Comportamento generale";
     const value = scoreAnswer(answer, question.reverse, question);
-    const dimensions = dimensionsForScoredQuestion(question, assessmentType, sourceTrait);
+    const dimensions = assessmentType === "sport_performance"
+      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
+      : normalizeDimensionDefinitions(sourceTrait);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -1557,19 +1518,19 @@ function buildAiTraitsForPrompt(traits) {
     })
     .map((trait) => {
       const name = displayDimensionName(normalizeTraitName(trait.name));
-      const normalizedScore = chartScore(trait.score);
+      const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = displayDimensionName(normalizeDimensionNameForDisplay(trait.name)) === "Attendibilità" ? truthfulnessStatusFromScore(normalizedScore) : null;
+      const truthfulness = displayDimensionName(normalizeDimensionNameForDisplay(trait.name)) === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
         description: dimensionDescription(trait.name),
         category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
-        score: normalizedScore,
-        chartScore: normalizedScore,
+        score: trait.score,
+        chartScore: value,
         evoGuide,
         truthfulness,
-        writingGuidance: scoreGuidanceForChartValue(normalizedScore),
+        writingGuidance: scoreGuidanceForPrompt(trait.score),
         questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
       };
     });
@@ -1925,34 +1886,30 @@ function findDimensionByDisplayName(dimensions, name) {
   }) || null;
 }
 
-function scoreGuidanceForChartValue(value) {
-  const safeValue = Math.max(-100, Math.min(100, Number(value || 0)));
+function scoreGuidanceForPrompt(score) {
+  const value = chartScore(score);
 
-  if (safeValue >= 70) {
+  if (value >= 70) {
     return "70-100: tratto dominante e molto marcato. L'analisi deve descrivere una forte manifestazione del tratto e, con tono prudente, indicare che valori cosÃ¬ elevati possono anche riflettere una risposta molto controllata o socialmente desiderabile. Non insinuare falsitÃ  o scarsa sinceritÃ ; scrivi che la continuitÃ  del comportamento va verificata nella pratica. I consigli devono essere di valorizzazione e verifica concreta, non correttivi.";
   }
 
-  if (safeValue >= 51) {
+  if (value >= 51) {
     return "51-69: tratto solido e produttivo. L'analisi deve descrivere una manifestazione stabile, utile nel lavoro quotidiano, senza introdurre criticitÃ  opposte al punteggio. I consigli devono valorizzare e consolidare il tratto.";
   }
 
-  if (safeValue >= 31) {
+  if (value >= 31) {
     return "31-50: tratto adeguato. L'analisi deve descrivere una base presente ma non dominante, con eventuale discontinuitÃ  leggera. I consigli devono aiutare a consolidare il comportamento, senza drammatizzare.";
   }
 
-  if (safeValue >= 0) {
+  if (value >= 0) {
     return "0-30: tratto migliorabile. L'analisi deve descrivere fragilitÃ  o presenza discontinua del tratto, con esempi concreti nel lavoro. I consigli devono essere di supporto, chiarimento e allenamento operativo.";
   }
 
-  if (safeValue >= -30) {
+  if (value >= -30) {
     return "-30-0: tratto in difficoltÃ . L'analisi deve descrivere una difficoltÃ  concreta che puÃ² emergere nel lavoro quotidiano, con impatto operativo o relazionale. I consigli devono essere di presidio, affiancamento e controllo semplice.";
   }
 
   return "-100--31: profonda difficoltÃ  da approfondire. L'analisi deve descrivere una criticitÃ  importante da verificare con attenzione, senza toni clinici o giudicanti. I consigli devono essere prudenti, orientati a osservazione, affiancamento e verifica sul campo.";
-}
-
-function scoreGuidanceForPrompt(score) {
-  return scoreGuidanceForChartValue(chartScore(score));
 }
 
 function dimensionByName(dimensions, name) {
@@ -2040,21 +1997,37 @@ function responsibilityOpinionNote() {
 }
 
 function stripLeadingTruthfulnessStatus(text) {
-  let value = String(text || "").trim();
+  let value = normalizeBrokenUtf8(String(text || "")).trim();
 
-  // Evita duplicazioni tipo:
-  // "AttendibilitÃ  SÃ¬: ... AttendibilitÃ  SÃ¬. Le risposte ..."
-  // L'AI puÃ² usare due formati:
-  // - AttendibilitÃ  SÃŒ: testo...
-  // - AttendibilitÃ  SÃ¬. Le risposte...
-  // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
-  // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
-  const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+  // Rimuove SOLO eventuali prefissi/stati di attendibilità generati dall'AI.
+  // Serve a evitare output tipo:
+  // "Attendibilità FORZATA: ... Attendibilità S. ..."
+  // Il prefisso ufficiale viene sempre ricostruito da codice più sotto.
+  const statusBlockPattern = /^Attendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
+  const nextStatusPattern = /\bAttendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
 
-  while (truthfulnessPattern.test(value)) {
-    value = value.replace(truthfulnessPattern, "").trim();
+  // Se il testo inizia con uno status, taglia quel blocco fino al prossimo status
+  // oppure fino alla fine della prima frase. Ripete al massimo poche volte per sicurezza.
+  for (let i = 0; i < 5 && statusBlockPattern.test(value); i += 1) {
+    const afterPrefix = value.replace(statusBlockPattern, "").trim();
+    const nextStatus = afterPrefix.search(nextStatusPattern);
+
+    if (nextStatus >= 0) {
+      value = afterPrefix.slice(nextStatus).trim();
+      continue;
+    }
+
+    const firstSentence = afterPrefix.match(/^(.{1,700}?[.!?])\s*/s);
+    value = firstSentence
+      ? afterPrefix.slice(firstSentence[0].length).trim()
+      : "";
   }
+
+  // Rimuove eventuali stati rimasti nel mezzo del testo, senza cancellare il contenuto utile.
+  value = value
+    .replace(nextStatusPattern, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
   return value;
 }
@@ -3914,11 +3887,11 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       });
     }
 
-    const normalizedScore = chartScore(dimension?.score ?? 0);
+    const value = chartScore(dimension?.score ?? 0);
     const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
     const truthfulness = isAttendibilita
-      ? truthfulnessStatusFromScore(normalizedScore)
+      ? truthfulnessStatusFromScore(value)
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
@@ -3989,8 +3962,8 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       name: canonicalName,
       displayName,
       description,
-      chartScore: normalizedScore,
-      score: normalizedScore,
+      chartScore: value,
+      score: dimension?.score ?? 0,
       showRemedies: true,
       showSkillAction: !directionalExecutive,
       expandedText,
