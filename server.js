@@ -178,8 +178,8 @@ function normalizePdfVisibleText(text) {
   // Correzione SOLO VISIVA per rendering PDF/Word: non va usata su nomi interni,
   // mapping, scoring, filtri o JSON salvati. Serve solo a ripulire output già calcolato.
   return normalizeBrokenUtf8(text)
-    .replace(/Affidabilità \+ autodisciplina/g, "Autodisciplina/affidabilità")
-    .replace(/AffidabilitÃ  \+ autodisciplina/g, "Autodisciplina/affidabilità")
+    .replace(/Affidabilità \+ autodisciplina/g, "Autodisciplina / affidabilità")
+    .replace(/AffidabilitÃ  \+ autodisciplina/g, "Autodisciplina / affidabilità")
     .replace(/ResponsabilitÃ\b/g, "Responsabilità")
     .replace(/ResponsabilitÃ\s/g, "Responsabilità ")
     .replace(/ResponsabilitÃ$/g, "Responsabilità")
@@ -432,7 +432,6 @@ const DIMENSION_ORDER = new Map(
 const DIMENSION_DEFINITIONS = {
   "Organizzazione e metodo": [
     { name: "Organizzazione e pianificazione", category: DIMENSION_CATEGORY.TRAIT },
-    { name: "AffidabilitÃ  + autodisciplina", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Gestione prioritÃ ", category: DIMENSION_CATEGORY.ADDITIONAL },
     { name: "AttendibilitÃ ", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
@@ -485,14 +484,9 @@ const DIMENSION_DEFINITIONS = {
     { name: "FlessibilitÃ  comunicativa", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
-  "Comprensione": [
-    { name: "Ascolto attivo", category: DIMENSION_CATEGORY.TRAIT }
-  ],
-  "Empatia": [
-    { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT }
-  ],
   "Empatia e collaborazione": [
     { name: "Ascolto attivo", category: DIMENSION_CATEGORY.TRAIT },
+    { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
   "Estroversione e networking": [
@@ -544,7 +538,7 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "Autodisciplina/affidabilità",
+  "AffidabilitÃ  + autodisciplina": "Autodisciplina / affidabilità",
   "Stress": "Gestione pressioni / Stress",
   "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
@@ -595,7 +589,7 @@ function evoGuideForDimension(name, score) {
   const guide =
     ZPI_EVO_TRAIT_GUIDE[displayName] ||
     ZPI_EVO_TRAIT_GUIDE[legacyName] ||
-    (displayName === "Autodisciplina/affidabilità" ? ZPI_EVO_TRAIT_GUIDE["Affidabilità"] : null) ||
+    (displayName === "Autodisciplina / affidabilità" ? ZPI_EVO_TRAIT_GUIDE["Affidabilità"] : null) ||
     (displayName === "Gestione pressioni / Stress" ? ZPI_EVO_TRAIT_GUIDE["Gestione pressioni / Stress"] : null);
   if (!guide) return null;
   const value = chartScore(score);
@@ -632,17 +626,37 @@ function displayDimensionName(name) {
 function dimensionDescription(name) {
   const rawName = String(name || "").trim();
   const canonicalName = normalizeDimensionNameForDisplay(rawName);
+  const utfCanonicalName = normalizeBrokenUtf8(canonicalName);
   const displayName = displayDimensionName(canonicalName);
 
-  return normalizeBrokenUtf8(
-    DIMENSION_DESCRIPTIONS[canonicalName] ||
-    DIMENSION_DESCRIPTIONS[displayName] ||
-    DIMENSION_DESCRIPTIONS[normalizeBrokenUtf8(canonicalName)] ||
-    DIMENSION_DESCRIPTIONS[normalizeBrokenUtf8(displayName)] ||
-    DIMENSION_DESCRIPTIONS[rawName] ||
-    DIMENSION_DESCRIPTIONS[normalizeBrokenUtf8(rawName)] ||
-    ""
-  );
+  const candidates = [
+    rawName,
+    normalizeBrokenUtf8(rawName),
+    canonicalName,
+    utfCanonicalName,
+    displayName,
+    normalizeBrokenUtf8(displayName)
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (DIMENSION_DESCRIPTIONS[candidate]) {
+      return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[candidate]);
+    }
+  }
+
+  const candidateKeys = new Set(candidates.map((candidate) => dimensionAliasKey(candidate)));
+  const matchingEntry = Object.entries(DIMENSION_DESCRIPTIONS).find(([key]) => {
+    const keyAliases = [
+      key,
+      normalizeBrokenUtf8(key),
+      displayDimensionName(key),
+      normalizeDimensionNameForDisplay(key)
+    ].map((value) => dimensionAliasKey(value));
+
+    return keyAliases.some((keyAlias) => candidateKeys.has(keyAlias));
+  });
+
+  return normalizeBrokenUtf8(matchingEntry?.[1] || "");
 }
 
 function withDisplayMeta(item) {
@@ -1115,6 +1129,45 @@ function collectAnswers(body, assessmentType = "zpi_hr") {
   );
 }
 
+
+function dimensionsForScoredQuestion(question, assessmentType = "zpi_hr", sourceTrait = "") {
+  if (assessmentType === "sport_performance") {
+    return [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }];
+  }
+
+  const sourceKey = dimensionAliasKey(sourceTrait);
+
+  // Patch chirurgica ZPI: il questionario reale usa spesso la sorgente unica
+  // "Empatia e collaborazione". Qui la separiamo SOLO nello scoring runtime:
+  // - Ascolto attivo = ascolto cognitivo, punti di vista, intenzioni, feedback, sospensione del giudizio;
+  // - Comprensione = componente empatica, emotiva e relazionale;
+  // - Cooperazione = parametro aggiuntivo collegato alla stessa area relazionale.
+  // Non modifica scoreAnswer, chartScore, canonical aliases, mergeDimensionList, DB o renderer PDF.
+  if (sourceKey === "empatia e collaborazione") {
+    const tags = Array.isArray(question?.tags)
+      ? question.tags.map((tag) => dimensionAliasKey(tag))
+      : [];
+    const textKey = dimensionAliasKey(question?.text || "");
+
+    const isActiveListeningItem =
+      tags.includes("criticita relazionale") ||
+      /punti di vista|intenzion|obiettiv|desidera comunicarmi|imparzial|pregiudiz|giudiz|feedback|carattere difficile|approccio.*persone.*difficili|comprendere.*motivazion|comprendere.*punti/.test(textKey);
+
+    return [
+      {
+        name: isActiveListeningItem ? "Ascolto attivo" : "Comprensione",
+        category: DIMENSION_CATEGORY.TRAIT
+      },
+      {
+        name: "Cooperazione",
+        category: DIMENSION_CATEGORY.ADDITIONAL
+      }
+    ];
+  }
+
+  return normalizeDimensionDefinitions(sourceTrait);
+}
+
 function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
   const groups = new Map();
   const config = getAssessmentConfig(assessmentType);
@@ -1126,9 +1179,7 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
 
     const sourceTrait = question.trait || "Comportamento generale";
     const value = scoreAnswer(answer, question.reverse, question);
-    const dimensions = assessmentType === "sport_performance"
-      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
-      : normalizeDimensionDefinitions(sourceTrait);
+    const dimensions = dimensionsForScoredQuestion(question, assessmentType, sourceTrait);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -1365,82 +1416,6 @@ function buildReliability(answers, traits) {
     reliabilityFlags: flags
   };
 }
-
-function buildRuntimeAnalysisPayload(assessment, storedPayload = {}) {
-  const payload = storedPayload && typeof storedPayload === "object" ? { ...storedPayload } : {};
-  const assessmentType = payload.assessmentType || assessment?.assessmentType || "zpi_hr";
-  const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
-  const answers = assessment?.result?.answersJson;
-
-  if (!answers || typeof answers !== "object" || Array.isArray(answers) || Object.keys(answers).length === 0) {
-    return {
-      ...payload,
-      assessmentType,
-      assessmentTitle
-    };
-  }
-
-  try {
-    const rebuiltTraits = buildTraitsFromAnswers(answers, assessmentType);
-
-    if (!Array.isArray(rebuiltTraits) || rebuiltTraits.length === 0) {
-      return {
-        ...payload,
-        assessmentType,
-        assessmentTitle
-      };
-    }
-
-    const { traits: mainTraits, additionalParameters } = splitDimensions(rebuiltTraits);
-    const requestedRole = assessment?.requestedRole || "non_specificato";
-    const summary = buildSummary(rebuiltTraits, requestedRole);
-    const roleFit = calculateRoleFit(rebuiltTraits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits: rebuiltTraits, roleFit });
-
-    let reliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
-
-    if (assessmentType === "zpi_hr") {
-      try {
-        const rebuiltReliability = buildReliability(answers, rebuiltTraits);
-        reliabilityFlags = Array.isArray(rebuiltReliability.reliabilityFlags)
-          ? rebuiltReliability.reliabilityFlags
-          : reliabilityFlags;
-      } catch (reliabilityError) {
-        console.warn("[ZPI RUNTIME PAYLOAD] reliability rebuild skipped", {
-          assessmentId: assessment?.id,
-          message: reliabilityError?.message
-        });
-      }
-    }
-
-    return {
-      ...payload,
-      assessmentType,
-      assessmentTitle,
-      traits: rebuiltTraits,
-      mainTraits,
-      additionalParameters,
-      roleFit,
-      managementAdvice,
-      topTraits: summary.topTraits,
-      weakTraits: summary.weakTraits,
-      reliabilityFlags,
-      rebuiltFromAnswers: true
-    };
-  } catch (error) {
-    console.error("[ZPI RUNTIME PAYLOAD] failed to rebuild traits from answersJson", {
-      assessmentId: assessment?.id,
-      message: error?.message
-    });
-
-    return {
-      ...payload,
-      assessmentType,
-      assessmentTitle
-    };
-  }
-}
-
 
 async function withTimeout(promise, ms, label = "Operazione") {
   let timeoutId;
@@ -1997,37 +1972,25 @@ function responsibilityOpinionNote() {
 }
 
 function stripLeadingTruthfulnessStatus(text) {
-  let value = normalizeBrokenUtf8(String(text || "")).trim();
+  let value = String(text || "").trim();
 
-  // Rimuove SOLO eventuali prefissi/stati di attendibilità generati dall'AI.
-  // Serve a evitare output tipo:
-  // "Attendibilità FORZATA: ... Attendibilità S. ..."
-  // Il prefisso ufficiale viene sempre ricostruito da codice più sotto.
-  const statusBlockPattern = /^Attendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
-  const nextStatusPattern = /\bAttendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
+  // Evita duplicazioni tipo:
+  // "Attendibilità FORZATA: ... Attendibilità S. Le risposte ..."
+  // Noi aggiungiamo già il prefisso ufficiale da codice, quindi rimuoviamo
+  // qualunque prefisso Attendibilità generato dall'AI all'inizio del testo.
+  const truthfulnessStartPattern =
+    /^Attendibilit(?:à|a|Ã |Ã)?\s+(SÌ|SÍ|SÃŒ|SI|Sì|SÃ¬|S|FORZATA|NO)\s*[:.]\s*/i;
 
-  // Se il testo inizia con uno status, taglia quel blocco fino al prossimo status
-  // oppure fino alla fine della prima frase. Ripete al massimo poche volte per sicurezza.
-  for (let i = 0; i < 5 && statusBlockPattern.test(value); i += 1) {
-    const afterPrefix = value.replace(statusBlockPattern, "").trim();
-    const nextStatus = afterPrefix.search(nextStatusPattern);
+  while (truthfulnessStartPattern.test(value)) {
+    value = value.replace(truthfulnessStartPattern, "").trim();
 
-    if (nextStatus >= 0) {
-      value = afterPrefix.slice(nextStatus).trim();
-      continue;
-    }
-
-    const firstSentence = afterPrefix.match(/^(.{1,700}?[.!?])\s*/s);
-    value = firstSentence
-      ? afterPrefix.slice(firstSentence[0].length).trim()
-      : "";
+    // Dopo il prefisso AI, spesso arriva una frase standard tipo
+    // "Le risposte..." o "Il profilo..."; la rimuoviamo perché il testo ufficiale
+    // viene già aggiunto da truthfulnessStatusFromScore().
+    value = value
+      .replace(/^(?:le\s+risposte|il\s+profilo|l[’']analisi|il\s+questionario)\b[^.!?]*[.!?]\s*/i, "")
+      .trim();
   }
-
-  // Rimuove eventuali stati rimasti nel mezzo del testo, senza cancellare il contenuto utile.
-  value = value
-    .replace(nextStatusPattern, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
 
   return value;
 }
@@ -2238,7 +2201,9 @@ const CANONICAL_DIMENSION_ALIASES = new Map([
 
   // Chiave interna storica: NON usare la label visibile per scoring/mapping.
   ["autodisciplina affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["autodisciplina affidabilit", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilit", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita autodisciplina", "AffidabilitÃ  + autodisciplina"],
   ["affidabilita e autodisciplina", "AffidabilitÃ  + autodisciplina"],
 
@@ -2340,23 +2305,11 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const traits = mergeDimensionList(rawTraits);
   const split = splitDimensions(traits);
 
-  const hasRawTraits = rawTraits.length > 0;
+  const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
+    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
 
-  // Fonte unica e sicura per PDF/grafici/relazione:
-  // se payload.traits esiste, deriva sempre mainTraits/additionalParameters da lì.
-  // Evita che vecchi mainTraits/additionalParameters già salvati o fallbackati a 0
-  // sovrascrivano i punteggi reali calcolati sulle risposte.
-  const mainTraits = mergeDimensionList(
-    hasRawTraits
-      ? split.traits
-      : (Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
-  ).filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
-
-  const additionalParameters = mergeDimensionList(
-    hasRawTraits
-      ? split.additionalParameters
-      : (Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
-  ).filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
+  const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
+    .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
 
   const fullMainTraits = TRAIT_DIMENSIONS.map((name) => {
     return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
@@ -2408,23 +2361,6 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     convictionChange,
     securityTheory
   };
-}
-
-function logPdfDimensionInput(assessmentId, normalized = {}) {
-  const compact = (items = []) => (Array.isArray(items) ? items : []).map((item) => ({
-    name: displayDimensionName(item?.name),
-    canonicalName: normalizeDimensionNameForDisplay(item?.name),
-    score: item?.score ?? 0,
-    chartScore: chartScore(item?.score ?? 0),
-    questionCount: item?.questionCount ?? 0,
-    sourceTraits: Array.from(new Set((Array.isArray(item?.items) ? item.items : []).map((entry) => entry.sourceTrait).filter(Boolean)))
-  }));
-
-  console.log("[ZPI PDF INPUT DEBUG]", {
-    assessmentId,
-    mainTraits: compact(normalized.mainTraits),
-    additionalParameters: compact(normalized.additionalParameters)
-  });
 }
 
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
@@ -2807,8 +2743,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
   });
 
   const submissions = assessments.map((item) => {
-    const storedPayload = item.result?.traitsJson || {};
-    const payload = buildRuntimeAnalysisPayload(item, storedPayload);
+    const payload = item.result?.traitsJson || {};
     const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
@@ -2888,8 +2823,7 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
         continue;
       }
 
-      const storedPayload = assessment.result.traitsJson || {};
-      const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+      const payload = assessment.result.traitsJson || {};
       const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
       const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
       const traits = normalized.traits;
@@ -2963,8 +2897,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin,
       return res.redirect(`/admin/${assessment.id}`);
     }
 
-    const storedPayload = assessment.result.traitsJson || {};
-    const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+    const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
@@ -3021,8 +2954,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmi
       return res.redirect(`/admin/${assessment.id}`);
     }
 
-    const storedPayload = assessment.result.traitsJson || {};
-    const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+    const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
@@ -3594,8 +3526,7 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
     return res.status(404).send("Assessment non trovato");
   }
 
-  const storedPayload = assessment.result.traitsJson || {};
-  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+  const payload = assessment.result.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
@@ -3725,8 +3656,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     return res.status(404).send("Assessment non trovato");
   }
 
-  const storedPayload = assessment.result?.traitsJson || {};
-  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+  const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
@@ -3887,9 +3817,14 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       });
     }
 
+    const lookupName =
+      displayName === "Autodisciplina / affidabilità"
+        ? "Affidabilità + autodisciplina"
+        : canonicalName;
+
     const value = chartScore(dimension?.score ?? 0);
-    const description = dimensionDescription(canonicalName);
-    const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
+    const description = dimensionDescription(lookupName);
+    const evoGuide = evoGuideForDimension(lookupName, dimension?.score ?? 0);
     const truthfulness = isAttendibilita
       ? truthfulnessStatusFromScore(value)
       : null;
@@ -4044,12 +3979,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     return res.status(404).send("Assessment non trovato");
   }
 
-  const storedPayload = assessment.result?.traitsJson || {};
-  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+  const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
-  logPdfDimensionInput(assessment.id, normalized);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
@@ -4155,7 +4088,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
         const displayName = displayDimensionName(t.name || "Tratto");
-        const description = dimensionDescription(t.name);
+        const description = t.description || dimensionDescription(t.name || t.displayName);
         doc.fontSize(14).text(displayName);
         if (description) {
           doc.moveDown(0.1);
