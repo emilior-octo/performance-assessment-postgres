@@ -246,6 +246,15 @@ function normalizePdfVisibleText(text) {
     .replace(/\bcapacit(?=\s|$)/g, "capacità")
     .replace(/\bcompatibilit(?=\s|$)/g, "compatibilità")
     .replace(/\bEt(?=:|\s|$)/g, "Età")
+    .replace(/\bClieni\b/g, "Clienti")
+    .replace(/\bclieni\b/g, "clienti")
+    .replace(/\bgi(?=\s+di\b)/gi, "già")
+    .replace(/\bpu(?=\s+(ascoltare|rallentare|collegare|contribuire|orientare|anticipare|consolidare|assegnare|valorizzare|presidiare|intervenire|ridurre|migliorare|allenare|integrare|verificare|essere|avere|risultare|dare|emergere|accettare|invece|percepire|mostrare|rendere|creare|succedere|portare|aiutare|diventare|funzionare|tradursi|richiedere|sostenere|modificare|generare|appoggiarsi|subire|fare|restare|variare|riuscire|preferire|mettere|vivere|accogliere|cercare|mantenere|apparire|offrire|produrre|facilitare|riflettere|indicare|rappresentare|rivelare|dipendere|servire)\b)/gi, "può")
+    .replace(/\bQuesto coerente\b/g, "Questo è coerente")
+    .replace(/\bquesto coerente\b/g, "questo è coerente")
+    .replace(/\bLa relazione quindi utile\b/g, "La relazione è quindi utile")
+    .replace(/\bla relazione quindi utile\b/g, "la relazione è quindi utile")
+    .replace(/nell[\"“”]iniziare/g, "nell’iniziare")
     .replace(/[\u0018\u0019]/g, "’");
 }
 
@@ -485,13 +494,8 @@ const DIMENSION_DEFINITIONS = {
     { name: "FlessibilitÃ  comunicativa", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Vendite", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
-  "Comprensione": [
-    { name: "Ascolto attivo", category: DIMENSION_CATEGORY.TRAIT }
-  ],
-  "Empatia": [
-    { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT }
-  ],
   "Empatia e collaborazione": [
+    { name: "Ascolto attivo", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Comprensione", category: DIMENSION_CATEGORY.TRAIT },
     { name: "Cooperazione", category: DIMENSION_CATEGORY.ADDITIONAL }
   ],
@@ -583,7 +587,7 @@ const ZPI_EVO_TRAIT_GUIDE = {
   "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciÃ² che deve fare" }, { min: 50, text: "attiva, preferisce attivitÃ  dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, puÃ² preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, puÃ² fare fatica ad avviare nuove attivitÃ " }, { min: -100, text: "bassa energia di azione e difficoltÃ  a mettersi in moto" }] },
   "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertivitÃ " }, { min: 20, text: "puÃ² manifestare lentezza produttiva o difficoltÃ  a incidere" }, { min: -100, text: "tende ad aggirare i problemi e puÃ² perdere focus sui risultati" }] },
   "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilitÃ  soprattutto per ciÃ² che dipende direttamente da lei" }, { min: -10, text: "puÃ² iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e puÃ² subire le situazioni" }] },
-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da piÃ¹ punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende puÃ² iniziare a criticare o valutare parzialmente" }, { min: -100, text: "comunicazione critica e poco motivante, con difficoltÃ  a comprendere punti di vista diversi" }] },
+  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "ascolta e comprende molto bene punti di vista diversi, raccogliendo informazioni prima di formulare una lettura" }, { min: 10, text: "ascolta e comprende in modo abbastanza funzionale, con una base utile da consolidare nei contesti piÃ¹ rapidi" }, { min: -20, text: "l'ascolto puÃ² risultare selettivo o non sempre costante, soprattutto quando il confronto richiede pazienza e sospensione del giudizio" }, { min: -100, text: "l'ascolto richiede presidio e verifica, con bisogno di riformulare, fare domande e raccogliere meglio i punti di vista prima di chiudere una lettura" }] },
   "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio e coglie bene stati dâ€™animo e bisogni" }, { min: 20, text: "calorosa, disponibile e attenta agli altri" }, { min: -20, text: "puÃ² mostrare freddezza o distacco, soprattutto in situazioni di disaccordo" }, { min: -100, text: "generalmente distaccata e fredda, con rischio di risultare poco sensibile" }] },
   "EspansivitÃ ": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata, disinibita e calorosa nellâ€™approccio" }, { min: 40, text: "aperta e cordiale nel primo approccio" }, { min: 20, text: "selettiva e formale, ma capace di approcciare se necessario" }, { min: 0, text: "traspare un poâ€™ di timidezza con persone nuove" }, { min: -40, text: "non fa facilmente il primo passo e puÃ² restare sulle sue" }, { min: -100, text: "chiusa, ritirata o impacciata con persone che non conosce" }] }
 };
@@ -1126,20 +1130,17 @@ function dimensionsForScoredQuestion(question, assessmentType = "zpi_hr", source
     : [];
   const textKey = dimensionAliasKey(question?.text || "");
 
-  // Patch chirurgica ZPI:
-  // nel questionario reale non esiste una sorgente separata "Empatia".
-  // Le domande arrivano come "Empatia e collaborazione", ma nel report finale
-  // dobbiamo separare:
-  // - Ascolto attivo = comprensione cognitiva, assenza di giudizio/pregiudizio, lettura dei punti di vista;
+  // Patch chirurgica ZPI: il questionario reale usa spesso la sorgente unica
+  // "Empatia e collaborazione". Qui la separiamo SOLO nello scoring runtime:
+  // - Ascolto attivo = comprensione cognitiva, ascolto, assenza di giudizio/pregiudizio;
   // - Comprensione = componente empatica, emotiva e relazionale;
   // - Cooperazione = parametro aggiuntivo collegato alla stessa area relazionale.
-  //
-  // Questo evita che "Comprensione" resti a 0 senza tornare al mapping unico
-  // che rendeva Ascolto attivo e Comprensione sempre identici.
+  // Non modifica prompt, PDF, DB o label visibili.
   if (sourceKey === "empatia e collaborazione") {
     const isActiveListeningItem =
       tags.includes("criticita relazionale") ||
-      /comprend|motivazion|punti di vista|intenzion|desidera comunicarmi|imparzial|giudiz|carattere difficile/.test(textKey);
+      tags.includes("auto mapped") ||
+      /comprend|punti di vista|intenzion|desidera comunicarmi|imparzial|giudiz|carattere difficile|motivat/.test(textKey);
 
     return [
       {
@@ -1405,82 +1406,6 @@ function buildReliability(answers, traits) {
   };
 }
 
-function buildRuntimeAnalysisPayload(assessment, storedPayload = {}) {
-  const payload = storedPayload && typeof storedPayload === "object" ? { ...storedPayload } : {};
-  const assessmentType = payload.assessmentType || assessment?.assessmentType || "zpi_hr";
-  const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
-  const answers = assessment?.result?.answersJson;
-
-  if (!answers || typeof answers !== "object" || Array.isArray(answers) || Object.keys(answers).length === 0) {
-    return {
-      ...payload,
-      assessmentType,
-      assessmentTitle
-    };
-  }
-
-  try {
-    const rebuiltTraits = buildTraitsFromAnswers(answers, assessmentType);
-
-    if (!Array.isArray(rebuiltTraits) || rebuiltTraits.length === 0) {
-      return {
-        ...payload,
-        assessmentType,
-        assessmentTitle
-      };
-    }
-
-    const { traits: mainTraits, additionalParameters } = splitDimensions(rebuiltTraits);
-    const requestedRole = assessment?.requestedRole || "non_specificato";
-    const summary = buildSummary(rebuiltTraits, requestedRole);
-    const roleFit = calculateRoleFit(rebuiltTraits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits: rebuiltTraits, roleFit });
-
-    let reliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
-
-    if (assessmentType === "zpi_hr") {
-      try {
-        const rebuiltReliability = buildReliability(answers, rebuiltTraits);
-        reliabilityFlags = Array.isArray(rebuiltReliability.reliabilityFlags)
-          ? rebuiltReliability.reliabilityFlags
-          : reliabilityFlags;
-      } catch (reliabilityError) {
-        console.warn("[ZPI RUNTIME PAYLOAD] reliability rebuild skipped", {
-          assessmentId: assessment?.id,
-          message: reliabilityError?.message
-        });
-      }
-    }
-
-    return {
-      ...payload,
-      assessmentType,
-      assessmentTitle,
-      traits: rebuiltTraits,
-      mainTraits,
-      additionalParameters,
-      roleFit,
-      managementAdvice,
-      topTraits: summary.topTraits,
-      weakTraits: summary.weakTraits,
-      reliabilityFlags,
-      rebuiltFromAnswers: true
-    };
-  } catch (error) {
-    console.error("[ZPI RUNTIME PAYLOAD] failed to rebuild traits from answersJson", {
-      assessmentId: assessment?.id,
-      message: error?.message
-    });
-
-    return {
-      ...payload,
-      assessmentType,
-      assessmentTitle
-    };
-  }
-}
-
-
 async function withTimeout(promise, ms, label = "Operazione") {
   let timeoutId;
 
@@ -1569,7 +1494,7 @@ function buildAiTraitsForPrompt(traits) {
         chartScore: value,
         evoGuide,
         truthfulness,
-        writingGuidance: scoreGuidanceForPrompt(trait.score),
+        writingGuidance: activeListeningWritingGuidance(name, trait.score) || scoreGuidanceForPrompt(trait.score),
         questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
       };
     });
@@ -1925,6 +1850,31 @@ function findDimensionByDisplayName(dimensions, name) {
   }) || null;
 }
 
+function activeListeningWritingGuidance(name, score) {
+  const displayName = displayDimensionName(normalizeDimensionNameForDisplay(name));
+  if (displayName !== "Ascolto attivo") return null;
+
+  const value = chartScore(score);
+
+  if (value >= 70) {
+    return "70-100: ascolto attivo molto marcato. Descrivi una forte capacità di ascoltare punti di vista diversi, raccogliere feedback e sospendere il giudizio. Mantieni tono prudente e concreto, senza enfasi eccessiva.";
+  }
+
+  if (value >= 51) {
+    return "51-69: ascolto attivo solido. Descrivi una buona capacità di recepire prospettive diverse e usare il confronto in modo utile nel lavoro quotidiano.";
+  }
+
+  if (value >= 31) {
+    return "31-50: ascolto attivo presente ma non dominante. Descrivi una base utile, da consolidare con riformulazione, domande di chiarimento e verifica dei feedback ricevuti.";
+  }
+
+  if (value >= 0) {
+    return "0-30: ascolto attivo migliorabile, ma senza toni duri. Non scrivere che la persona fraintende, interpreta male, distorce o crea errori relazionali. Descrivi invece ascolto selettivo o non sempre costante nei contesti rapidi, con bisogno di verificare meglio feedback, punti di vista e passaggi importanti.";
+  }
+
+  return "sotto 0: ascolto attivo fragile da verificare con prudenza. Non usare toni patologizzanti o giudicanti. Descrivi difficoltà possibili nel sospendere il giudizio o nel raccogliere completamente prospettive diverse, indicando rimedi pratici di ascolto, riformulazione e conferma.";
+}
+
 function scoreGuidanceForPrompt(score) {
   const value = chartScore(score);
 
@@ -2036,21 +1986,29 @@ function responsibilityOpinionNote() {
 }
 
 function stripLeadingTruthfulnessStatus(text) {
-  let value = String(text || "").trim();
+  let value = normalizeBrokenUtf8(String(text || "")).trim();
 
-  // Evita duplicazioni tipo:
-  // "AttendibilitÃ  SÃ¬: ... AttendibilitÃ  SÃ¬. Le risposte ..."
-  // L'AI puÃ² usare due formati:
-  // - AttendibilitÃ  SÃŒ: testo...
-  // - AttendibilitÃ  SÃ¬. Le risposte...
-  // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
-  // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
-  const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+  // Rimuove SOLO prefissi/status di Attendibilità generati dall'AI.
+  // Il prefisso ufficiale viene ricostruito da codice più sotto, quindi qui
+  // evitiamo doppioni tipo "Attendibilità FORZATA ... Attendibilità S. ...".
+  const statusPrefixPattern = /^Attendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/i;
+  const anyStatusPattern = /\bAttendibilit(?:à|a|Ã\s*|Ã |Ã)?\s+(?:S(?:Ì|I|ÃŒ|Ã¬)?|SI|SÌ|YES|FORZATA|FORCED|NO)\s*[:.]\s*/gi;
 
-  while (truthfulnessPattern.test(value)) {
-    value = value.replace(truthfulnessPattern, "").trim();
+  for (let i = 0; i < 5 && statusPrefixPattern.test(value); i += 1) {
+    value = value.replace(statusPrefixPattern, "").trim();
+
+    // Se dopo lo status l'AI ha aggiunto una frase standard sulle risposte,
+    // la rimuoviamo: è ridondante rispetto allo status ufficiale.
+    value = value
+      .replace(/^le\s+risposte\s+[^.]{1,420}\.\s*/i, "")
+      .replace(/^il\s+profilo\s+[^.]{1,420}\.\s*/i, "")
+      .trim();
   }
+
+  value = value
+    .replace(anyStatusPattern, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
   return value;
 }
@@ -2363,23 +2321,11 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const traits = mergeDimensionList(rawTraits);
   const split = splitDimensions(traits);
 
-  const hasRawTraits = rawTraits.length > 0;
+  const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
+    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
 
-  // Fonte unica e sicura per PDF/grafici/relazione:
-  // se payload.traits esiste, deriva sempre mainTraits/additionalParameters da lì.
-  // Evita che vecchi mainTraits/additionalParameters già salvati o fallbackati a 0
-  // sovrascrivano i punteggi reali calcolati sulle risposte.
-  const mainTraits = mergeDimensionList(
-    hasRawTraits
-      ? split.traits
-      : (Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
-  ).filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
-
-  const additionalParameters = mergeDimensionList(
-    hasRawTraits
-      ? split.additionalParameters
-      : (Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
-  ).filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
+  const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
+    .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
 
   const fullMainTraits = TRAIT_DIMENSIONS.map((name) => {
     return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
@@ -2431,23 +2377,6 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
     convictionChange,
     securityTheory
   };
-}
-
-function logPdfDimensionInput(assessmentId, normalized = {}) {
-  const compact = (items = []) => (Array.isArray(items) ? items : []).map((item) => ({
-    name: displayDimensionName(item?.name),
-    canonicalName: normalizeDimensionNameForDisplay(item?.name),
-    score: item?.score ?? 0,
-    chartScore: chartScore(item?.score ?? 0),
-    questionCount: item?.questionCount ?? 0,
-    sourceTraits: Array.from(new Set((Array.isArray(item?.items) ? item.items : []).map((entry) => entry.sourceTrait).filter(Boolean)))
-  }));
-
-  console.log("[ZPI PDF INPUT DEBUG]", {
-    assessmentId,
-    mainTraits: compact(normalized.mainTraits),
-    additionalParameters: compact(normalized.additionalParameters)
-  });
 }
 
 function drawAssessmentHistograms(doc, dimensions, assessmentTitle = "Performance Assessment Report") {
@@ -2830,8 +2759,7 @@ app.get("/admin", requireAdmin, async (req, res) => {
   });
 
   const submissions = assessments.map((item) => {
-    const storedPayload = item.result?.traitsJson || {};
-    const payload = buildRuntimeAnalysisPayload(item, storedPayload);
+    const payload = item.result?.traitsJson || {};
     const assessmentType = payload.assessmentType || item.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, item.requestedRole);
 
@@ -2911,8 +2839,7 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
         continue;
       }
 
-      const storedPayload = assessment.result.traitsJson || {};
-      const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+      const payload = assessment.result.traitsJson || {};
       const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
       const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
       const traits = normalized.traits;
@@ -2986,8 +2913,7 @@ app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin,
       return res.redirect(`/admin/${assessment.id}`);
     }
 
-    const storedPayload = assessment.result.traitsJson || {};
-    const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+    const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
@@ -3044,8 +2970,7 @@ app.post("/admin/:id/regenerate-expanded-report", requireAdmin, requireSuperAdmi
       return res.redirect(`/admin/${assessment.id}`);
     }
 
-    const storedPayload = assessment.result.traitsJson || {};
-    const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+    const payload = assessment.result.traitsJson || {};
     const assessmentType = assessment.assessmentType || payload.assessmentType || "zpi_hr";
     const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
     const traits = normalized.traits;
@@ -3617,8 +3542,7 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
     return res.status(404).send("Assessment non trovato");
   }
 
-  const storedPayload = assessment.result.traitsJson || {};
-  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+  const payload = assessment.result.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
@@ -3748,8 +3672,7 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
     return res.status(404).send("Assessment non trovato");
   }
 
-  const storedPayload = assessment.result?.traitsJson || {};
-  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+  const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
   const expanded = applyClientOutputRulesToExpandedReport(
@@ -4067,12 +3990,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     return res.status(404).send("Assessment non trovato");
   }
 
-  const storedPayload = assessment.result?.traitsJson || {};
-  const payload = buildRuntimeAnalysisPayload(assessment, storedPayload);
+  const payload = assessment.result?.traitsJson || {};
   const assessmentType = payload.assessmentType || assessment.assessmentType || "zpi_hr";
   const assessmentTitle = payload.assessmentTitle || getAssessmentConfig(assessmentType).title;
   const normalized = getNormalizedAnalysis(payload, assessment.requestedRole);
-  logPdfDimensionInput(assessment.id, normalized);
   const traits = normalized.traits;
   const mainTraits = normalized.mainTraits;
   const additionalParameters = normalized.additionalParameters;
