@@ -1557,19 +1557,19 @@ function buildAiTraitsForPrompt(traits) {
     })
     .map((trait) => {
       const name = displayDimensionName(normalizeTraitName(trait.name));
-      const value = chartScore(trait.score);
+      const normalizedScore = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = displayDimensionName(normalizeDimensionNameForDisplay(trait.name)) === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = displayDimensionName(normalizeDimensionNameForDisplay(trait.name)) === "Attendibilità" ? truthfulnessStatusFromScore(normalizedScore) : null;
 
       return {
         name,
         description: dimensionDescription(trait.name),
         category: trait.category === DIMENSION_CATEGORY.ADDITIONAL ? "Parametro aggiuntivo" : "Tratto",
-        score: trait.score,
-        chartScore: value,
+        score: normalizedScore,
+        chartScore: normalizedScore,
         evoGuide,
         truthfulness,
-        writingGuidance: scoreGuidanceForPrompt(trait.score),
+        writingGuidance: scoreGuidanceForChartValue(normalizedScore),
         questionCount: trait.questionCount || (Array.isArray(trait.answers) ? trait.answers.length : undefined)
       };
     });
@@ -1925,30 +1925,34 @@ function findDimensionByDisplayName(dimensions, name) {
   }) || null;
 }
 
-function scoreGuidanceForPrompt(score) {
-  const value = chartScore(score);
+function scoreGuidanceForChartValue(value) {
+  const safeValue = Math.max(-100, Math.min(100, Number(value || 0)));
 
-  if (value >= 70) {
+  if (safeValue >= 70) {
     return "70-100: tratto dominante e molto marcato. L'analisi deve descrivere una forte manifestazione del tratto e, con tono prudente, indicare che valori cosÃ¬ elevati possono anche riflettere una risposta molto controllata o socialmente desiderabile. Non insinuare falsitÃ  o scarsa sinceritÃ ; scrivi che la continuitÃ  del comportamento va verificata nella pratica. I consigli devono essere di valorizzazione e verifica concreta, non correttivi.";
   }
 
-  if (value >= 51) {
+  if (safeValue >= 51) {
     return "51-69: tratto solido e produttivo. L'analisi deve descrivere una manifestazione stabile, utile nel lavoro quotidiano, senza introdurre criticitÃ  opposte al punteggio. I consigli devono valorizzare e consolidare il tratto.";
   }
 
-  if (value >= 31) {
+  if (safeValue >= 31) {
     return "31-50: tratto adeguato. L'analisi deve descrivere una base presente ma non dominante, con eventuale discontinuitÃ  leggera. I consigli devono aiutare a consolidare il comportamento, senza drammatizzare.";
   }
 
-  if (value >= 0) {
+  if (safeValue >= 0) {
     return "0-30: tratto migliorabile. L'analisi deve descrivere fragilitÃ  o presenza discontinua del tratto, con esempi concreti nel lavoro. I consigli devono essere di supporto, chiarimento e allenamento operativo.";
   }
 
-  if (value >= -30) {
+  if (safeValue >= -30) {
     return "-30-0: tratto in difficoltÃ . L'analisi deve descrivere una difficoltÃ  concreta che puÃ² emergere nel lavoro quotidiano, con impatto operativo o relazionale. I consigli devono essere di presidio, affiancamento e controllo semplice.";
   }
 
   return "-100--31: profonda difficoltÃ  da approfondire. L'analisi deve descrivere una criticitÃ  importante da verificare con attenzione, senza toni clinici o giudicanti. I consigli devono essere prudenti, orientati a osservazione, affiancamento e verifica sul campo.";
+}
+
+function scoreGuidanceForPrompt(score) {
+  return scoreGuidanceForChartValue(chartScore(score));
 }
 
 function dimensionByName(dimensions, name) {
@@ -3910,11 +3914,11 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       });
     }
 
-    const value = chartScore(dimension?.score ?? 0);
+    const normalizedScore = chartScore(dimension?.score ?? 0);
     const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
     const truthfulness = isAttendibilita
-      ? truthfulnessStatusFromScore(value)
+      ? truthfulnessStatusFromScore(normalizedScore)
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
@@ -3985,8 +3989,8 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       name: canonicalName,
       displayName,
       description,
-      chartScore: value,
-      score: dimension?.score ?? 0,
+      chartScore: normalizedScore,
+      score: normalizedScore,
       showRemedies: true,
       showSkillAction: !directionalExecutive,
       expandedText,
