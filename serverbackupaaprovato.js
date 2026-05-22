@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import zlib from "zlib";
@@ -178,6 +178,8 @@ function normalizePdfVisibleText(text) {
   // Correzione SOLO VISIVA per rendering PDF/Word: non va usata su nomi interni,
   // mapping, scoring, filtri o JSON salvati. Serve solo a ripulire output già calcolato.
   return normalizeBrokenUtf8(text)
+    .replace(/Affidabilità \+ autodisciplina/g, "Autodisciplina / affidabilità")
+    .replace(/AffidabilitÃ  \+ autodisciplina/g, "Autodisciplina / affidabilità")
     .replace(/ResponsabilitÃ\b/g, "Responsabilità")
     .replace(/ResponsabilitÃ\s/g, "Responsabilità ")
     .replace(/ResponsabilitÃ$/g, "Responsabilità")
@@ -536,7 +538,7 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
+  "AffidabilitÃ  + autodisciplina": "Autodisciplina / affidabilità",
   "Stress": "Gestione pressioni / Stress",
   "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
@@ -581,8 +583,14 @@ const ZPI_EVO_TRAIT_GUIDE = {
 };
 
 function evoGuideForDimension(name, score) {
-  const displayName = displayDimensionName(name);
-  const guide = ZPI_EVO_TRAIT_GUIDE[displayName];
+  const canonicalName = normalizeDimensionNameForDisplay(name);
+  const displayName = displayDimensionName(canonicalName);
+  const legacyName = normalizeBrokenUtf8(canonicalName);
+  const guide =
+    ZPI_EVO_TRAIT_GUIDE[displayName] ||
+    ZPI_EVO_TRAIT_GUIDE[legacyName] ||
+    (displayName === "Autodisciplina / affidabilità" ? ZPI_EVO_TRAIT_GUIDE["Affidabilità"] : null) ||
+    (displayName === "Gestione pressioni / Stress" ? ZPI_EVO_TRAIT_GUIDE["Gestione pressioni / Stress"] : null);
   if (!guide) return null;
   const value = chartScore(score);
   const band = guide.bands.find((item) => value >= item.min) || guide.bands[guide.bands.length - 1];
@@ -616,8 +624,39 @@ function displayDimensionName(name) {
 }
 
 function dimensionDescription(name) {
-  const displayName = displayDimensionName(name);
-  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
+  const rawName = String(name || "").trim();
+  const canonicalName = normalizeDimensionNameForDisplay(rawName);
+  const utfCanonicalName = normalizeBrokenUtf8(canonicalName);
+  const displayName = displayDimensionName(canonicalName);
+
+  const candidates = [
+    rawName,
+    normalizeBrokenUtf8(rawName),
+    canonicalName,
+    utfCanonicalName,
+    displayName,
+    normalizeBrokenUtf8(displayName)
+  ].filter(Boolean);
+
+  for (const candidate of candidates) {
+    if (DIMENSION_DESCRIPTIONS[candidate]) {
+      return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[candidate]);
+    }
+  }
+
+  const candidateKeys = new Set(candidates.map((candidate) => dimensionAliasKey(candidate)));
+  const matchingEntry = Object.entries(DIMENSION_DESCRIPTIONS).find(([key]) => {
+    const keyAliases = [
+      key,
+      normalizeBrokenUtf8(key),
+      displayDimensionName(key),
+      normalizeDimensionNameForDisplay(key)
+    ].map((value) => dimensionAliasKey(value));
+
+    return keyAliases.some((keyAlias) => candidateKeys.has(keyAlias));
+  });
+
+  return normalizeBrokenUtf8(matchingEntry?.[1] || "");
 }
 
 function withDisplayMeta(item) {
@@ -631,8 +670,25 @@ function withDisplayMeta(item) {
 }
 
 function normalizeDimensionDefinitions(originalTrait) {
-  return DIMENSION_DEFINITIONS[originalTrait] || [
-    { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
+  const rawTrait = String(originalTrait || "").trim();
+  const repairedTrait = normalizeBrokenUtf8(rawTrait);
+  const rawKey = dimensionAliasKey(rawTrait);
+  const repairedKey = dimensionAliasKey(repairedTrait);
+
+  const matchingDefinitionKey = Object.keys(DIMENSION_DEFINITIONS).find((key) => {
+    const definitionKey = dimensionAliasKey(key);
+    return definitionKey === rawKey || definitionKey === repairedKey;
+  });
+
+  const definitions =
+    DIMENSION_DEFINITIONS[rawTrait] ||
+    DIMENSION_DEFINITIONS[repairedTrait] ||
+    (matchingDefinitionKey ? DIMENSION_DEFINITIONS[matchingDefinitionKey] : null);
+
+  if (definitions) return definitions;
+
+  return [
+    { name: normalizeDimensionNameForDisplay(rawTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
   ];
 }
 
@@ -894,14 +950,14 @@ function roleFitLabel(score) {
 function calculateRoleFit(dimensions, requestedRole) {
   const roleKey = normalizeRoleKey(requestedRole);
   const weights = ROLE_FIT_WEIGHTS[roleKey] || ROLE_FIT_WEIGHTS.altro;
-  const byName = new Map((Array.isArray(dimensions) ? dimensions : []).map((item) => [item.name, item]));
+  const byName = new Map((Array.isArray(dimensions) ? dimensions : []).map((item) => [normalizeDimensionNameForDisplay(item.name), item]));
 
   let weightedTotal = 0;
   let weightTotal = 0;
   const details = [];
 
   Object.entries(weights).forEach(([name, weight]) => {
-    const dimension = byName.get(name);
+    const dimension = byName.get(normalizeDimensionNameForDisplay(name));
     if (!dimension) return;
 
     const score = scoreToPercent(dimension.score);
@@ -1073,6 +1129,45 @@ function collectAnswers(body, assessmentType = "zpi_hr") {
   );
 }
 
+
+function dimensionsForScoredQuestion(question, assessmentType = "zpi_hr", sourceTrait = "") {
+  if (assessmentType === "sport_performance") {
+    return [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }];
+  }
+
+  const sourceKey = dimensionAliasKey(sourceTrait);
+
+  // Patch chirurgica ZPI: il questionario reale usa spesso la sorgente unica
+  // "Empatia e collaborazione". Qui la separiamo SOLO nello scoring runtime:
+  // - Ascolto attivo = ascolto cognitivo, punti di vista, intenzioni, feedback, sospensione del giudizio;
+  // - Comprensione = componente empatica, emotiva e relazionale;
+  // - Cooperazione = parametro aggiuntivo collegato alla stessa area relazionale.
+  // Non modifica scoreAnswer, chartScore, canonical aliases, mergeDimensionList, DB o renderer PDF.
+  if (sourceKey === "empatia e collaborazione") {
+    const tags = Array.isArray(question?.tags)
+      ? question.tags.map((tag) => dimensionAliasKey(tag))
+      : [];
+    const textKey = dimensionAliasKey(question?.text || "");
+
+    const isActiveListeningItem =
+      tags.includes("criticita relazionale") ||
+      /punti di vista|intenzion|obiettiv|desidera comunicarmi|imparzial|pregiudiz|giudiz|feedback|carattere difficile|approccio.*persone.*difficili|comprendere.*motivazion|comprendere.*punti/.test(textKey);
+
+    return [
+      {
+        name: isActiveListeningItem ? "Ascolto attivo" : "Comprensione",
+        category: DIMENSION_CATEGORY.TRAIT
+      },
+      {
+        name: "Cooperazione",
+        category: DIMENSION_CATEGORY.ADDITIONAL
+      }
+    ];
+  }
+
+  return normalizeDimensionDefinitions(sourceTrait);
+}
+
 function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
   const groups = new Map();
   const config = getAssessmentConfig(assessmentType);
@@ -1084,9 +1179,7 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
 
     const sourceTrait = question.trait || "Comportamento generale";
     const value = scoreAnswer(answer, question.reverse, question);
-    const dimensions = assessmentType === "sport_performance"
-      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
-      : normalizeDimensionDefinitions(sourceTrait);
+    const dimensions = dimensionsForScoredQuestion(question, assessmentType, sourceTrait);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -1402,7 +1495,7 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = displayDimensionName(normalizeDimensionNameForDisplay(trait.name)) === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
@@ -1537,6 +1630,14 @@ ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
+REGOLA OBBLIGATORIA DI COMPLETEZZA DEI TRATTI
+- Devi restituire SEMPRE una voce nell'array traits per OGNI elemento ricevuto in TRATTI E PARAMETRI VALUTATI.
+- Non saltare mai tratti o parametri con punteggio basso, neutro, zero o apparentemente poco informativo.
+- Ogni name restituito in traits deve corrispondere esattamente a uno dei name ricevuti nel JSON TRATTI E PARAMETRI VALUTATI.
+- L'array traits della risposta deve avere lo stesso numero di elementi del JSON TRATTI E PARAMETRI VALUTATI.
+- Se manca anche un solo tratto o parametro, la risposta è errata.
+- Anche per punteggi pari a zero devi scrivere una vera analisi comportamentale coerente con writingGuidance, non un testo generico o placeholder.
+
 MAPPATURA EVO E PARAMETRIZZAZIONE
 - Sicurezza deve essere interpretata come Convinzioni: non Ã¨ semplice autostima, ma modo in cui la persona costruisce, difende o mette in discussione le proprie idee.
 - Se Sicurezza Ã¨ alta, valuta il rischio di rigiditÃ , punto di osservazione troppo distante o sicurezza teorica, soprattutto se Ã¨ presente Profilo teorico.
@@ -1616,6 +1717,7 @@ IMPORTANTE
 - Non usare espressioni come â€œKPIâ€, â€œstakeholderâ€, â€œperformance reviewâ€, â€œcoachingâ€, â€œdebriefingâ€, salvo tradurle in parole semplici.
 - Non aggiungere tratti duplicati, tratti di controllo o sezioni placeholder.
 - Non scrivere mai REPEAT_PLACEHOLDER o testi provvisori.
+- Non usare mai testi generici come "Questo indicatore va letto come una traccia operativa da verificare..." al posto dell'analisi del tratto.
 `;
 
   console.log("[EXPANDED] OpenAI call start", {
@@ -1858,7 +1960,7 @@ function theoreticalSecuritySignal(dimensions = [], reliabilityFlags = []) {
 
 function shouldAddResponsibilityOpinionNote(normalized) {
   const dimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
-  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "ResponsabilitÃ " || item?.name === "ResponsabilitÃ ");
+  const responsibility = dimensions.find((item) => displayDimensionName(item?.name) === "Responsabilità" || normalizeDimensionNameForDisplay(item?.name) === "ResponsabilitÃ ");
   if (!responsibility) return false;
 
   const value = chartScore(responsibility.score);
@@ -1873,17 +1975,21 @@ function stripLeadingTruthfulnessStatus(text) {
   let value = String(text || "").trim();
 
   // Evita duplicazioni tipo:
-  // "AttendibilitÃ  SÃ¬: ... AttendibilitÃ  SÃ¬. Le risposte ..."
-  // L'AI puÃ² usare due formati:
-  // - AttendibilitÃ  SÃŒ: testo...
-  // - AttendibilitÃ  SÃ¬. Le risposte...
-  // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
-  // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
-  const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+  // "Attendibilità FORZATA: ... Attendibilità S. Le risposte ..."
+  // Noi aggiungiamo già il prefisso ufficiale da codice, quindi rimuoviamo
+  // qualunque prefisso Attendibilità generato dall'AI all'inizio del testo.
+  const truthfulnessStartPattern =
+    /^Attendibilit(?:à|a|Ã |Ã)?\s+(SÌ|SÍ|SÃŒ|SI|Sì|SÃ¬|S|FORZATA|NO)\s*[:.]\s*/i;
 
-  while (truthfulnessPattern.test(value)) {
-    value = value.replace(truthfulnessPattern, "").trim();
+  while (truthfulnessStartPattern.test(value)) {
+    value = value.replace(truthfulnessStartPattern, "").trim();
+
+    // Dopo il prefisso AI, spesso arriva una frase standard tipo
+    // "Le risposte..." o "Il profilo..."; la rimuoviamo perché il testo ufficiale
+    // viene già aggiunto da truthfulnessStatusFromScore().
+    value = value
+      .replace(/^(?:le\s+risposte|il\s+profilo|l[’']analisi|il\s+questionario)\b[^.!?]*[.!?]\s*/i, "")
+      .trim();
   }
 
   return value;
@@ -2077,11 +2183,75 @@ function drawAdditionalParameterBars(doc, parameters) {
   doc.fillColor("black");
 }
 
+function dimensionAliasKey(name) {
+  return normalizeBrokenUtf8(String(name || ""))
+    .replace(/gesti[Ãòó]ne/gi, "gestione")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’'`´]/g, "")
+    .replace(/[^a-z0-9]+/gi, " ")
+    .trim()
+    .toLowerCase();
+}
+
+const CANONICAL_DIMENSION_ALIASES = new Map([
+  ["organizzazione", "Organizzazione e pianificazione"],
+  ["organizzazione e pianificazione", "Organizzazione e pianificazione"],
+  ["automotivazione", "Automotivazione"],
+
+  // Chiave interna storica: NON usare la label visibile per scoring/mapping.
+  ["autodisciplina affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["autodisciplina affidabilit", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilita", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilit", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilita autodisciplina", "AffidabilitÃ  + autodisciplina"],
+  ["affidabilita e autodisciplina", "AffidabilitÃ  + autodisciplina"],
+
+  ["sicurezza", "Sicurezza"],
+  ["stress", "Stress"],
+  ["gestione pressioni", "Stress"],
+  ["gestione pressioni stress", "Stress"],
+
+  ["dinamismo", "Dinamismo"],
+  ["flessibilita comunicativa", "FlessibilitÃ  comunicativa"],
+  ["responsabilita", "ResponsabilitÃ "],
+  ["ascolto attivo", "Ascolto attivo"],
+  ["comprensione", "Comprensione"],
+  ["espansivita", "EspansivitÃ "],
+
+  ["resistenza al cambiamento", "Resistenza al cambiamento"],
+  ["leadership naturale", "Leadership naturale"],
+  ["management", "Management"],
+  ["cooperazione", "Cooperazione"],
+  ["principi", "Principi"],
+  ["vendite", "Vendite"],
+  ["gestione priorita", "Gestione prioritÃ "],
+  ["capacita di gestione finanziaria", "CapacitÃ  di gestione finanziaria"],
+  ["capacita di gestione finanziaria", "CapacitÃ  di gestione finanziaria"],
+  ["attendibilita", "AttendibilitÃ "],
+
+  // Alias legacy/cliente.
+  ["attuabilita", "AttendibilitÃ "],
+  ["emotiva", "Cooperazione"]
+]);
+
 function normalizeDimensionNameForDisplay(name) {
-  const value = String(name || "").trim();
-  if (value === "AttuabilitÃ ") return "AttendibilitÃ ";
-  if (value === "Emotiva") return "Cooperazione";
-  return value;
+  const rawValue = String(name || "").trim();
+  const repairedValue = normalizeBrokenUtf8(rawValue)
+    .replace(/gestiÃ³ne/gi, "gestione")
+    .replace(/gestiÃ²ne/gi, "gestione")
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione")
+    .trim();
+
+  const repairedKey = dimensionAliasKey(repairedValue);
+  const rawKey = dimensionAliasKey(rawValue);
+
+  return (
+    CANONICAL_DIMENSION_ALIASES.get(repairedKey) ||
+    CANONICAL_DIMENSION_ALIASES.get(rawKey) ||
+    rawValue
+  );
 }
 
 function mergeDimensionList(list = []) {
@@ -2141,38 +2311,27 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
     .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
 
-  const assessmentType = payload.assessmentType || "zpi_hr";
-  const isSportAssessment = assessmentType === "sport_performance";
+  const fullMainTraits = TRAIT_DIMENSIONS.map((name) => {
+    return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
+      name,
+      category: DIMENSION_CATEGORY.TRAIT,
+      score: 0,
+      range: range(0),
+      questionCount: 0,
+      items: []
+    };
+  });
 
-  // ZPI usa una griglia fissa di tratti/parametri per mantenere sempre lo stesso istogramma.
-  // Human & Sport Performance ha tratti propri: NON va forzato dentro la griglia ZPI,
-  // altrimenti quasi tutti i valori finiscono a fallback 0 nel PDF.
-  // Patch isolata: non tocca scoring, mapping ZPI, chartScore, DB o AI.
-  const fullMainTraits = isSportAssessment
-    ? mainTraits
-    : TRAIT_DIMENSIONS.map((name) => {
-        return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
-          name,
-          category: DIMENSION_CATEGORY.TRAIT,
-          score: 0,
-          range: range(0),
-          questionCount: 0,
-          items: []
-        };
-      });
-
-  const fullAdditionalParameters = isSportAssessment
-    ? additionalParameters
-    : ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => {
-        return additionalParameters.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
-          name,
-          category: DIMENSION_CATEGORY.ADDITIONAL,
-          score: 0,
-          range: range(0),
-          questionCount: 0,
-          items: []
-        };
-      });
+  const fullAdditionalParameters = ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => {
+    return additionalParameters.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
+      name,
+      category: DIMENSION_CATEGORY.ADDITIONAL,
+      score: 0,
+      range: range(0),
+      questionCount: 0,
+      items: []
+    };
+  });
 
   const fullTraits = [...fullMainTraits, ...fullAdditionalParameters];
 
@@ -3198,18 +3357,18 @@ function extractValidatedWordPlainText(revision) {
   try {
     if (fileName.endsWith(".docx") || buffer.slice(0, 2).toString("utf8") === "PK") {
       const text = extractDocxPlainText(buffer);
-      if (text) return cleanValidatedReportPlainText(text);
+      if (text) return text;
     }
 
     const utf8Text = buffer.toString("utf8");
 
     if (/<html|<body|<p|<h1|<h2/i.test(utf8Text)) {
-      return cleanValidatedReportPlainText(htmlToPlainText(utf8Text));
+      return htmlToPlainText(utf8Text);
     }
 
     const latinText = buffer.toString("latin1");
     if (/<html|<body|<p|<h1|<h2/i.test(latinText)) {
-      return cleanValidatedReportPlainText(htmlToPlainText(latinText));
+      return htmlToPlainText(latinText);
     }
 
     return "";
@@ -3379,38 +3538,7 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
 
   res.setHeader("Content-Type", "application/msword; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename=report-${assessment.id}.doc`);
-  res.send(normalizePdfVisibleText(html));
-});
-
-
-app.post("/admin/:id/validate-ai", requireAdmin, requireSuperAdmin, async (req, res) => {
-  try {
-    const assessment = await prisma.assessment.findFirst({
-      where: {
-        id: req.params.id,
-        organizationId: req.session.admin.organizationId
-      },
-      include: { result: true }
-    });
-
-    if (!assessment || !assessment.result) {
-      return res.status(404).send("Assessment non trovato");
-    }
-
-    await prisma.assessmentResult.update({
-      where: { id: assessment.result.id },
-      data: {
-        isValidated: true,
-        validatedAt: new Date(),
-        validatedById: req.session.admin.id
-      }
-    });
-
-    return res.redirect(`/admin/${assessment.id}`);
-  } catch (error) {
-    console.error("Errore validazione relazione AI:", error);
-    return res.status(500).send("Errore durante la validazione della relazione AI.");
-  }
+  res.send(html);
 });
 
 app.post("/admin/:id/upload-validated-report", requireAdmin, requireSuperAdmin, async (req, res) => {
@@ -3631,9 +3759,31 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const aiTraits = Array.isArray(expandedReportJson.traits) ? expandedReportJson.traits : [];
 
   const aiTraitByName = new Map();
+
+  function addAiTraitAlias(name, trait) {
+    const key = String(name || "").trim();
+    if (key && !aiTraitByName.has(key)) aiTraitByName.set(key, trait);
+  }
+
   aiTraits.forEach((trait) => {
     const canonical = normalizeDimensionNameForDisplay(normalizeTraitName(trait?.canonicalName || trait?.name));
-    if (canonical && !aiTraitByName.has(canonical)) aiTraitByName.set(canonical, trait);
+    const utfCanonical = normalizeBrokenUtf8(canonical);
+    const visibleName = displayDimensionName(canonical);
+
+    addAiTraitAlias(canonical, trait);
+    addAiTraitAlias(utfCanonical, trait);
+    addAiTraitAlias(visibleName, trait);
+
+    // Alias chirurgici SOLO per il lookup del testo AI.
+    // Non modificano nomi interni, scoring, mapping, DB o JSON salvati.
+    if (/attendibilit|attendibilitÃ|truthfulness|reliability/i.test(String(canonical || "")) || visibleName === "Attendibilità") {
+      addAiTraitAlias("Attendibilità", trait);
+      addAiTraitAlias("Attendibilita", trait);
+      addAiTraitAlias("AttendibilitÃ ", trait);
+      addAiTraitAlias("AttendibilitÃ", trait);
+      addAiTraitAlias("reliability", trait);
+      addAiTraitAlias("truthfulness", trait);
+    }
   });
 
   const allApprovedDimensions = [
@@ -3643,13 +3793,40 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const traits = allApprovedDimensions.map((dimension) => {
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
+    const utfCanonicalName = normalizeBrokenUtf8(canonicalName);
     const displayName = displayDimensionName(canonicalName);
-    const aiTrait = aiTraitByName.get(canonicalName) || {};
+    const isAttendibilita = displayName === "Attendibilità" || utfCanonicalName === "Attendibilità" || canonicalName === "AttendibilitÃ ";
+
+    // Fallback chirurgico UTF-safe SOLO per il lookup del testo AI.
+    // Non modifica nomi interni, scoring, mapping, DB o JSON salvati.
+    const aiTrait =
+      aiTraitByName.get(canonicalName) ||
+      aiTraitByName.get(utfCanonicalName) ||
+      aiTraitByName.get(displayName) ||
+      (isAttendibilita ? aiTraitByName.get("Attendibilità") : null) ||
+      {};
+
+    if (["Gestione priorità", "Capacità di gestione finanziaria", "Attendibilità"].includes(displayName)) {
+      console.log("[ZPI TRAIT MATCH DEBUG]", {
+        canonicalName,
+        utfCanonicalName,
+        displayName,
+        aiTraitFound: !!aiTrait.expandedText,
+        aiTraitExpandedTextPreview: aiTrait?.expandedText ? String(aiTrait.expandedText).slice(0, 180) : null,
+        availableAiTraitNames: Array.from(aiTraitByName.keys())
+      });
+    }
+
+    const lookupName =
+      displayName === "Autodisciplina / affidabilità"
+        ? "Affidabilità + autodisciplina"
+        : canonicalName;
+
     const value = chartScore(dimension?.score ?? 0);
-    const description = dimensionDescription(canonicalName);
-    const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
-    const truthfulness = canonicalName === "Attendibilità"
-      ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) })
+    const description = dimensionDescription(lookupName);
+    const evoGuide = evoGuideForDimension(lookupName, dimension?.score ?? 0);
+    const truthfulness = isAttendibilita
+      ? truthfulnessStatusFromScore(value)
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
@@ -3658,7 +3835,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     );
 
     if (!expandedText) {
-      if (canonicalName === "Attendibilità" && truthfulness) {
+      if (isAttendibilita && truthfulness) {
         expandedText = `${truthfulness.label}: ${truthfulness.text}`;
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
         expandedText = "Possono essere presenti fonti di pressione, distrazione o preoccupazione che influenzano il modo di lavorare. Questo dato va letto con esempi concreti: quali situazioni generano tensione, come vengono gestite le urgenze e quanto l’ambiente aiuta o ostacola la continuità operativa.";
@@ -3669,7 +3846,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (canonicalName === "Attendibilità") {
+    if (isAttendibilita) {
       const statusText = `${truthfulness.label}: ${truthfulness.text}`;
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
@@ -3780,96 +3957,6 @@ function writeParagraphs(doc, text) {
     });
 }
 
-
-function cleanValidatedReportPlainText(text) {
-  return normalizePdfVisibleText(normalizeBrokenUtf8(text))
-    .replace(/Lattendibilità/g, "L’attendibilità")
-    .replace(/lapertura/g, "l’apertura")
-    .replace(/Lassetto/g, "L’assetto")
-    .replace(/Latteggiamento/g, "L’atteggiamento")
-    .replace(/lefficienza/g, "l’efficienza")
-    .replace(/limplementazione/g, "l’implementazione")
-    .replace(/dilogistica/gi, "di logistica")
-    .replace(/trattto/gi, "tratto")
-    .replace(/trattò/gi, "tratto")
-    .replace(/dominance/gi, "dominante")
-    .replace(/poich/gi, "poiché")
-    .replace(/criticit/gi, "criticità")
-    .replace(/realt/gi, "realtà")
-    .replace(/veridicit/gi, "veridicità")
-    .replace(/influenzabilit/gi, "influenzabilità")
-    .replace(/proattivit/gi, "proattività")
-    .replace(/reattivit/gi, "reattività")
-    .replace(/stabilit/gi, "stabilità")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
-function isValidatedReportHeading(line) {
-  const value = normalizePdfVisibleText(line).trim();
-  if (!value || value.length > 90) return false;
-
-  const knownHeadings = new Set([
-    "Human & Sport Performance",
-    "ZPI™ – Zenith Performance Index",
-    "Dati anagrafici",
-    "Relazione generale",
-    "Approfondimento dei tratti",
-    ...TRAIT_DIMENSIONS.map((name) => displayDimensionName(name)),
-    ...ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => displayDimensionName(name))
-  ]);
-
-  if (knownHeadings.has(value)) return true;
-
-  return /^(Organizzazione|Automotivazione|Autodisciplina|Affidabilità|Sicurezza|Gestione pressioni|Stress|Dinamismo|Flessibilità|Responsabilità|Ascolto attivo|Comprensione|Espansività|Resistenza al cambiamento|Leadership naturale|Management|Cooperazione|Principi|Vendite|Gestione priorità|Capacità di gestione finanziaria|Attendibilità)$/i.test(value);
-}
-
-function writeValidatedReportText(doc, text) {
-  const normalizedText = cleanValidatedReportPlainText(text);
-  const blocks = String(normalizedText || "-")
-    .split(/\n\s*\n/g)
-    .map((part) => part.trim())
-    .filter(Boolean);
-
-  blocks.forEach((block) => {
-    const oneLine = block.replace(/\s+/g, " ").trim();
-
-    if (isValidatedReportHeading(oneLine)) {
-      doc.moveDown(0.2);
-      doc.font("Helvetica-Bold").fontSize(14).fillColor("black").text(oneLine, {
-        align: "left",
-        lineGap: 3
-      });
-      doc.font("Helvetica").moveDown(0.35);
-      return;
-    }
-
-    const labelMatch = oneLine.match(/^(Rimedi pratici|Come gestirlo nella pratica|Nome|Email|Età|Azienda risorsa|Ruolo target|Data compilazione):\s*(.*)$/i);
-    if (labelMatch) {
-      doc.font("Helvetica-Bold").fontSize(11).fillColor("black").text(`${labelMatch[1]}: `, {
-        continued: !!labelMatch[2],
-        align: "left",
-        lineGap: 3
-      });
-      if (labelMatch[2]) {
-        doc.font("Helvetica").fontSize(11).text(labelMatch[2], {
-          align: "left",
-          lineGap: 3
-        });
-      }
-      doc.font("Helvetica").moveDown(0.55);
-      return;
-    }
-
-    doc.font("Helvetica").fontSize(11).fillColor("black").text(block, {
-      align: "left",
-      lineGap: 3
-    });
-    doc.moveDown(0.6);
-  });
-}
-
-
 app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
@@ -3963,13 +4050,13 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   if (validatedReportText) {
     doc.fontSize(9).fillColor("#2f4b7c").text("Relazione validata da revisione Word caricata.", { align: "left" });
     doc.moveDown(0.5);
-    writeValidatedReportText(doc, validatedReportText);
+    writeParagraphs(doc, validatedReportText);
   } else {
     const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
     writeParagraphs(doc, generalRelation);
   }
 
-  if (roleFit?.score != null) {
+  if (roleFit?.score != null && !isDirectionalExecutiveRole(assessment.requestedRole)) {
     doc.moveDown(0.1);
     doc.fontSize(12).fillColor("black").text(`CompatibilitÃ  con il ruolo ricoperto: ${roleFit.score}%`, {
       align: "left"
@@ -4001,7 +4088,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     if (Array.isArray(expanded.traits)) {
       expanded.traits.forEach((t) => {
         const displayName = displayDimensionName(t.name || "Tratto");
-        const description = dimensionDescription(t.name);
+        const description = t.description || dimensionDescription(t.name || t.displayName);
         doc.fontSize(14).text(displayName);
         if (description) {
           doc.moveDown(0.1);
