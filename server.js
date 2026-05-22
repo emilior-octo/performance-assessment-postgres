@@ -3109,10 +3109,14 @@ function htmlToPlainText(html) {
   return decodeBasicHtmlEntities(String(html || "")
     .replace(/<\s*style[\s\S]*?<\s*\/\s*style\s*>/gi, " ")
     .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, " ")
-    .replace(/<\s*\/\s*(p|div|h1|h2|h3|h4|li|tr)\s*>/gi, "\n\n")
+    .replace(/<\s*(h1|h2|h3|h4)\b[^>]*>/gi, "\n\n")
+    .replace(/<\s*\/\s*(h1|h2|h3|h4)\s*>/gi, "\n\n")
+    .replace(/<\s*(p|div|li|tr)\b[^>]*>/gi, "\n")
+    .replace(/<\s*\/\s*(p|div|li|tr)\s*>/gi, "\n\n")
     .replace(/<\s*br\s*\/?\s*>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
     .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim());
@@ -3744,7 +3748,7 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
   const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
-  const roleFitText = normalized?.roleFit?.score != null
+  const roleFitText = normalized?.roleFit?.score != null && !isDirectionalExecutiveRole(assessment?.requestedRole)
     ? `La compatibilità con il ruolo ricoperto è pari al ${normalized.roleFit.score}%. `
     : "";
   const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
@@ -3801,7 +3805,8 @@ function cleanValidatedReportPlainText(text) {
     .replace(/proattivit/gi, "proattività")
     .replace(/reattivit/gi, "reattività")
     .replace(/stabilit/gi, "stabilità")
-    .replace(/\s{2,}/g, " ")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
@@ -3969,7 +3974,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     writeParagraphs(doc, generalRelation);
   }
 
-  if (roleFit?.score != null) {
+  if (roleFit?.score != null && !isDirectionalExecutiveRole(assessment.requestedRole)) {
     doc.moveDown(0.1);
     doc.fontSize(12).fillColor("black").text(`CompatibilitÃ  con il ruolo ricoperto: ${roleFit.score}%`, {
       align: "left"
