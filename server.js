@@ -243,6 +243,18 @@ function normalizePdfVisibleText(text) {
     .replace(/\battivit(?=\s|$)/g, "attività")
     .replace(/\bcapacit(?=\s|$)/g, "capacità")
     .replace(/\bcompatibilit(?=\s|$)/g, "compatibilità")
+    .replace(/\boperativit(?=[:;,.!?\s]|$)/gi, "operatività")
+    .replace(/\bproduttivit(?=[:;,.!?\s]|$)/gi, "produttività")
+    .replace(/\bcontinuit(?=[:;,.!?\s]|$)/gi, "continuità")
+    .replace(/\bresponsabilit(?=[:;,.!?\s]|$)/gi, "responsabilità")
+    .replace(/\bpriorit(?=[:;,.!?\s]|$)/gi, "priorità")
+    .replace(/\battivit(?=[:;,.!?\s]|$)/gi, "attività")
+    .replace(/\bcapacit(?=[:;,.!?\s]|$)/gi, "capacità")
+    .replace(/\bpi(?=\s+(efficac|util|chiar|concret|solid|stabil|marcat|facil|strutturat|fort|rapid|compless|profond|vicin|amp|adatt|coerent|puntual|frequent|semplic|specific|motivanti|decis|produttiv|visibil)\w*\b)/gi, "più")
+    .replace(/\bpu(?=\s+(essere|avere|risultare|dare|emergere|accettare|invece|percepire|mostrare|rendere|creare|succedere|portare|aiutare|diventare|funzionare|tradursi|richiedere|sostenere|modificare|generare|appoggiarsi|subire|fare|restare|variare|riuscire|preferire|mettere|vivere|accogliere|cercare|mantenere|apparire|offrire|produrre|facilitare|riflettere|indicare|rappresentare|rivelare|dipendere|servire|favorire|rivedere|incidere|limitare|mostrarsi|tradurre|contribuire|sostenere|perdere|gestire|aiutare|diventare|richiedere)\b)/gi, "può")
+    .replace(/\bgi(?=\s+(conosciut|present|chiar|vist|fatt|stat|matur|consolidat|format|emers|attiv|avviat|definit)\w*\b)/gi, "già")
+    .replace(/(^|\n)(\s*)Attendibilità\s+(S[IÌ]|FORZATA|NO)\s*[.:]/g, "$1$2Attendibilità: $3.")
+    .replace(/(^|\n)(\s*)Attendibilit[aà]\s+(S[IÌ]|FORZATA|NO)\s*[.:]/gi, "$1$2Attendibilità: $3.")
     .replace(/\bEt(?=:|\s|$)/g, "Età")
     .replace(/[\u0018\u0019]/g, "’");
 }
@@ -598,9 +610,9 @@ function evoGuideForDimension(name, score) {
 
 function truthfulnessStatusFromScore(score) {
   const value = Number(score || 0);
-  if (value >= 50) return { label: "AttendibilitÃ  SÃŒ", text: "le risposte risultano complessivamente coerenti e il profilo puÃ² essere letto con buona fiducia, pur restando da confrontare con colloquio e osservazione concreta." };
-  if (value >= 30) return { label: "AttendibilitÃ  FORZATA", text: "le risposte appaiono parzialmente controllate o orientate a presentarsi in modo favorevole; il profilo va letto con prudenza e verificato con esempi reali." };
-  return { label: "AttendibilitÃ  NO", text: "le risposte non offrono una base sufficientemente coerente; la relazione va considerata indicativa e richiede approfondimento diretto prima di trarre conclusioni operative." };
+  if (value >= 50) return { label: "Attendibilità: SÌ", text: "le risposte risultano complessivamente coerenti e il profilo puÃ² essere letto con buona fiducia, pur restando da confrontare con colloquio e osservazione concreta." };
+  if (value >= 30) return { label: "Attendibilità: FORZATA", text: "le risposte appaiono parzialmente controllate o orientate a presentarsi in modo favorevole; il profilo va letto con prudenza e verificato con esempi reali." };
+  return { label: "Attendibilità: NO", text: "le risposte non offrono una base sufficientemente coerente; la relazione va considerata indicativa e richiede approfondimento diretto prima di trarre conclusioni operative." };
 }
 
 function stripForbiddenGeneralRelationPhrases(text) {
@@ -1950,7 +1962,7 @@ function stripLeadingTruthfulnessStatus(text) {
   // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
   // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
   const truthfulnessPattern =
-    /^Attendibilit(?:à|Ã )\s+(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilit(?:à|Ã )\s+(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+    /^Attendibilit(?:à|Ã )\s*:?[\s]*(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilit(?:à|Ã )\s*:?[\s]*(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -3940,7 +3952,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
     if (!expandedText) {
       if (displayName === "Attendibilità" && truthfulness) {
-        expandedText = `${truthfulness.label}: ${truthfulness.text}`;
+        expandedText = `${truthfulness.label}. ${truthfulness.text}`;
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
         expandedText = stressFallbackExpandedText(value);
       } else if (evoGuide?.interpretation) {
@@ -3951,7 +3963,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     }
 
     if (displayName === "Attendibilità") {
-      const statusText = `${truthfulness.label}: ${truthfulness.text}`;
+      const statusText = `${truthfulness.label}. ${truthfulness.text}`;
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
       expandedText = stripLeadingTruthfulnessStatus(expandedText);
