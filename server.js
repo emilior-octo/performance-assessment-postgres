@@ -2931,15 +2931,125 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
     const sourcePayload = source.result.traitsJson || {};
     const assessmentType = sourcePayload.assessmentType || source.assessmentType || getLinkAssessmentType(source.assessmentLink);
     const answers = source.result.answersJson || {};
-    const traits = buildTraitsFromAnswers(answers, assessmentType);
-    const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
-    const avgScore = avg(mainTraits.map((t) => t.score));
-    const avgRange = range(avgScore);
     const requestedRole = source.requestedRole || source.assessmentLink?.requestedRole || "non_specificato";
-    const summary = buildSummary(traits, requestedRole);
-    const roleFit = calculateRoleFit(traits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits, roleFit });
-    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+
+    // IMPORTANTE:
+    // la duplicazione serve per test/debug di assessment già salvati.
+    // Non deve ricalcolare i tratti dalle risposte con il questions.js corrente,
+    // perché se il mapping domande/dimensioni è stato evoluto nel tempo si rischia
+    // di alterare punteggi storici già corretti (es. Affidabilità + autodisciplina
+    // o Resistenza al cambiamento che possono finire a 0).
+    //
+    // Quindi, quando il risultato sorgente contiene già traitsJson valido,
+    // cloniamo il payload numerico salvato e lo usiamo come fonte di verità.
+    // Il ricalcolo resta solo come fallback per vecchi record privi di traitsJson.
+    const hasStoredTraits = Array.isArray(sourcePayload.traits) && sourcePayload.traits.length > 0;
+
+    let traits;
+    let mainTraits;
+    let additionalParameters;
+    let avgScore;
+    let avgRange;
+    let summary;
+    let roleFit;
+    let managementAdvice;
+    let reliabilityScore;
+    let reliabilityLabel;
+    let reliabilityFlags;
+    let traitsJson;
+
+    if (hasStoredTraits) {
+      traits = sourcePayload.traits || [];
+      const splitStored = splitDimensions(traits);
+
+      mainTraits = Array.isArray(sourcePayload.mainTraits) && sourcePayload.mainTraits.length
+        ? sourcePayload.mainTraits
+        : splitStored.traits;
+
+      additionalParameters = Array.isArray(sourcePayload.additionalParameters) && sourcePayload.additionalParameters.length
+        ? sourcePayload.additionalParameters
+        : splitStored.additionalParameters;
+
+      const normalizedStored = getNormalizedAnalysis(
+        {
+          ...sourcePayload,
+          assessmentType,
+          traits,
+          mainTraits,
+          additionalParameters
+        },
+        requestedRole
+      );
+
+      roleFit = sourcePayload.roleFit || normalizedStored.roleFit || calculateRoleFit(traits, requestedRole);
+      managementAdvice = sourcePayload.managementAdvice || normalizedStored.managementAdvice || buildManagementAdvice({ traits, roleFit });
+
+      const fallbackSummary = buildSummary(traits, requestedRole);
+      summary = {
+        orientation: source.result.orientation || fallbackSummary.orientation,
+        roleComment: source.result.roleComment || fallbackSummary.roleComment,
+        topTraits: Array.isArray(sourcePayload.topTraits) ? sourcePayload.topTraits : (normalizedStored.topTraits || fallbackSummary.topTraits),
+        weakTraits: Array.isArray(sourcePayload.weakTraits) ? sourcePayload.weakTraits : (normalizedStored.weakTraits || fallbackSummary.weakTraits)
+      };
+
+      avgScore = typeof source.result.avgScore === "number"
+        ? source.result.avgScore
+        : avg(mainTraits.map((t) => t.score));
+
+      avgRange = source.result.avgRange || range(avgScore);
+
+      reliabilityScore = typeof source.result.reliabilityScore === "number"
+        ? source.result.reliabilityScore
+        : buildReliability(answers, traits).reliabilityScore;
+
+      reliabilityLabel = source.result.reliabilityLabel || reliabilityLabelFromScore(reliabilityScore);
+      reliabilityFlags = Array.isArray(sourcePayload.reliabilityFlags) ? sourcePayload.reliabilityFlags : [];
+
+      traitsJson = {
+        ...sourcePayload,
+        assessmentType,
+        assessmentTitle: sourcePayload.assessmentTitle || getAssessmentConfig(assessmentType).title,
+        traits,
+        mainTraits,
+        additionalParameters,
+        roleFit,
+        managementAdvice,
+        topTraits: summary.topTraits,
+        weakTraits: summary.weakTraits,
+        reliabilityFlags,
+        duplicatedFromAssessmentId: source.id,
+        duplicatedAt: new Date().toISOString()
+      };
+    } else {
+      traits = buildTraitsFromAnswers(answers, assessmentType);
+      const splitRecalculated = splitDimensions(traits);
+      mainTraits = splitRecalculated.traits;
+      additionalParameters = splitRecalculated.additionalParameters;
+      avgScore = avg(mainTraits.map((t) => t.score));
+      avgRange = range(avgScore);
+      summary = buildSummary(traits, requestedRole);
+      roleFit = calculateRoleFit(traits, requestedRole);
+      managementAdvice = buildManagementAdvice({ traits, roleFit });
+      const reliability = buildReliability(answers, traits);
+      reliabilityScore = reliability.reliabilityScore;
+      reliabilityLabel = reliability.reliabilityLabel;
+      reliabilityFlags = reliability.reliabilityFlags;
+
+      traitsJson = {
+        assessmentType,
+        assessmentTitle: getAssessmentConfig(assessmentType).title,
+        traits,
+        mainTraits,
+        additionalParameters,
+        roleFit,
+        managementAdvice,
+        topTraits: summary.topTraits,
+        weakTraits: summary.weakTraits,
+        reliabilityFlags,
+        duplicatedFromAssessmentId: source.id,
+        duplicatedAt: new Date().toISOString()
+      };
+    }
 
     const copiedName = `${source.respondentName || "Anonimo"} - copia test`;
     const copiedCompany = source.candidateCompany
@@ -2968,20 +3078,7 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
         roleComment: summary.roleComment,
         reliabilityScore,
         reliabilityLabel,
-        traitsJson: {
-          assessmentType,
-          assessmentTitle: getAssessmentConfig(assessmentType).title,
-          traits,
-          mainTraits,
-          additionalParameters,
-          roleFit,
-          managementAdvice,
-          topTraits: summary.topTraits,
-          weakTraits: summary.weakTraits,
-          reliabilityFlags,
-          duplicatedFromAssessmentId: source.id,
-          duplicatedAt: new Date().toISOString()
-        },
+        traitsJson,
         answersJson: answers,
         expandedReportJson: null,
         expandedReportGeneratedAt: null,
@@ -2991,6 +3088,8 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
     });
 
     if (req.body.generateAi === "yes") {
+      const normalizedForAi = getNormalizedAnalysis(traitsJson, requestedRole);
+
       startExpandedReportJob({
         assessmentId: duplicated.id,
         companyName: req.session.admin.organizationName,
@@ -3003,7 +3102,7 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
           roleFit,
           managementAdvice
         },
-        traits,
+        traits: normalizedForAi.traits || traits,
         reliabilityScore,
         reliabilityLabel,
         reliabilityFlags,
