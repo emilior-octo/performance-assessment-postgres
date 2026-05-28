@@ -567,30 +567,23 @@ const DIMENSION_DESCRIPTIONS = {
 };
 
 const ZPI_EVO_TRAIT_GUIDE = {
-  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "capacità concreta di programmare il lavoro a breve, mantenere ordine operativo e rispettare consegne e scadenze" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, ma può confondersi o disperdersi quando ci sono molte cose da fare" }, { min: 10, text: "ha bisogno di aiuto per trasformare il lavoro in piani, priorità e programmazione settimanale" }, { min: -10, text: "tendenza a correre dietro alle urgenze senza programmare davvero, con rischio di dispersione" }, { min: -100, text: "forte disorganizzazione operativa e marcata dispersione nella gestione delle attività" }] },
-  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "spinta personale molto elevata, con forte fiducia nelle proprie possibilità; attenzione all’eccesso di considerazione di sé" }, { min: 40, text: "molto motivata e ambiziosa, con buona spinta autonoma verso il risultato" }, { min: 0, text: "riesce ad automotivarsi, ma può avere difficoltà ad accendere o motivare gli altri" }, { min: -30, text: "ha bisogno di motivazione, carica e riconoscimento esterni, soprattutto nei momenti di difficoltà" }, { min: -100, text: "crede poco nelle proprie possibilità e può essersi allontanata da scopi o obiettivi importanti" }] },
-  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile: dà peso alla parola data, mantiene gli accordi e sostiene la continuità esecutiva anche quando costa sacrificio" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere e con uno scambio corretto rispetto al ruolo" }, { min: 20, text: "può non curare fino in fondo alcuni aspetti del ruolo, soprattutto sotto pressione o quando il controllo diminuisce" }, { min: 0, text: "tende a rimandare, tamponare o lasciare attività non completamente gestite; la continuità esecutiva va presidiata" }, { min: -100, text: "può essere produttiva con direttive chiare e controllo costante, ma l’incostanza rischia di lasciare cose non gestite" }] },
+  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico Ã¨ alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro puÃ² non essere organizzato con continuitÃ " }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
+  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacitÃ " }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma puÃ² non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltÃ " }, { min: -100, text: "crede poco in se stessa e puÃ² aver rinunciato a scopi o obiettivi importanti" }] },
+  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dÃ  peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "puÃ² non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attivitÃ  non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuitÃ " }] },
   "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "convinzioni molto radicate: puÃ² avere una visione d'insieme forte, ma rischia di diventare teorica o rigida se non verifica le idee nell'azione" }, { min: 50, text: "convinzioni strutturate e stabili: tende a sostituire se stessa con dati e criteri, ma puÃ² essere poco facile farle cambiare idea" }, { min: 10, text: "mantiene un punto di vista abbastanza stabile, pur potendo metterlo in discussione davanti a dati o alternative migliori" }, { min: -20, text: "puÃ² mettere facilmente in discussione le proprie idee e cercare riferimenti esterni, con rischio di influenzabilitÃ " }, { min: -100, text: "convinzioni poco stabili: puÃ² essere vittima di ciÃ² che non conosce, cercando sicurezza fuori da sÃ©" }] },
-  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "può aver incelofanato una situazione o una persona che crea difficoltà: all’esterno mantiene equilibrio, ma tende ad accettare compromessi senza affrontare fino in fondo il nodo" }, { min: 30, text: "gestisce efficacemente eventuali situazioni di stress o pressione: la persona è sostanzialmente serena e, anche se ha qualche pressione, riesce a gestirla" }, { min: 0, text: "può esserci una persona o situazione che la ostacola o la preoccupa, con rischio di drenare energia, buonumore e attenzione" }, { min: -30, text: "sono presenti situazioni di conflitto o influenze negative evidenti, con possibili alti e bassi e riprese discontinue" }, { min: -70, text: "vive una forte condizione di stress legata a conflitti o pressioni, con rischio di errori e distrazioni" }, { min: -100, text: "agitazione marcata causata da una situazione conflittuale o da pressioni molto significative" }] },
-  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica: inizia rapidamente ciò che deve fare e preferisce contesti in movimento" }, { min: 50, text: "attiva: avvia abbastanza rapidamente i lavori e preferisce attività dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo: può preferire routine e lavori più tranquilli rispetto ad attività molto movimentate" }, { min: 0, text: "poco attiva: può fare fatica a mettere energia nell’avviare nuove attività e preferire lavori sedentari" }, { min: -100, text: "bassa energia di azione e forte difficoltà ad avviare anche attività di routine" }] },
-  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; può convincere gli altri, ma deve evitare eccesso di dominanza o impazienza" }, { min: 60, text: "concreta e assertiva: affronta le situazioni di petto e sostiene con efficacia la propria posizione" }, { min: 40, text: "mantiene un buon focus sul risultato e una discreta assertività, utile anche in ambito commerciale" }, { min: 20, text: "può manifestare lentezza produttiva o difficoltà a incidere, chiedendo le cose senza vera assertività" }, { min: -100, text: "tende ad aggirare i problemi, non affronta le situazioni di petto e può perdere focus sui risultati" }] },
-  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "molto propositiva: tende a farsi carico dei problemi, mettersi in discussione e muoversi da causa rispetto alle situazioni" }, { min: 30, text: "proattiva nei rapporti con gli altri, orientata alle soluzioni e al problem solving" }, { min: 10, text: "si prende responsabilità soprattutto per ciò che dipende direttamente da lei, ma può essere permalosa se messa in discussione" }, { min: -10, text: "non sempre propositiva: può ragionare da effetto e reagire soprattutto sotto pressione o quando incontra disaccordi" }, { min: -100, text: "tende a sentirsi effetto degli eventi, attribuire le cause all’esterno e subire le situazioni" }] },
-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, sa mettersi nei panni dell’altro e tende a vedere il buono negli altri" }, { min: 10, text: "comprende abbastanza bene persone e situazioni, analizza senza troppi pregiudizi e può correggere positivamente gli altri" }, { min: -20, text: "non sempre comprende gli altri: quando qualcosa non rientra nella sua valutazione può criticare o leggere la situazione in modo parziale" }, { min: -100, text: "fatica a comprendere punti di vista diversi e può avere una comunicazione critica, centrata sugli errori" }] },
+  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma puÃ² accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "puÃ² esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
+  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciÃ² che deve fare" }, { min: 50, text: "attiva, preferisce attivitÃ  dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, puÃ² preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, puÃ² fare fatica ad avviare nuove attivitÃ " }, { min: -100, text: "bassa energia di azione e difficoltÃ  a mettersi in moto" }] },
+  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertivitÃ " }, { min: 20, text: "puÃ² manifestare lentezza produttiva o difficoltÃ  a incidere" }, { min: -100, text: "tende ad aggirare i problemi e puÃ² perdere focus sui risultati" }] },
+  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilitÃ  soprattutto per ciÃ² che dipende direttamente da lei" }, { min: -10, text: "puÃ² iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e puÃ² subire le situazioni" }] },
+  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da piÃ¹ punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende puÃ² iniziare a criticare o valutare parzialmente" }, { min: -100, text: "comunicazione critica e poco motivante, con difficoltÃ  a comprendere punti di vista diversi" }] },
   "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio e coglie bene stati dâ€™animo e bisogni" }, { min: 20, text: "calorosa, disponibile e attenta agli altri" }, { min: -20, text: "puÃ² mostrare freddezza o distacco, soprattutto in situazioni di disaccordo" }, { min: -100, text: "generalmente distaccata e fredda, con rischio di risultare poco sensibile" }] },
   "EspansivitÃ ": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata, disinibita e calorosa nellâ€™approccio" }, { min: 40, text: "aperta e cordiale nel primo approccio" }, { min: 20, text: "selettiva e formale, ma capace di approcciare se necessario" }, { min: 0, text: "traspare un poâ€™ di timidezza con persone nuove" }, { min: -40, text: "non fa facilmente il primo passo e puÃ² restare sulle sue" }, { min: -100, text: "chiusa, ritirata o impacciata con persone che non conosce" }] }
 };
 
 function evoGuideForDimension(name, score) {
   const displayName = displayDimensionName(name);
-  const guide =
-    ZPI_EVO_TRAIT_GUIDE[displayName] ||
-    ZPI_EVO_TRAIT_GUIDE[normalizeBrokenUtf8(displayName)] ||
-    Object.entries(ZPI_EVO_TRAIT_GUIDE).find(([guideName]) => {
-      return dimensionAiMatchKey(guideName) === dimensionAiMatchKey(displayName);
-    })?.[1];
-
+  const guide = ZPI_EVO_TRAIT_GUIDE[displayName];
   if (!guide) return null;
-
   const value = chartScore(score);
   const band = guide.bands.find((item) => value >= item.min) || guide.bands[guide.bands.length - 1];
   return { evoParameter: guide.evo, chartScore: value, interpretation: band.text };
@@ -1353,58 +1346,6 @@ function normalizeTraitName(name) {
     .trim();
 }
 
-function normalizeDimensionKeyText(name) {
-  return normalizeBrokenUtf8(String(name || ""))
-    .replace(/\u00A0/g, " ")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function dimensionAiMatchKey(name) {
-  // Chiave SOLO per collegare il testo AI alla dimensione già calcolata.
-  // Non modifica scoring, istogrammi, DB, canonical names o mapping.
-  const raw = normalizeTraitName(name);
-  const normalized = normalizeDimensionNameForDisplay(raw);
-  const displayed = displayDimensionName(normalized);
-  const key = normalizeDimensionKeyText(displayed || normalized || raw);
-
-  const aliases = new Map([
-    ["stress", "gestione pressioni stress"],
-    ["gestione della pressione", "gestione pressioni stress"],
-    ["gestione pressioni", "gestione pressioni stress"],
-    ["gestione pressioni stress", "gestione pressioni stress"],
-
-    ["affidabilita", "affidabilita autodisciplina"],
-    ["autodisciplina", "affidabilita autodisciplina"],
-    ["autodisciplina affidabilita", "affidabilita autodisciplina"],
-    ["affidabilita autodisciplina", "affidabilita autodisciplina"],
-
-    ["responsabilita e ownership", "responsabilita"],
-    ["centralita", "responsabilita"],
-
-    ["estroversione", "espansivita"],
-    ["estroversione e networking", "espansivita"],
-
-    ["gestione priorita", "gestione priorita"],
-    ["priorita", "gestione priorita"],
-
-    ["capacita di gestione finanziaria", "capacita di gestione finanziaria"],
-    ["gestione finanziaria", "capacita di gestione finanziaria"],
-    ["autonomia economica e iniziativa", "capacita di gestione finanziaria"],
-
-    ["indice di attendibilita", "attendibilita"],
-    ["attendibilita si", "attendibilita"],
-    ["attendibilita forzata", "attendibilita"],
-    ["attendibilita no", "attendibilita"]
-  ]);
-
-  return aliases.get(key) || key;
-}
-
 function isPlaceholderText(value) {
   return String(value || "").includes("REPEAT_PLACEHOLDER");
 }
@@ -1461,7 +1402,7 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
@@ -1608,17 +1549,6 @@ MAPPATURA EVO E PARAMETRIZZAZIONE
 - Per il tratto AttendibilitÃ  devi usare il campo truthfulness e indicare chiaramente una delle tre letture: AttendibilitÃ  SÃŒ, AttendibilitÃ  FORZATA, AttendibilitÃ  NO. Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
 - Se Ã¨ presente la Nota attendibilitÃ  "Profilo teorico", devi integrarla nell'AttendibilitÃ  una sola volta, spiegando che la prevalenza di punteggi molto alti rende il questionario teorico e richiede verifica tramite colloquio/osservazione.
 
-REGOLE SEMANTICHE CHIRURGICHE PER I TRATTI ZPI
-Queste regole valgono solo per expandedText, improvementPlan e skillAction dei singoli tratti. Non modificano generalSummary, compatibilità ruolo, istogrammi o punteggi.
-- Organizzazione e pianificazione: interpretala come capacità concreta di programmare il lavoro, mettere ordine, non disperdersi e non correre solo dietro alle urgenze. Non trasformarla in precisione mentale astratta.
-- Automotivazione: interpretala come spinta interna, ambizione e capacità di caricarsi verso il risultato. Non confonderla con entusiasmo generico o umore positivo.
-- Affidabilità / Autodisciplina: interpretala come continuità esecutiva, parola data, cura degli accordi, capacità di non rimandare e non lasciare attività non gestite. Non confonderla con organizzazione.
-- Gestione pressioni / Stress: non interpretarla come stress generico o fragilità emotiva. Da 30 a 60 indica gestione efficace e serenità operativa. Da 70 in su può indicare che la persona ha “incelofanato” una situazione difficile: mantiene equilibrio e compromessi, ma potrebbe non affrontare davvero il nodo. Da 0 a 20 indica una situazione/persona che inizia a drenare energia e attenzione. Sotto 0 indica conflitto o influenza negativa più evidente.
-- Dinamismo: interpretalo come energia di azione, movimento e prontezza nell’iniziare attività. Non confonderlo con motivazione, entusiasmo o stress.
-- Flessibilità comunicativa: interpretala come determinazione/assertività orientata al risultato, capacità di affrontare le situazioni di petto e sostenere una posizione. Non leggerla come empatia, diplomazia o morbidezza relazionale.
-- Responsabilità: interpretala come centralità/locus of control operativo: essere causa, mettersi in discussione, problem solving e proattività. Non confonderla con affidabilità o serietà generica.
-- Ascolto attivo: interpretalo come comprensione delle persone e delle situazioni, capacità di mettersi nei panni dell’altro, vedere punti di vista diversi e non giudicare subito. Non ridurlo ad ascolto tecnico o raccolta informazioni.
-
 PRINCIPI DI LETTURA
 - Non descrivere la persona come se fosse definita una volta per tutte: descrivi il suo funzionamento comportamentale attuale nel lavoro.
 - Il report non misura il valore della persona, ma il modo in cui tende ad agire, reagire, organizzarsi e relazionarsi nel contesto lavorativo.
@@ -1680,7 +1610,7 @@ IMPORTANTE
 - Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 - Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
-- Quando parli di Gestione pressioni / Stress, usa la regola semantica chirurgica sopra: 30-60 = gestione efficace/serenità; 70+ = possibile equilibrio mantenuto senza affrontare il nodo; 0-20 = elemento che inizia a drenare attenzione; sotto 0 = conflitto o influenza negativa più evidente.
+- Quando parli di Gestione pressioni / Stress, interpretalo come fonti di preoccupazione, pressione o distrazione presenti nellâ€™ambiente personale o professionale, non come semplice tensione emotiva generica.
 - Quando parli di CapacitÃ  di gestione finanziaria, interpretala come capacitÃ  pratica di generare reddito autonomo, risparmiare e gestire risorse economiche con continuitÃ  e visione futura.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacitÃ  o tratto.
 - Non usare espressioni come â€œKPIâ€, â€œstakeholderâ€, â€œperformance reviewâ€, â€œcoachingâ€, â€œdebriefingâ€, salvo tradurle in parole semplici.
@@ -1950,7 +1880,7 @@ function stripLeadingTruthfulnessStatus(text) {
   // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
   // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
   const truthfulnessPattern =
-    /^Attendibilit(?:à|Ã )\s+(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilit(?:à|Ã )\s+(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -3694,61 +3624,6 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
-
-function stressFallbackExpandedText(chartValue) {
-  const value = Number(chartValue || 0);
-
-  if (value >= 70) {
-    return "Il dato indica una possibile gestione esterna della pressione: la persona può apparire in equilibrio, ma potrebbe aver accettato compromessi o mantenere sotto controllo una situazione che non affronta fino in fondo. La lettura va verificata con esempi concreti, distinguendo tra reale serenità e mantenimento dell’equilibrio.";
-  }
-
-  if (value >= 30) {
-    return "La persona gestisce efficacemente eventuali situazioni di stress o pressione. Il dato suggerisce una condizione complessivamente serena: anche se sono presenti impegni, richieste o qualche fonte di tensione, tende a mantenere lucidità e continuità operativa.";
-  }
-
-  if (value >= 0) {
-    return "Può esserci una situazione o una persona che ostacola la persona e assorbe parte della sua attenzione. Questo può drenare energia, buonumore e continuità operativa, soprattutto se il nodo non viene chiarito con esempi concreti.";
-  }
-
-  if (value >= -30) {
-    return "Sono presenti situazioni di conflitto o influenze negative che possono incidere sul modo di lavorare. Possono emergere alti e bassi, cali di motivazione o riprese discontinue, soprattutto quando la persona è esposta alla fonte del contrasto.";
-  }
-
-  if (value >= -70) {
-    return "La persona può vivere una forte condizione di stress legata a una o più situazioni conflittuali. Questo può tradursi in errori, distrazioni e perdita di continuità, per cui il dato va approfondito con attenzione e senza letture generiche.";
-  }
-
-  return "Il dato suggerisce agitazione marcata legata a una situazione conflittuale o a pressioni significative. La lettura richiede confronto diretto e osservazione concreta prima di trarre conclusioni operative.";
-}
-
-function stressFallbackImprovementPlan(chartValue) {
-  const value = Number(chartValue || 0);
-
-  if (value >= 30 && value < 70) {
-    return "Valorizzare la capacità di gestione della pressione mantenendo priorità chiare e condizioni operative ordinate, senza trattare il dato come una criticità.";
-  }
-
-  if (value >= 70) {
-    return "Verificare se esistono compromessi, situazioni sospese o relazioni non affrontate che la persona mantiene sotto controllo senza risolvere. Usare domande concrete, non interpretazioni generiche.";
-  }
-
-  return "Individuare con esempi concreti le situazioni o le persone che assorbono attenzione, poi trasformare il nodo in azioni semplici: chiarimento, priorità scritte, tempi realistici e confronto tempestivo.";
-}
-
-function stressFallbackSkillAction(chartValue) {
-  const value = Number(chartValue || 0);
-
-  if (value >= 30 && value < 70) {
-    return "Mantenere un contesto chiaro e ordinato, perché la persona tende già a gestire efficacemente eventuali pressioni.";
-  }
-
-  if (value >= 70) {
-    return "Aprire un confronto prudente su eventuali situazioni mantenute in equilibrio ma non affrontate, chiedendo fatti, esempi e conseguenze pratiche.";
-  }
-
-  return "Ridurre ambiguità e fonti di pressione non chiarite, verificando cosa assorbe attenzione e quali passaggi pratici possono liberare continuità operativa.";
-}
-
 function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     expandedReportJson = { generalSummary: "", generalManagementAdvice: "", traits: [] };
@@ -3761,7 +3636,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const aiTraitByName = new Map();
   aiTraits.forEach((trait) => {
-    const canonical = dimensionAiMatchKey(trait?.canonicalName || trait?.name);
+    const canonical = normalizeDimensionNameForDisplay(normalizeTraitName(trait?.canonicalName || trait?.name));
     if (canonical && !aiTraitByName.has(canonical)) aiTraitByName.set(canonical, trait);
   });
 
@@ -3773,13 +3648,12 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const traits = allApprovedDimensions.map((dimension) => {
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
     const displayName = displayDimensionName(canonicalName);
-    const aiMatchKey = dimensionAiMatchKey(canonicalName);
-    const aiTrait = aiTraitByName.get(aiMatchKey) || {};
+    const aiTrait = aiTraitByName.get(canonicalName) || {};
     const value = chartScore(dimension?.score ?? 0);
     const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
-    const truthfulness = displayName === "Attendibilità"
-      ? truthfulnessStatusFromScore(value)
+    const truthfulness = canonicalName === "Attendibilità"
+      ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) })
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
@@ -3788,10 +3662,10 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     );
 
     if (!expandedText) {
-      if (displayName === "Attendibilità" && truthfulness) {
+      if (canonicalName === "Attendibilità" && truthfulness) {
         expandedText = `${truthfulness.label}: ${truthfulness.text}`;
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
-        expandedText = stressFallbackExpandedText(value);
+        expandedText = "Possono essere presenti fonti di pressione, distrazione o preoccupazione che influenzano il modo di lavorare. Questo dato va letto con esempi concreti: quali situazioni generano tensione, come vengono gestite le urgenze e quanto l’ambiente aiuta o ostacola la continuità operativa.";
       } else if (evoGuide?.interpretation) {
         expandedText = `Il dato emerso indica che questo tratto va letto così: ${evoGuide.interpretation}. Nel lavoro quotidiano questa indicazione va verificata con esempi concreti, osservazione sul campo e colloquio.`;
       } else {
@@ -3799,7 +3673,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (displayName === "Attendibilità") {
+    if (canonicalName === "Attendibilità") {
       const statusText = `${truthfulness.label}: ${truthfulness.text}`;
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
@@ -3816,12 +3690,12 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (displayName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
+    if (canonicalName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
       expandedText = expandedText ? `${expandedText} ${normalized.securityTheory.text}` : normalized.securityTheory.text;
     }
 
     if (
-      (displayName === "Sicurezza" || displayName === "Resistenza al cambiamento") &&
+      (canonicalName === "Sicurezza" || canonicalName === "Resistenza al cambiamento") &&
       normalized?.convictionChange &&
       !expandedText.includes(normalized.convictionChange.label)
     ) {
@@ -3830,19 +3704,19 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
     }
 
-    if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
+    if (shouldAddResponsibilityNote && canonicalName === "Responsabilità") {
       const note = responsibilityOpinionNote();
       if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
         expandedText = expandedText ? `${expandedText} ${note}` : note;
       }
     }
 
-    const fallbackImprovementPlan = displayName === "Gestione pressioni / Stress"
-      ? stressFallbackImprovementPlan(value)
+    const fallbackImprovementPlan = canonicalName === "Stress"
+      ? "Individuare le principali fonti di pressione e trasformarle in azioni semplici: priorità scritte, tempi realistici, pause operative e confronto tempestivo quando una situazione rischia di accumularsi."
       : "Collegare il miglioramento a obiettivi misurabili e a tappe brevi. Prevedere momenti di verifica dei progressi e riconoscimento dei risultati raggiunti.";
 
-    const fallbackSkillAction = displayName === "Gestione pressioni / Stress"
-      ? stressFallbackSkillAction(value)
+    const fallbackSkillAction = canonicalName === "Stress"
+      ? "Ridurre ambiguità e sovraccarichi, chiarendo priorità, responsabilità e tempi. Nei momenti più intensi è utile verificare spesso cosa sta bloccando il lavoro."
       : "Dare obiettivi concreti, visibili e ravvicinati. Evitare incarichi lunghi senza riscontro, perché potrebbero ridurre continuità e iniziativa.";
 
     return {
