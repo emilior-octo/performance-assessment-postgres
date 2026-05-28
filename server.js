@@ -3749,6 +3749,51 @@ function stressFallbackSkillAction(chartValue) {
   return "Ridurre ambiguità e fonti di pressione non chiarite, verificando cosa assorbe attenzione e quali passaggi pratici possono liberare continuità operativa.";
 }
 
+
+function firstNonEmptyAiField(source, fieldNames = []) {
+  for (const fieldName of fieldNames) {
+    const value = source?.[fieldName];
+
+    if (typeof value === "string" && value.trim() && !isPlaceholderText(value)) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function expandedTraitTextFromAi(trait) {
+  return firstNonEmptyAiField(trait, [
+    "expandedText",
+    "analysis",
+    "text",
+    "descriptionText",
+    "traitAnalysis"
+  ]);
+}
+
+function improvementPlanFromAi(trait) {
+  return firstNonEmptyAiField(trait, [
+    "improvementPlan",
+    "practicalRemedies",
+    "remedies",
+    "remedy",
+    "actionPlan",
+    "developmentPlan"
+  ]);
+}
+
+function skillActionFromAi(trait) {
+  return firstNonEmptyAiField(trait, [
+    "skillAction",
+    "teamLeverage",
+    "managementTips",
+    "managementAdvice",
+    "practicalManagement",
+    "managerAction"
+  ]);
+}
+
 function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
   if (!expandedReportJson || typeof expandedReportJson !== "object") {
     expandedReportJson = { generalSummary: "", generalManagementAdvice: "", traits: [] };
@@ -3761,8 +3806,15 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const aiTraitByName = new Map();
   aiTraits.forEach((trait) => {
-    const canonical = dimensionAiMatchKey(trait?.canonicalName || trait?.name);
-    if (canonical && !aiTraitByName.has(canonical)) aiTraitByName.set(canonical, trait);
+    const keys = [
+      dimensionAiMatchKey(trait?.canonicalName || trait?.name),
+      dimensionAiMatchKey(trait?.name),
+      dimensionAiMatchKey(trait?.displayName)
+    ].filter(Boolean);
+
+    keys.forEach((key) => {
+      if (key && !aiTraitByName.has(key)) aiTraitByName.set(key, trait);
+    });
   });
 
   const allApprovedDimensions = [
@@ -3783,7 +3835,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
-      String(aiTrait.expandedText || "").trim(),
+      expandedTraitTextFromAi(aiTrait),
       description
     );
 
@@ -3852,11 +3904,11 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       description,
       chartScore: value,
       score: dimension?.score ?? 0,
-      showRemedies: true,
-      showSkillAction: !directionalExecutive,
+      showRemedies: shouldShowRemediesForChartValue(value),
+      showSkillAction: !directionalExecutive && shouldShowSkillActionForChartValue(value),
       expandedText,
-      improvementPlan: aiTrait.improvementPlan || fallbackImprovementPlan,
-      skillAction: aiTrait.skillAction || aiTrait.teamLeverage || fallbackSkillAction
+      improvementPlan: improvementPlanFromAi(aiTrait) || fallbackImprovementPlan,
+      skillAction: skillActionFromAi(aiTrait) || fallbackSkillAction
     };
   });
 
