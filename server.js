@@ -1346,6 +1346,12 @@ function normalizeTraitName(name) {
     .trim();
 }
 
+function dimensionAiMatchKey(name) {
+  // Chiave SOLO per collegare il testo AI alla dimensione già calcolata.
+  // Non modifica scoring, istogrammi, DB, canonical names o mapping.
+  return displayDimensionName(normalizeDimensionNameForDisplay(normalizeTraitName(name)));
+}
+
 function isPlaceholderText(value) {
   return String(value || "").includes("REPEAT_PLACEHOLDER");
 }
@@ -1402,7 +1408,7 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = name === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
@@ -3702,7 +3708,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const aiTraitByName = new Map();
   aiTraits.forEach((trait) => {
-    const canonical = normalizeDimensionNameForDisplay(normalizeTraitName(trait?.canonicalName || trait?.name));
+    const canonical = dimensionAiMatchKey(trait?.canonicalName || trait?.name);
     if (canonical && !aiTraitByName.has(canonical)) aiTraitByName.set(canonical, trait);
   });
 
@@ -3714,12 +3720,13 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
   const traits = allApprovedDimensions.map((dimension) => {
     const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
     const displayName = displayDimensionName(canonicalName);
-    const aiTrait = aiTraitByName.get(canonicalName) || {};
+    const aiMatchKey = dimensionAiMatchKey(canonicalName);
+    const aiTrait = aiTraitByName.get(aiMatchKey) || {};
     const value = chartScore(dimension?.score ?? 0);
     const description = dimensionDescription(canonicalName);
     const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
-    const truthfulness = canonicalName === "Attendibilità"
-      ? truthfulnessStatusFromScore(value, { forced: shouldUseForcedTruthfulness(normalized?.reliabilityFlags || []) })
+    const truthfulness = displayName === "Attendibilità"
+      ? truthfulnessStatusFromScore(value)
       : null;
 
     let expandedText = stripLeadingDefinitionSentence(
@@ -3739,7 +3746,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       }
     }
 
-    if (canonicalName === "Attendibilità") {
+    if (displayName === "Attendibilità") {
       const statusText = `${truthfulness.label}: ${truthfulness.text}`;
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
@@ -3770,7 +3777,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
         : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
     }
 
-    if (shouldAddResponsibilityNote && canonicalName === "Responsabilità") {
+    if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
       const note = responsibilityOpinionNote();
       if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
         expandedText = expandedText ? `${expandedText} ${note}` : note;
