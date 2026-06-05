@@ -155,6 +155,19 @@ function normalizeBrokenUtf8(text) {
 function normalizeItalianTextArtifacts(text) {
   return String(text ?? "")
     .replace(/\bdellapersona\b/gi, "della persona")
+    .replace(/\bfuori da s\b/gi, "fuori da sé")
+    .replace(/\bdentro di s\b/gi, "dentro di sé")
+    .replace(/\bda s(?=\s|[.,;:!?]|$)/gi, "da sé")
+    .replace(/\bd[’']quipe\b/gi, "d’équipe")
+    .replace(/\bdquipe\b/gi, "d’équipe")
+    .replace(/\bequipe\b/gi, "équipe")
+    .replace(/\bIl rischio per quello\b/g, "Il rischio è quello")
+    .replace(/\bil rischio per quello\b/g, "il rischio è quello")
+    .replace(/\bse il cambiamento spiegato\b/gi, "se il cambiamento è spiegato")
+    .replace(/\bquando il contesto confuso\b/gi, "quando il contesto è confuso")
+    .replace(/\bquesto rilevante\b/gi, "questo è rilevante")
+    .replace(/\bquesto aspetto rilevante\b/gi, "questo aspetto è rilevante")
+    .replace(/\bquesto ti aiuta\b/gi, "questo ti aiuta")
     .replace(/\bpu\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "può")
     .replace(/\bPu\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "Può")
     .replace(/\bpi\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "più")
@@ -173,10 +186,29 @@ function normalizeItalianTextArtifacts(text) {
     .replace(/\battivit(?=\s|[.,;:!?]|$)/gi, "attività")
     .replace(/\bqualit(?=\s|[.,;:!?]|$)/gi, "qualità")
     .replace(/\bpossibilit(?=\s|[.,;:!?]|$)/gi, "possibilità")
+    .replace(/\bvisibilit(?=\s|[.,;:!?]|$)/gi, "visibilità")
+    .replace(/\bdisponibilit(?=\s|[.,;:!?]|$)/gi, "disponibilità")
+    .replace(/\bcompatibilit(?=\s|[.,;:!?]|$)/gi, "compatibilità")
+    .replace(/\boperativit(?=\s|[.,;:!?]|$)/gi, "operatività")
+    .replace(/\bproduttivit(?=\s|[.,;:!?]|$)/gi, "produttività")
     .replace(/\butilit(?=\s|[.,;:!?]|$)/gi, "utilità")
     .replace(/\bsolidit(?=\s|[.,;:!?]|$)/gi, "solidità")
     .replace(/\bnecessit(?=\s|[.,;:!?]|$)/gi, "necessità")
-    .replace(/\bdifficolt(?=\s|[.,;:!?]|$)/gi, "difficoltà");
+    .replace(/\bdifficolt(?=\s|[.,;:!?]|$)/gi, "difficoltà")
+    .replace(/\bquando il contesto Ã¨ confuso\b/gi, "quando il contesto è confuso")
+    .replace(/\bquando il contesto e confuso\b/gi, "quando il contesto è confuso")
+    .replace(/\bse il cambiamento e spiegato\b/gi, "se il cambiamento è spiegato")
+    .replace(/\bIl rischio e quello\b/g, "Il rischio è quello")
+    .replace(/\bil rischio e quello\b/g, "il rischio è quello")
+    .replace(/\bpiu\b/gi, "più")
+    .replace(/\bpuo\b/gi, "può")
+    .replace(/\bperche\b/gi, "perché")
+    .replace(/\bse stessi\b/gi, "sé stessi")
+    .replace(/\bse stesso\b/gi, "sé stesso")
+    .replace(/\bda se\b/gi, "da sé")
+    .replace(/\bin se\b/gi, "in sé")
+    .replace(/\bsu se\b/gi, "su sé")
+    .replace(/\bverso se\b/gi, "verso sé");
 }
 
 function normalizeTextPayload(value) {
@@ -2546,7 +2578,7 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v17-multi-assessment");
+  res.send("openai-expanded-report-v18-zpi-v2-2");
 });
 
 app.get("/", (_req, res) => {

@@ -3003,7 +3003,7 @@ export const ZPI_QUESTIONS = [
 // Questa mappa NON cambia testi, domande, grafici, prompt o label finali.
 // Serve solo al motore di scoring per collegare ogni domanda alla dimensione
 // finale corretta del report, evitando il vecchio mapping ambiguo per trait sorgente.
-export const ZPI_SCORING_VERSION = "zpi_v2";
+export const ZPI_SCORING_VERSION = "zpi_v2_2";
 
 export const ZPI_SCORE_DIMENSIONS_V2 = {
   "q1": {
@@ -5579,15 +5579,15 @@ const ZPI_SCORE_DIMENSIONS_V2_SECONDARY = {
   q38: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
   q45: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
   q73: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
-  q99: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
-  q105: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q99: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q105: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
   q108: [{ name: "Gestione prioritÃ ", category: "additional" }],
   q117: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
   q120: [{ name: "Gestione prioritÃ ", category: "additional" }],
-  q122: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
-  q166: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
-  q201: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
-  q228: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q122: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q166: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q201: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q228: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
 
   // Management: guida + coordinamento + ownership + performance operativa
   q4: [{ name: "Management", category: "additional" }],
@@ -5647,7 +5647,13 @@ const ZPI_SCORE_DIMENSIONS_V2_SECONDARY = {
   q123: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
   q130: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
   q180: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
-  q183: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }]
+  q183: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+
+  // Ascolto attivo: micro-integrazione anti-desiderabilità. Aggiunge item critici
+  // su giudizio, rigidità relazionale e capacità di non filtrare subito l'altro.
+  q91: [{ name: "Ascolto attivo", category: "trait" }],
+  q133: [{ name: "Ascolto attivo", category: "trait" }],
+  q177: [{ name: "Ascolto attivo", category: "trait" }]
 };
 
 function zpiDimensionMergeKey(dimension) {
@@ -5666,6 +5672,89 @@ Object.entries(ZPI_SCORE_DIMENSIONS_V2_SECONDARY).forEach(([key, extraDimensions
     ZPI_SCORE_DIMENSIONS_V2[key].dimensions.push(dimension);
     existingKeys.add(mergeKey);
   });
+});
+
+
+
+// V2.2 scoring review: mappa finale domanda -> dimensione dopo revisione completa.
+// Obiettivi: ridurre sovrapposizioni forti, rafforzare Ascolto/Comprensione,
+// separare Gestione priorità da Organizzazione, Principi da Attendibilità,
+// Management da Leadership e Vendite da Flessibilità comunicativa.
+const ZPI_SCORE_DIMENSIONS_V2_2_OVERRIDES = {
+  q4: [{ name: "Leadership naturale", category: "additional" }],
+  q17: [{ name: "EspansivitÃ ", category: "trait" }],
+  q18: [{ name: "Leadership naturale", category: "additional" }],
+  q21: [{ name: "Sicurezza", category: "trait" }, { name: "Ascolto attivo", category: "trait" }],
+  q24: [{ name: "Leadership naturale", category: "additional" }],
+  q25: [{ name: "Leadership naturale", category: "additional" }],
+  q32: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q36: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q38: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q39: [{ name: "Principi", category: "additional" }],
+  q45: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q57: [],
+  q73: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q78: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "Principi", category: "additional" }],
+  q82: [{ name: "Leadership naturale", category: "additional" }, { name: "Management", category: "additional" }, { name: "Principi", category: "additional" }],
+  q83: [{ name: "Comprensione", category: "trait" }, { name: "Cooperazione", category: "additional" }],
+  q86: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q87: [{ name: "Vendite", category: "additional" }],
+  q91: [{ name: "Ascolto attivo", category: "trait" }],
+  q93: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q94: [{ name: "Vendite", category: "additional" }],
+  q95: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q99: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q100: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q105: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q107: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q110: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q115: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q117: [{ name: "Organizzazione e pianificazione", category: "trait" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q119: [{ name: "Sicurezza", category: "trait" }, { name: "Ascolto attivo", category: "trait" }],
+  q120: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "Principi", category: "additional" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q123: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q124: [{ name: "Vendite", category: "additional" }],
+  q130: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q131: [{ name: "Vendite", category: "additional" }],
+  q133: [{ name: "Ascolto attivo", category: "trait" }],
+  q134: [{ name: "Vendite", category: "additional" }],
+  q137: [{ name: "Comprensione", category: "trait" }, { name: "Cooperazione", category: "additional" }],
+  q142: [{ name: "Comprensione", category: "trait" }],
+  q155: [{ name: "Leadership naturale", category: "additional" }],
+  q157: [{ name: "Principi", category: "additional" }],
+  q167: [],
+  q170: [{ name: "Leadership naturale", category: "additional" }],
+  q172: [{ name: "Vendite", category: "additional" }],
+  q176: [{ name: "Principi", category: "additional" }],
+  q177: [{ name: "Ascolto attivo", category: "trait" }],
+  q179: [{ name: "Leadership naturale", category: "additional" }],
+  q180: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q183: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q190: [{ name: "Comprensione", category: "trait" }, { name: "Cooperazione", category: "additional" }],
+  q198: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "ResponsabilitÃ ", category: "trait" }, { name: "Management", category: "additional" }, { name: "Principi", category: "additional" }],
+  q203: [{ name: "Sicurezza", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q206: [{ name: "Comprensione", category: "trait" }, { name: "Cooperazione", category: "additional" }],
+  q208: [{ name: "Automotivazione", category: "trait" }, { name: "Principi", category: "additional" }],
+  q211: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "ResponsabilitÃ ", category: "trait" }, { name: "Management", category: "additional" }, { name: "Principi", category: "additional" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q214: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "ResponsabilitÃ ", category: "trait" }, { name: "Management", category: "additional" }, { name: "Principi", category: "additional" }, { name: "Gestione prioritÃ ", category: "additional" }],
+  q215: [{ name: "Comprensione", category: "trait" }, { name: "Cooperazione", category: "additional" }],
+  q221: [],
+  q222: [{ name: "AttendibilitÃ ", category: "additional" }],
+  q229: [{ name: "Stress", category: "trait" }],
+  q231: [{ name: "Stress", category: "trait" }],
+  q233: [{ name: "Ascolto attivo", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q234: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }, { name: "Resistenza al cambiamento", category: "additional" }],
+  q235: [{ name: "ResponsabilitÃ ", category: "trait" }],
+  q237: [{ name: "Comprensione", category: "trait" }, { name: "Cooperazione", category: "additional" }],
+  q239: [{ name: "Cooperazione", category: "additional" }, { name: "Vendite", category: "additional" }],
+  q242: [{ name: "Automotivazione", category: "trait" }, { name: "Stress", category: "trait" }],
+  q243: [{ name: "AffidabilitÃ  + autodisciplina", category: "trait" }, { name: "ResponsabilitÃ ", category: "trait" }, { name: "Principi", category: "additional" }]
+};
+
+Object.entries(ZPI_SCORE_DIMENSIONS_V2_2_OVERRIDES).forEach(([key, dimensions]) => {
+  if (!ZPI_SCORE_DIMENSIONS_V2[key]) return;
+  ZPI_SCORE_DIMENSIONS_V2[key].dimensions = dimensions;
+  ZPI_SCORE_DIMENSIONS_V2[key].reviewStatus = dimensions.length ? "V2_2_REVIEWED" : "V2_2_EXCLUDED";
 });
 
 export function getQuestionTexts() {
