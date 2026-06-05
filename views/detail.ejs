@@ -187,6 +187,28 @@
       background: #f7f7f7;
     }
 
+    .diagnostic-summary {
+      cursor: pointer;
+      font-weight: 700;
+      padding: 10px 0;
+    }
+
+    .diagnostic-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 6px 0 12px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: #f2f2f2;
+      font-size: 12px;
+      color: #333;
+    }
+
     form { margin: 0; }
 
     @media (max-width: 700px) {
@@ -369,6 +391,61 @@
         </div>
       <% }) %>
     <% } %>
+  <% } %>
+
+  <% if (currentAdmin && currentAdmin.role === "SUPER_ADMIN" && submission.analysis.dimensionDiagnostics && submission.analysis.dimensionDiagnostics.length) { %>
+    <div class="card">
+      <h2>Diagnostica scoring V2.1</h2>
+      <p class="muted">
+        Mostra quali risposte alimentano ogni tratto/parametro dopo il ricalcolo V2.1. Serve per verificare casi anomali come 100, 0 o salti molto ampi rispetto allo scoring legacy.
+      </p>
+
+      <% submission.analysis.dimensionDiagnostics.forEach(function(dimension) { %>
+        <details>
+          <summary class="diagnostic-summary">
+            <%= dimension.displayName || dimension.name %> — score <%= dimension.chartScore %> — <%= dimension.questionCount %> item
+          </summary>
+          <div class="diagnostic-meta">
+            <span class="pill"><%= dimension.category === "additional" ? "Parametro aggiuntivo" : "Tratto" %></span>
+            <span class="pill">raw score: <%= dimension.score %></span>
+          </div>
+
+          <% if (dimension.items && dimension.items.length) { %>
+            <table class="answers-table">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">Q</th>
+                  <th>Domanda</th>
+                  <th style="width: 150px;">Risposta</th>
+                  <th style="width: 80px;">Reverse</th>
+                  <th style="width: 70px;">Valore</th>
+                  <th style="width: 180px;">Origine</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% dimension.items.forEach(function(item) { %>
+                  <tr>
+                    <td><strong><%= item.questionKey %></strong></td>
+                    <td>
+                      <%= item.text || "-" %>
+                      <% if (item.subDimension) { %>
+                        <br><span class="muted"><%= item.subDimension %></span>
+                      <% } %>
+                    </td>
+                    <td><%= item.answerLabel || item.answer || "-" %></td>
+                    <td><%= item.reverse ? "Sì" : "No" %></td>
+                    <td><strong><%= item.value %></strong></td>
+                    <td><%= item.sourceTrait || "-" %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } else { %>
+            <p class="muted">Nessun item alimenta questa dimensione.</p>
+          <% } %>
+        </details>
+      <% }) %>
+    </div>
   <% } %>
 
   <script>

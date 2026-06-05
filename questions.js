@@ -5570,6 +5570,104 @@ export const ZPI_SCORE_DIMENSIONS_V2 = {
   }
 };
 
+// V2.1 hotfix: dimensioni secondarie controllate.
+// Mantengono invariati nomi, grafici e prompt finali, ma impediscono che
+// parametri aggiuntivi importanti restino a questionCount=0 dopo la separazione V2.
+const ZPI_SCORE_DIMENSIONS_V2_SECONDARY = {
+  // Metodo / priorità / affidabilità operativa
+  q36: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q38: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q45: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q73: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q99: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q105: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q108: [{ name: "Gestione prioritÃ ", category: "additional" }],
+  q117: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q120: [{ name: "Gestione prioritÃ ", category: "additional" }],
+  q122: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q166: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q201: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+  q228: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "AffidabilitÃ  + autodisciplina", category: "trait" }],
+
+  // Management: guida + coordinamento + ownership + performance operativa
+  q4: [{ name: "Management", category: "additional" }],
+  q18: [{ name: "Management", category: "additional" }],
+  q24: [{ name: "Management", category: "additional" }],
+  q25: [{ name: "Management", category: "additional" }],
+  q43: [{ name: "Management", category: "additional" }],
+  q82: [{ name: "Management", category: "additional" }],
+  q102: [{ name: "Management", category: "additional" }],
+  q138: [{ name: "Management", category: "additional" }],
+  q147: [{ name: "Management", category: "additional" }],
+  q155: [{ name: "Management", category: "additional" }],
+  q156: [{ name: "Management", category: "additional" }, { name: "Principi", category: "additional" }],
+  q170: [{ name: "Management", category: "additional" }],
+  q171: [{ name: "Management", category: "additional" }],
+  q173: [{ name: "Management", category: "additional" }, { name: "Principi", category: "additional" }],
+  q174: [{ name: "Management", category: "additional" }],
+  q179: [{ name: "Management", category: "additional" }],
+  q218: [{ name: "Management", category: "additional" }],
+  q220: [{ name: "Management", category: "additional" }],
+  q241: [{ name: "Management", category: "additional" }],
+
+  // Principi: coerenza, regole, criterio professionale e scala di attendibilità.
+  q39: [{ name: "Principi", category: "additional" }],
+  q86: [{ name: "Principi", category: "additional" }],
+  q93: [{ name: "Principi", category: "additional" }],
+  q95: [{ name: "Principi", category: "additional" }],
+  q100: [{ name: "Principi", category: "additional" }],
+  q107: [{ name: "Principi", category: "additional" }],
+  q115: [{ name: "Principi", category: "additional" }],
+  q120: [{ name: "Gestione prioritÃ ", category: "additional" }, { name: "Principi", category: "additional" }],
+  q157: [{ name: "Principi", category: "additional" }],
+  q176: [{ name: "Principi", category: "additional" }],
+  q198: [{ name: "Principi", category: "additional" }],
+  q214: [{ name: "Principi", category: "additional" }],
+  q222: [{ name: "Principi", category: "additional" }],
+  q230: [{ name: "Principi", category: "additional" }],
+  q243: [{ name: "Principi", category: "additional" }],
+
+  // Vendite / proposta / negoziazione: evita che il parametro resti su soli pochi item estremi.
+  q32: [{ name: "Vendite", category: "additional" }],
+  q50: [{ name: "Vendite", category: "additional" }],
+  q104: [{ name: "Vendite", category: "additional" }],
+  q124: [{ name: "Vendite", category: "additional" }],
+  q134: [{ name: "Vendite", category: "additional" }],
+  q146: [{ name: "Vendite", category: "additional" }],
+  q172: [{ name: "Vendite", category: "additional" }],
+  q191: [{ name: "Vendite", category: "additional" }],
+
+  // Flessibilità comunicativa: micro-integrazione di adattamento/comunicazione per ridurre estremi facili.
+  q87: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q94: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q131: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q152: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q158: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q164: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q123: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q130: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q180: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }],
+  q183: [{ name: "FlessibilitÃ  comunicativa", category: "trait" }]
+};
+
+function zpiDimensionMergeKey(dimension) {
+  return `${String(dimension?.name || "").trim()}::${String(dimension?.category || "").trim()}`;
+}
+
+Object.entries(ZPI_SCORE_DIMENSIONS_V2_SECONDARY).forEach(([key, extraDimensions]) => {
+  if (!ZPI_SCORE_DIMENSIONS_V2[key]) return;
+  if (!Array.isArray(ZPI_SCORE_DIMENSIONS_V2[key].dimensions)) return;
+
+  const existingKeys = new Set(ZPI_SCORE_DIMENSIONS_V2[key].dimensions.map(zpiDimensionMergeKey));
+
+  extraDimensions.forEach((dimension) => {
+    const mergeKey = zpiDimensionMergeKey(dimension);
+    if (!mergeKey || existingKeys.has(mergeKey)) return;
+    ZPI_SCORE_DIMENSIONS_V2[key].dimensions.push(dimension);
+    existingKeys.add(mergeKey);
+  });
+});
+
 export function getQuestionTexts() {
   return Object.fromEntries(ZPI_QUESTIONS.map((q) => [q.key, q.text]));
 }

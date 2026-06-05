@@ -151,6 +151,34 @@ function normalizeBrokenUtf8(text) {
     .replace(/�/g, "");
 }
 
+
+function normalizeItalianTextArtifacts(text) {
+  return String(text ?? "")
+    .replace(/\bdellapersona\b/gi, "della persona")
+    .replace(/\bpu\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "può")
+    .replace(/\bPu\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "Può")
+    .replace(/\bpi\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "più")
+    .replace(/\bPi\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "Più")
+    .replace(/\bper(?=\s+(davanti|quando|in presenza|di fronte|se invece|nel caso)\b)/gi, "però")
+    .replace(/\bfacilit(?=\s|[.,;:!?]|$)/gi, "facilità")
+    .replace(/\badattabilit(?=\s|[.,;:!?]|$)/gi, "adattabilità")
+    .replace(/\binstabilit(?=\s|[.,;:!?]|$)/gi, "instabilità")
+    .replace(/\bflessibilit(?=\s|[.,;:!?]|$)/gi, "flessibilità")
+    .replace(/\bresponsabilit(?=\s|[.,;:!?]|$)/gi, "responsabilità")
+    .replace(/\baffidabilit(?=\s|[.,;:!?]|$)/gi, "affidabilità")
+    .replace(/\bcapacit(?=\s|[.,;:!?]|$)/gi, "capacità")
+    .replace(/\bcontinuit(?=\s|[.,;:!?]|$)/gi, "continuità")
+    .replace(/\bmodalit(?=\s|[.,;:!?]|$)/gi, "modalità")
+    .replace(/\bpriorit(?=\s|[.,;:!?]|$)/gi, "priorità")
+    .replace(/\battivit(?=\s|[.,;:!?]|$)/gi, "attività")
+    .replace(/\bqualit(?=\s|[.,;:!?]|$)/gi, "qualità")
+    .replace(/\bpossibilit(?=\s|[.,;:!?]|$)/gi, "possibilità")
+    .replace(/\butilit(?=\s|[.,;:!?]|$)/gi, "utilità")
+    .replace(/\bsolidit(?=\s|[.,;:!?]|$)/gi, "solidità")
+    .replace(/\bnecessit(?=\s|[.,;:!?]|$)/gi, "necessità")
+    .replace(/\bdifficolt(?=\s|[.,;:!?]|$)/gi, "difficoltà");
+}
+
 function normalizeTextPayload(value) {
   if (Array.isArray(value)) return value.map((item) => normalizeTextPayload(item));
 
@@ -161,7 +189,7 @@ function normalizeTextPayload(value) {
   }
 
   if (typeof value === "string") {
-    return normalizeBrokenUtf8(value)
+    return normalizeItalianTextArtifacts(normalizeBrokenUtf8(value))
       .replace(/La risorsa può essere gestita/gi, "Può essere utile lavorare")
       .replace(/La risorsa può rendere/gi, "La persona può rendere")
       .replace(/la risorsa/gi, "la persona")
@@ -177,7 +205,7 @@ function normalizeTextPayload(value) {
 function normalizePdfVisibleText(text) {
   // Correzione SOLO VISIVA per rendering PDF/Word: non va usata su nomi interni,
   // mapping, scoring, filtri o JSON salvati. Serve solo a ripulire output già calcolato.
-  return normalizeBrokenUtf8(text)
+  return normalizeItalianTextArtifacts(normalizeBrokenUtf8(text))
     .replace(/ResponsabilitÃ\b/g, "Responsabilità")
     .replace(/ResponsabilitÃ\s/g, "Responsabilità ")
     .replace(/ResponsabilitÃ$/g, "Responsabilità")
@@ -1930,7 +1958,7 @@ IMPORTANTE
 
   console.log("[EXPANDED] OpenAI call done");
 
-  return cleanExpandedReport(JSON.parse(response.output_text));
+  return normalizeTextPayload(cleanExpandedReport(JSON.parse(response.output_text)));
 }
 
 function startExpandedReportJob({
@@ -3990,6 +4018,46 @@ app.post("/admin/:id/unvalidate-report", requireAdmin, requireSuperAdmin, async 
   res.redirect(`/admin/${assessment.id}`);
 });
 
+
+function buildDimensionDiagnostics({ normalized, answers, assessmentType = "zpi_hr" }) {
+  const config = getAssessmentConfig(assessmentType);
+  const questionByKey = new Map(config.questions.map((question) => [question.key, question]));
+  const dimensions = [
+    ...(Array.isArray(normalized?.mainTraits) ? normalized.mainTraits : []),
+    ...(Array.isArray(normalized?.additionalParameters) ? normalized.additionalParameters : [])
+  ];
+
+  return dimensions.map((dimension) => {
+    const items = (Array.isArray(dimension?.items) ? dimension.items : []).map((item) => {
+      const question = questionByKey.get(item.questionKey) || null;
+      return {
+        questionKey: item.questionKey,
+        questionId: item.questionId,
+        text: question?.text || "",
+        sourceTrait: item.sourceTrait || question?.trait || "-",
+        answer: item.answer || answers?.[item.questionKey] || "-",
+        answerLabel: answerLabel(item.answer || answers?.[item.questionKey], question),
+        reverse: !!item.reverse,
+        legacyReverse: !!item.legacyReverse,
+        value: Number(item.value || 0),
+        reviewStatus: item.reviewStatus || null,
+        proposedDimension: item.proposedDimension || null,
+        subDimension: item.subDimension || null
+      };
+    });
+
+    return {
+      name: normalizeDimensionNameForDisplay(dimension?.name),
+      displayName: displayDimensionName(dimension?.name),
+      category: dimension?.category,
+      score: Number(dimension?.score || 0),
+      chartScore: chartScore(dimension?.score || 0),
+      questionCount: Number(dimension?.questionCount || items.length || 0),
+      items
+    };
+  });
+}
+
 app.get("/admin/:id", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
@@ -4053,6 +4121,11 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       traits: normalized.traits.map(withDisplayMeta),
       mainTraits: normalized.mainTraits.map(withDisplayMeta),
       additionalParameters: normalized.additionalParameters.map(withDisplayMeta),
+      dimensionDiagnostics: buildDimensionDiagnostics({
+        normalized,
+        answers: assessment.result?.answersJson || {},
+        assessmentType
+      }),
       expandedReport: expanded,
       isValidated: !!assessment.result?.isValidated,
       validatedAt: assessment.result?.validatedAt || null,
@@ -4160,6 +4233,116 @@ function stressFallbackSkillAction(chartValue) {
 }
 
 
+
+function dimensionFallbackExpandedText(displayName, chartValue) {
+  const value = Number(chartValue || 0);
+  const low = value < 30;
+  const high = value >= 60;
+
+  const templates = {
+    "Organizzazione e pianificazione": high
+      ? "La persona mostra una buona capacità di mettere ordine nel lavoro, programmare attività e mantenere una direzione operativa. La continuità va comunque verificata nei fatti, soprattutto quando aumentano urgenze e richieste contemporanee."
+      : "La gestione di ordine, tempi e priorità va presidiata con attenzione. Nel lavoro può servire una struttura più chiara per evitare dispersione, rinvii o passaggi non chiusi.",
+    "Automotivazione": high
+      ? "La spinta personale verso il risultato appare presente e può sostenere iniziativa, energia e desiderio di riuscire. Va collegata a obiettivi concreti per verificare continuità nel tempo."
+      : "La spinta interna può dipendere dal contesto, dal riconoscimento e dalla vicinanza di un referente. È utile verificare come la persona si attiva quando mancano stimoli esterni.",
+    "Autodisciplina / affidabilità": high
+      ? "La continuità esecutiva appare solida: la persona tende a dare peso agli accordi, chiudere i compiti affidati e sostenere le responsabilità operative. Il dato va confermato osservando puntualità, rispetto delle consegne e cura dei dettagli."
+      : "La continuità esecutiva va seguita. La persona può avviare attività o accettare impegni, ma rischiare di lasciare sospesi se mancano scadenze, controllo o responsabilità ben definite.",
+    "Sicurezza": high
+      ? "Le convinzioni appaiono strutturate e la persona può sostenere il proprio punto di vista con decisione. È utile verificare che questa sicurezza resti concreta, aggiornata ai dati e non diventi rigidità."
+      : "Le convinzioni possono non essere sempre stabili. La persona può cercare conferme esterne o modificare posizione con facilità, soprattutto davanti a interlocutori più decisi o situazioni nuove.",
+    "Dinamismo": high
+      ? "L’energia di azione appare presente: la persona può avviare attività con prontezza e mantenere ritmo operativo. Va verificato che questa energia resti collegata a priorità e chiusura dei compiti."
+      : "L’attivazione può essere discontinua. La persona può rendere meglio con compiti chiari, tempi definiti e avvii guidati, soprattutto nei momenti più movimentati.",
+    "Flessibilità comunicativa": high
+      ? "La determinazione comunicativa appare marcata. La persona può sostenere una posizione, affrontare il confronto e orientare l’interlocutore verso il risultato, purché mantenga ascolto e misura."
+      : "La determinazione comunicativa può essere fragile. Nel lavoro può servire supporto per chiarire richieste, sostenere una posizione e gestire conversazioni scomode senza rinviare il confronto.",
+    "Responsabilità": high
+      ? "La persona tende a sentirsi parte attiva nella gestione dei problemi e può cercare soluzioni invece di limitarsi a segnalare ostacoli. La continuità va verificata quando emergono errori, imprevisti o feedback critici."
+      : "La presa in carico va rafforzata. La persona può reagire alle situazioni più che sentirsi causa della soluzione, soprattutto quando il problema coinvolge vincoli o decisioni esterne.",
+    "Ascolto attivo": high
+      ? "La capacità di comprendere punti di vista diversi appare utile nel confronto. Può aiutare a leggere persone e situazioni prima di intervenire, riducendo giudizi affrettati."
+      : "La comprensione dei punti di vista diversi va allenata. La persona può ascoltare, ma rischiare di filtrare alcune situazioni attraverso la propria lettura iniziale.",
+    "Comprensione": high
+      ? "La sensibilità relazionale appare presente e può aiutare a cogliere bisogni, stati d’animo e segnali pratici nelle interazioni quotidiane."
+      : "La componente empatica può risultare discontinua, soprattutto in presenza di tensione o disaccordo. È utile verificare tono, accoglienza e capacità di leggere l’impatto relazionale delle risposte.",
+    "Espansività": high
+      ? "L’approccio relazionale appare aperto e visibile. La persona può creare contatto con facilità, purché la relazione resti funzionale al lavoro e non tolga spazio alla chiusura delle attività."
+      : "L’approccio può essere selettivo o riservato. La persona può interagire quando serve, ma potrebbe non prendere spontaneamente iniziativa relazionale in contesti nuovi.",
+    "Resistenza al cambiamento": high
+      ? "Il cambiamento può essere vissuto con cautela o resistenza. È utile verificare come la persona reagisce quando deve modificare procedure, abitudini o punti di vista consolidati."
+      : "La disponibilità al cambiamento appare possibile, ma va governata con criteri chiari per evitare adattamenti troppo rapidi o cambi di direzione non sufficientemente valutati.",
+    "Leadership naturale": high
+      ? "La tendenza a guidare e diventare punto di riferimento appare presente. Va verificato se questa spinta produce orientamento utile, ascolto e responsabilizzazione del gruppo."
+      : "La guida spontanea degli altri non appare dominante. La persona può contribuire bene su compiti definiti, ma potrebbe non prendere naturalmente il ruolo di riferimento.",
+    "Management": high
+      ? "La capacità di organizzare persone, attività e responsabilità appare utilizzabile. Va verificata nella pratica attraverso assegnazione di compiti, controllo degli avanzamenti e chiusura delle attività."
+      : "La capacità di coordinare persone, attività e responsabilità va costruita con gradualità. Nel lavoro può servire una struttura chiara prima di affidare compiti di gestione più ampi.",
+    "Cooperazione": high
+      ? "La collaborazione appare una risorsa: la persona può condividere informazioni, lavorare con continuità con gli altri e contribuire a un clima operativo più ordinato."
+      : "La collaborazione può dipendere molto da chiarezza dei ruoli e qualità dello scambio. È utile verificare continuità nella condivisione delle informazioni e disponibilità al confronto.",
+    "Principi": high
+      ? "Il riferimento a regole, correttezza e comportamenti professionali appare presente. Va verificato che resti concreto e funzionale, soprattutto quando servono adattamenti operativi."
+      : "Il rapporto con regole, criteri e comportamenti professionali va osservato nel lavoro quotidiano. È utile verificare coerenza tra dichiarazioni, azioni, rispetto degli accordi e gestione delle eccezioni.",
+    "Vendite": high
+      ? "La predisposizione a proporre, influenzare e sostenere una posizione appare utilizzabile. Va verificato che la spinta persuasiva resti coerente con ruolo, contesto e qualità della relazione."
+      : "La proposta, la negoziazione o la capacità di sostenere una posizione possono richiedere supporto. La persona potrebbe evitare di insistere, gestire obiezioni o chiedere una decisione.",
+    "Gestione priorità": high
+      ? "La gestione delle priorità appare presente: la persona può distinguere ciò che richiede attenzione immediata da ciò che può essere pianificato, soprattutto se gli obiettivi sono chiari."
+      : "La gestione delle priorità va presidiata con strumenti semplici. In presenza di molte richieste, la persona può avere bisogno di criteri espliciti per scegliere cosa fare prima.",
+    "Capacità di gestione finanziaria": high
+      ? "La gestione pratica delle risorse economiche appare orientata a continuità e futuro. Nel lavoro può aiutare a considerare costi, sprechi, ritorno delle attività e sostenibilità delle scelte."
+      : "La gestione pratica delle risorse economiche può essere poco strutturata. Nel lavoro può servire supporto quando le decisioni hanno impatto su costi, budget, materiali o ritorno delle attività."
+  };
+
+  return templates[displayName] || (low
+    ? "Il dato va verificato nel lavoro quotidiano con esempi concreti, perché può indicare un’area da presidiare con obiettivi chiari, feedback e osservazione sul campo."
+    : "Il dato offre una traccia utile di lettura operativa e va collegato a comportamenti osservabili, risultati concreti e confronto nel colloquio.");
+}
+
+function dimensionFallbackImprovementPlan(displayName, chartValue) {
+  const value = Number(chartValue || 0);
+  if (value >= 40) {
+    return "Valorizzare il tratto con responsabilità coerenti, obiettivi concreti e verifica periodica dell’applicazione nel lavoro reale.";
+  }
+
+  const templates = {
+    "Management": "Partire da micro-responsabilità di coordinamento: una consegna, un passaggio informativo, un controllo avanzamento o una piccola attività da organizzare.",
+    "Principi": "Usare regole chiare, esempi concreti e confronto su casi reali per verificare coerenza tra comportamento atteso e comportamento osservato.",
+    "Gestione priorità": "Definire ogni giorno poche priorità scritte, distinguendo urgenza, importanza, scadenza e impatto operativo.",
+    "Vendite": "Allenare schemi semplici di proposta: bisogno, beneficio, prova concreta e richiesta finale, partendo da situazioni a basso rischio.",
+    "Sicurezza": "Rafforzare il criterio decisionale con esempi, dati e regole pratiche su quando procedere e quando chiedere conferma.",
+    "Responsabilità": "Chiedere sempre una proposta di azione insieme alla segnalazione del problema: cosa dipende da sé, cosa fare subito e cosa verificare dopo.",
+    "Ascolto attivo": "Allenare riformulazione, domande di chiarimento e distinzione tra fatti, interpretazioni e richieste dell’interlocutore.",
+    "Comprensione": "Lavorare su segnali osservabili: tono, accoglienza, domande aperte, conferma di comprensione e gestione del disaccordo.",
+    "Autodisciplina / affidabilità": "Usare consegne scritte, scadenze ravvicinate e verifica della chiusura effettiva delle attività, non solo dell’avvio."
+  };
+
+  return templates[displayName] || "Collegare il miglioramento a obiettivi misurabili, tappe brevi, feedback ravvicinati e comportamenti osservabili nel lavoro quotidiano.";
+}
+
+function dimensionFallbackSkillAction(displayName, chartValue) {
+  const value = Number(chartValue || 0);
+  if (value >= 50) {
+    return "Valorizzare il tratto assegnando responsabilità coerenti e verificando che resti utile al ruolo e al contesto.";
+  }
+
+  const templates = {
+    "Management": "Affidare responsabilità di coordinamento solo in modo graduale, con confini chiari, referente definito e verifica degli avanzamenti.",
+    "Principi": "Confrontare il comportamento con esempi pratici, regole condivise e riscontri osservabili, evitando valutazioni generiche.",
+    "Gestione priorità": "Dare criteri espliciti su cosa viene prima, cosa può attendere e quale risultato deve essere chiuso entro la giornata.",
+    "Vendite": "Non esporre subito la persona a negoziazioni delicate: preparare frasi guida, obiezioni ricorrenti e confini della proposta.",
+    "Sicurezza": "Aiutare la persona a decidere usando criteri concreti e verificare dopo l’azione se la scelta ha prodotto il risultato atteso.",
+    "Responsabilità": "Gestire con compiti chiari, autonomia delimitata e richiesta costante di una proposta operativa prima di dare la soluzione.",
+    "Ascolto attivo": "Osservare riunioni e interazioni, chiedendo alla persona di sintetizzare il punto di vista altrui prima di rispondere.",
+    "Comprensione": "Affiancare nelle conversazioni delicate e dare feedback immediati su tono, tatto e capacità di leggere il bisogno dell’altro.",
+    "Autodisciplina / affidabilità": "Presidiare con checklist, scadenze brevi e conferma di chiusura, soprattutto sulle attività ripetitive o meno visibili."
+  };
+
+  return templates[displayName] || "Dare obiettivi concreti, visibili e ravvicinati, verificando il comportamento nel lavoro reale con esempi e riscontri periodici.";
+}
+
 function firstNonEmptyAiField(source, fieldNames = []) {
   for (const fieldName of fieldNames) {
     const value = source?.[fieldName];
@@ -4255,9 +4438,9 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
         expandedText = stressFallbackExpandedText(value);
       } else if (evoGuide?.interpretation) {
-        expandedText = `Il dato emerso indica che questo tratto va letto così: ${evoGuide.interpretation}. Nel lavoro quotidiano questa indicazione va verificata con esempi concreti, osservazione sul campo e colloquio.`;
+        expandedText = `${dimensionFallbackExpandedText(displayName, value)} Lettura specifica: ${evoGuide.interpretation}.`;
       } else {
-        expandedText = "Questo indicatore va letto come una traccia operativa da verificare nel lavoro quotidiano, attraverso colloquio, osservazione e confronto con esempi concreti.";
+        expandedText = dimensionFallbackExpandedText(displayName, value);
       }
     }
 
@@ -4301,11 +4484,11 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
     const fallbackImprovementPlan = displayName === "Gestione pressioni / Stress"
       ? stressFallbackImprovementPlan(value)
-      : "Collegare il miglioramento a obiettivi misurabili e a tappe brevi. Prevedere momenti di verifica dei progressi e riconoscimento dei risultati raggiunti.";
+      : dimensionFallbackImprovementPlan(displayName, value);
 
     const fallbackSkillAction = displayName === "Gestione pressioni / Stress"
       ? stressFallbackSkillAction(value)
-      : "Dare obiettivi concreti, visibili e ravvicinati. Evitare incarichi lunghi senza riscontro, perché potrebbero ridurre continuità e iniziativa.";
+      : dimensionFallbackSkillAction(displayName, value);
 
     return {
       ...aiTrait,
