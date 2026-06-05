@@ -241,6 +241,127 @@
     }
   </style>
 
+<%
+
+  function cleanDisplayText(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+      // Mojibake / UTF-8 letto come latin1.
+      .replace(/ZPIâ„¢/g, "ZPI™")
+      .replace(/â€“/g, "–")
+      .replace(/â€”/g, "—")
+      .replace(/â€™/g, "’")
+      .replace(/â€˜/g, "‘")
+      .replace(/â€œ/g, "“")
+      .replace(/â€/g, "”")
+      .replace(/â€¦/g, "…")
+      .replace(/â€¢/g, "•")
+      .replace(/Ã /g, "à")
+      .replace(/Ã¨/g, "è")
+      .replace(/Ã©/g, "é")
+      .replace(/Ã¬/g, "ì")
+      .replace(/Ã²/g, "ò")
+      .replace(/Ã¹/g, "ù")
+      .replace(/Ã€/g, "À")
+      .replace(/Ãˆ/g, "È")
+      .replace(/Ã‰/g, "É")
+      .replace(/ÃŒ/g, "Ì")
+      .replace(/Ã’/g, "Ò")
+      .replace(/Ã™/g, "Ù")
+      .replace(/Â°/g, "°")
+      .replace(/Â/g, "")
+      // Accenti persi frequentemente nei testi AI/HTML.
+      .replace(/\bpu\b/gi, function(match) { return match === match.toUpperCase() ? "PUÒ" : "può"; })
+      .replace(/\bpi\b/g, "più")
+      .replace(/\bPi\b/g, "Più")
+      .replace(/\bci che\b/g, "ciò che")
+      .replace(/\bCi che\b/g, "Ciò che")
+      .replace(/\bperch\b/g, "perché")
+      .replace(/\bPerch\b/g, "Perché")
+      .replace(/\bcos\b/g, "così")
+      .replace(/\bCos\b/g, "Così")
+      .replace(/\bfuori da s\b/g, "fuori da sé")
+      .replace(/\bFuori da s\b/g, "Fuori da sé")
+      .replace(/\bd['’]quipe\b/g, "d’équipe")
+      .replace(/\bdquipe\b/g, "d’équipe")
+      .replace(/\blavoro d['’]?quipe\b/g, "lavoro d’équipe")
+      .replace(/\bpossibilit\b/g, "possibilità")
+      .replace(/\bPossibilit\b/g, "Possibilità")
+      .replace(/\bcapacit\b/g, "capacità")
+      .replace(/\bCapacit\b/g, "Capacità")
+      .replace(/\bqualit\b/g, "qualità")
+      .replace(/\bQualit\b/g, "Qualità")
+      .replace(/\bcontinuit\b/g, "continuità")
+      .replace(/\bContinuit\b/g, "Continuità")
+      .replace(/\bresponsabilit\b/g, "responsabilità")
+      .replace(/\bResponsabilit\b/g, "Responsabilità")
+      .replace(/\baffidabilit\b/g, "affidabilità")
+      .replace(/\bAffidabilit\b/g, "Affidabilità")
+      .replace(/\bflessibilit\b/g, "flessibilità")
+      .replace(/\bFlessibilit\b/g, "Flessibilità")
+      .replace(/\badattabilit\b/g, "adattabilità")
+      .replace(/\bAdattabilit\b/g, "Adattabilità")
+      .replace(/\bstabilit\b/g, "stabilità")
+      .replace(/\bStabilit\b/g, "Stabilità")
+      .replace(/\binstabilit\b/g, "instabilità")
+      .replace(/\bInstabilit\b/g, "Instabilità")
+      .replace(/\bvalidit\b/g, "validità")
+      .replace(/\bValidit\b/g, "Validità")
+      .replace(/\battivit\b/g, "attività")
+      .replace(/\bAttivit\b/g, "Attività")
+      .replace(/\bmodalit\b/g, "modalità")
+      .replace(/\bModalit\b/g, "Modalità")
+      .replace(/\bpriorit\b/g, "priorità")
+      .replace(/\bPriorit\b/g, "Priorità")
+      .replace(/\bsostenibilit\b/g, "sostenibilità")
+      .replace(/\bSostenibilit\b/g, "Sostenibilità")
+      .replace(/\bopportunit\b/g, "opportunità")
+      .replace(/\bOpportunit\b/g, "Opportunità")
+      .replace(/\bcriticit\b/g, "criticità")
+      .replace(/\bCriticit\b/g, "Criticità")
+      .replace(/\bambiguit\b/g, "ambiguità")
+      .replace(/\bAmbiguit\b/g, "Ambiguità")
+      .replace(/\bcentralit\b/g, "centralità")
+      .replace(/\bCentralit\b/g, "Centralità")
+      .replace(/\bvisibilit\b/g, "visibilità")
+      .replace(/\bVisibilit\b/g, "Visibilità")
+      .replace(/\bdisponibilit\b/g, "disponibilità")
+      .replace(/\bDisponibilit\b/g, "Disponibilità")
+      // Frasi ricorrenti dove l'AI perde il verbo essere.
+      .replace(/\bIl rischio per quello\b/g, "Il rischio è quello")
+      .replace(/\bIl rischio quello\b/g, "Il rischio è quello")
+      .replace(/\bil rischio per quello\b/g, "il rischio è quello")
+      .replace(/\bil rischio quello\b/g, "il rischio è quello")
+      .replace(/\bse il cambiamento spiegato\b/g, "se il cambiamento è spiegato")
+      .replace(/\bSe il cambiamento spiegato\b/g, "Se il cambiamento è spiegato")
+      .replace(/\bquando il cambiamento spiegato\b/g, "quando il cambiamento è spiegato")
+      .replace(/\bQuando il cambiamento spiegato\b/g, "Quando il cambiamento è spiegato")
+      .replace(/\bse il contesto confuso\b/g, "se il contesto è confuso")
+      .replace(/\bSe il contesto confuso\b/g, "Se il contesto è confuso")
+      .replace(/\bquando il contesto confuso\b/g, "quando il contesto è confuso")
+      .replace(/\bQuando il contesto confuso\b/g, "Quando il contesto è confuso")
+      .replace(/\bquesto aspetto rilevante\b/g, "questo aspetto è rilevante")
+      .replace(/\bQuesto aspetto rilevante\b/g, "Questo aspetto è rilevante")
+      .replace(/\bil tema collegato\b/g, "il tema è collegato")
+      .replace(/\bIl tema collegato\b/g, "Il tema è collegato")
+      .replace(/\bL’apertura al cambiamento presente\b/g, "L’apertura al cambiamento è presente")
+      .replace(/\bl’apertura al cambiamento presente\b/g, "l’apertura al cambiamento è presente")
+      .replace(/\bUtile leggere questo tratto\b/g, "È utile leggere questo tratto")
+      .replace(/\butile leggere questo tratto\b/g, "è utile leggere questo tratto");
+  }
+
+  function cleanDisplayList(values, separator) {
+    if (!Array.isArray(values)) return cleanDisplayText(values);
+    return values.map(cleanDisplayText).filter(Boolean).join(separator || ", ");
+  }
+
+  function safeText(value, fallback) {
+    const cleaned = cleanDisplayText(value);
+    return cleaned || fallback || "-";
+  }
+
+%>
+
   <% if (submission.analysis.isValidated) { %>
     <div class="notice notice-success">
       <strong>Relazione validata.</strong>
@@ -313,8 +434,8 @@
 
         <form method="POST" action="/admin/<%= submission.id %>/recalculate-scoring-v2" id="recalculate-scoring-v2-form">
           <input type="hidden" name="regenerateAi" value="true">
-          <button class="btn btn-secondary" type="submit" id="recalculate-scoring-v2-button" onclick="return confirm('Confermi il ricalcolo scoring V2? I punteggi verranno ricalcolati dalle risposte grezze e la relazione AI verrà rigenerata.');">
-            Ricalcola scoring V2 + rigenera AI
+          <button class="btn btn-secondary" type="submit" id="recalculate-scoring-v2-button" onclick="return confirm('Confermi il ricalcolo scoring V2.2? I punteggi verranno ricalcolati dalle risposte grezze e la relazione AI verrà rigenerata.');">
+            Ricalcola scoring V2.2 + rigenera AI
           </button>
         </form>
 
@@ -344,25 +465,25 @@
   <% if (submission.analysis.generationError) { %>
     <div class="notice notice-error">
       <strong>Generazione non completata.</strong>
-      <%= submission.analysis.generationError %>. Puoi rilanciare la generazione dal pulsante fallback.
+      <%= safeText(submission.analysis.generationError) %>. Puoi rilanciare la generazione dal pulsante fallback.
     </div>
   <% } %>
 
   <% if (submission.analysis.validatedReportText) { %>
     <div class="card">
       <h2>Relazione generale validata</h2>
-      <p style="white-space: pre-line;"><%= submission.analysis.validatedReportText %></p>
+      <p style="white-space: pre-line;"><%= safeText(submission.analysis.validatedReportText) %></p>
     </div>
   <% } else if (submission.analysis.expandedReport) { %>
     <div class="card">
       <h2>Relazione generale</h2>
-      <p><%= submission.analysis.expandedReport.generalSummary || "-" %></p>
+      <p><%= safeText(submission.analysis.expandedReport.generalSummary) %></p>
       <% if (submission.analysis.summary.roleFit && submission.analysis.summary.roleFit.score !== undefined) { %>
         <p><strong>Compatibilità con il ruolo ricoperto:</strong> <%= submission.analysis.summary.roleFit.score %>%</p>
       <% } %>
-      <p><strong>Indice di coerenza delle risposte:</strong> <%= submission.analysis.reliabilityScore %>/100 — <%= submission.analysis.reliabilityLabel %></p>
+      <p><strong>Indice di coerenza delle risposte:</strong> <%= submission.analysis.reliabilityScore %>/100 — <%= safeText(submission.analysis.reliabilityLabel) %></p>
       <% if (submission.analysis.reliabilityFlags && submission.analysis.reliabilityFlags.length) { %>
-        <p class="muted"><%= submission.analysis.reliabilityFlags.join("; ") %></p>
+        <p class="muted"><%= cleanDisplayList(submission.analysis.reliabilityFlags, "; ") %></p>
       <% } %>
     </div>
 
@@ -373,20 +494,20 @@
 
       <% submission.analysis.expandedReport.traits.forEach(function(item) { %>
         <div class="card">
-          <h3><%= item.displayName || item.name || "Tratto" %></h3>
+          <h3><%= safeText(item.displayName || item.name, "Tratto") %></h3>
 
           <% if (item.description) { %>
-            <p class="muted">(<%= item.description %>)</p>
+            <p class="muted">(<%= safeText(item.description) %>)</p>
           <% } %>
 
-          <p><%= item.expandedText || "-" %></p>
+          <p><%= safeText(item.expandedText) %></p>
 
           <% if (item.showRemedies !== false) { %>
-            <p><strong>Rimedi pratici:</strong> <%= item.improvementPlan || "-" %></p>
+            <p><strong>Rimedi pratici:</strong> <%= safeText(item.improvementPlan) %></p>
           <% } %>
 
           <% if (item.showSkillAction !== false) { %>
-            <p><strong>Come gestirlo nella pratica:</strong> <%= item.skillAction || item.teamLeverage || "-" %></p>
+            <p><strong>Come gestirlo nella pratica:</strong> <%= safeText(item.skillAction || item.teamLeverage) %></p>
           <% } %>
         </div>
       <% }) %>
@@ -395,15 +516,15 @@
 
   <% if (currentAdmin && currentAdmin.role === "SUPER_ADMIN" && submission.analysis.dimensionDiagnostics && submission.analysis.dimensionDiagnostics.length) { %>
     <div class="card">
-      <h2>Diagnostica scoring V2.1</h2>
+      <h2>Diagnostica scoring V2.2</h2>
       <p class="muted">
-        Mostra quali risposte alimentano ogni tratto/parametro dopo il ricalcolo V2.1. Serve per verificare casi anomali come 100, 0 o salti molto ampi rispetto allo scoring legacy.
+        Mostra quali risposte alimentano ogni tratto/parametro dopo il ricalcolo V2.2. Serve per verificare casi anomali come 100, 0 o salti molto ampi rispetto allo scoring legacy.
       </p>
 
       <% submission.analysis.dimensionDiagnostics.forEach(function(dimension) { %>
         <details>
           <summary class="diagnostic-summary">
-            <%= dimension.displayName || dimension.name %> — score <%= dimension.chartScore %> — <%= dimension.questionCount %> item
+            <%= safeText(dimension.displayName || dimension.name) %> — score <%= dimension.chartScore %> — <%= dimension.questionCount %> item
           </summary>
           <div class="diagnostic-meta">
             <span class="pill"><%= dimension.category === "additional" ? "Parametro aggiuntivo" : "Tratto" %></span>
@@ -427,15 +548,15 @@
                   <tr>
                     <td><strong><%= item.questionKey %></strong></td>
                     <td>
-                      <%= item.text || "-" %>
+                      <%= safeText(item.text) %>
                       <% if (item.subDimension) { %>
-                        <br><span class="muted"><%= item.subDimension %></span>
+                        <br><span class="muted"><%= safeText(item.subDimension) %></span>
                       <% } %>
                     </td>
-                    <td><%= item.answerLabel || item.answer || "-" %></td>
+                    <td><%= safeText(item.answerLabel || item.answer) %></td>
                     <td><%= item.reverse ? "Sì" : "No" %></td>
                     <td><strong><%= item.value %></strong></td>
-                    <td><%= item.sourceTrait || "-" %></td>
+                    <td><%= safeText(item.sourceTrait) %></td>
                   </tr>
                 <% }) %>
               </tbody>
@@ -452,7 +573,7 @@
     const formsToDisable = [
       ["generate-expanded-form", "generate-expanded-button", "Generazione in corso..."],
       ["regenerate-expanded-form", "regenerate-expanded-button", "Rigenerazione in corso..."],
-      ["recalculate-scoring-v2-form", "recalculate-scoring-v2-button", "Ricalcolo V2 in corso..."]
+      ["recalculate-scoring-v2-form", "recalculate-scoring-v2-button", "Ricalcolo V2.2 in corso..."]
     ];
 
     formsToDisable.forEach(function ([formId, buttonId, loadingText]) {

@@ -249,7 +249,7 @@
   <div class="topbar">
     <div>
       <h1>Area Admin</h1>
-      <p class="muted"><%= organizationName %></p>
+      <p class="muted"><%= safeText(organizationName) %></p>
     </div>
 
     <div class="admin-actions">
@@ -264,22 +264,125 @@
   </div>
 
   <%
-  function fixUtfLabel(value) {
-    return String(value || "")
+
+  function cleanDisplayText(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+      // Mojibake / UTF-8 letto come latin1.
       .replace(/ZPIâ„¢/g, "ZPI™")
       .replace(/â€“/g, "–")
       .replace(/â€”/g, "—")
       .replace(/â€™/g, "’")
+      .replace(/â€˜/g, "‘")
       .replace(/â€œ/g, "“")
       .replace(/â€/g, "”")
+      .replace(/â€¦/g, "…")
+      .replace(/â€¢/g, "•")
       .replace(/Ã /g, "à")
       .replace(/Ã¨/g, "è")
       .replace(/Ã©/g, "é")
       .replace(/Ã¬/g, "ì")
       .replace(/Ã²/g, "ò")
       .replace(/Ã¹/g, "ù")
-      .replace(/Â/g, "");
+      .replace(/Ã€/g, "À")
+      .replace(/Ãˆ/g, "È")
+      .replace(/Ã‰/g, "É")
+      .replace(/ÃŒ/g, "Ì")
+      .replace(/Ã’/g, "Ò")
+      .replace(/Ã™/g, "Ù")
+      .replace(/Â°/g, "°")
+      .replace(/Â/g, "")
+      // Accenti persi frequentemente nei testi AI/HTML.
+      .replace(/\bpu\b/gi, function(match) { return match === match.toUpperCase() ? "PUÒ" : "può"; })
+      .replace(/\bpi\b/g, "più")
+      .replace(/\bPi\b/g, "Più")
+      .replace(/\bci che\b/g, "ciò che")
+      .replace(/\bCi che\b/g, "Ciò che")
+      .replace(/\bperch\b/g, "perché")
+      .replace(/\bPerch\b/g, "Perché")
+      .replace(/\bcos\b/g, "così")
+      .replace(/\bCos\b/g, "Così")
+      .replace(/\bfuori da s\b/g, "fuori da sé")
+      .replace(/\bFuori da s\b/g, "Fuori da sé")
+      .replace(/\bd['’]quipe\b/g, "d’équipe")
+      .replace(/\bdquipe\b/g, "d’équipe")
+      .replace(/\blavoro d['’]?quipe\b/g, "lavoro d’équipe")
+      .replace(/\bpossibilit\b/g, "possibilità")
+      .replace(/\bPossibilit\b/g, "Possibilità")
+      .replace(/\bcapacit\b/g, "capacità")
+      .replace(/\bCapacit\b/g, "Capacità")
+      .replace(/\bqualit\b/g, "qualità")
+      .replace(/\bQualit\b/g, "Qualità")
+      .replace(/\bcontinuit\b/g, "continuità")
+      .replace(/\bContinuit\b/g, "Continuità")
+      .replace(/\bresponsabilit\b/g, "responsabilità")
+      .replace(/\bResponsabilit\b/g, "Responsabilità")
+      .replace(/\baffidabilit\b/g, "affidabilità")
+      .replace(/\bAffidabilit\b/g, "Affidabilità")
+      .replace(/\bflessibilit\b/g, "flessibilità")
+      .replace(/\bFlessibilit\b/g, "Flessibilità")
+      .replace(/\badattabilit\b/g, "adattabilità")
+      .replace(/\bAdattabilit\b/g, "Adattabilità")
+      .replace(/\bstabilit\b/g, "stabilità")
+      .replace(/\bStabilit\b/g, "Stabilità")
+      .replace(/\binstabilit\b/g, "instabilità")
+      .replace(/\bInstabilit\b/g, "Instabilità")
+      .replace(/\bvalidit\b/g, "validità")
+      .replace(/\bValidit\b/g, "Validità")
+      .replace(/\battivit\b/g, "attività")
+      .replace(/\bAttivit\b/g, "Attività")
+      .replace(/\bmodalit\b/g, "modalità")
+      .replace(/\bModalit\b/g, "Modalità")
+      .replace(/\bpriorit\b/g, "priorità")
+      .replace(/\bPriorit\b/g, "Priorità")
+      .replace(/\bsostenibilit\b/g, "sostenibilità")
+      .replace(/\bSostenibilit\b/g, "Sostenibilità")
+      .replace(/\bopportunit\b/g, "opportunità")
+      .replace(/\bOpportunit\b/g, "Opportunità")
+      .replace(/\bcriticit\b/g, "criticità")
+      .replace(/\bCriticit\b/g, "Criticità")
+      .replace(/\bambiguit\b/g, "ambiguità")
+      .replace(/\bAmbiguit\b/g, "Ambiguità")
+      .replace(/\bcentralit\b/g, "centralità")
+      .replace(/\bCentralit\b/g, "Centralità")
+      .replace(/\bvisibilit\b/g, "visibilità")
+      .replace(/\bVisibilit\b/g, "Visibilità")
+      .replace(/\bdisponibilit\b/g, "disponibilità")
+      .replace(/\bDisponibilit\b/g, "Disponibilità")
+      // Frasi ricorrenti dove l'AI perde il verbo essere.
+      .replace(/\bIl rischio per quello\b/g, "Il rischio è quello")
+      .replace(/\bIl rischio quello\b/g, "Il rischio è quello")
+      .replace(/\bil rischio per quello\b/g, "il rischio è quello")
+      .replace(/\bil rischio quello\b/g, "il rischio è quello")
+      .replace(/\bse il cambiamento spiegato\b/g, "se il cambiamento è spiegato")
+      .replace(/\bSe il cambiamento spiegato\b/g, "Se il cambiamento è spiegato")
+      .replace(/\bquando il cambiamento spiegato\b/g, "quando il cambiamento è spiegato")
+      .replace(/\bQuando il cambiamento spiegato\b/g, "Quando il cambiamento è spiegato")
+      .replace(/\bse il contesto confuso\b/g, "se il contesto è confuso")
+      .replace(/\bSe il contesto confuso\b/g, "Se il contesto è confuso")
+      .replace(/\bquando il contesto confuso\b/g, "quando il contesto è confuso")
+      .replace(/\bQuando il contesto confuso\b/g, "Quando il contesto è confuso")
+      .replace(/\bquesto aspetto rilevante\b/g, "questo aspetto è rilevante")
+      .replace(/\bQuesto aspetto rilevante\b/g, "Questo aspetto è rilevante")
+      .replace(/\bil tema collegato\b/g, "il tema è collegato")
+      .replace(/\bIl tema collegato\b/g, "Il tema è collegato")
+      .replace(/\bL’apertura al cambiamento presente\b/g, "L’apertura al cambiamento è presente")
+      .replace(/\bl’apertura al cambiamento presente\b/g, "l’apertura al cambiamento è presente")
+      .replace(/\bUtile leggere questo tratto\b/g, "È utile leggere questo tratto")
+      .replace(/\butile leggere questo tratto\b/g, "è utile leggere questo tratto");
   }
+
+  function cleanDisplayList(values, separator) {
+    if (!Array.isArray(values)) return cleanDisplayText(values);
+    return values.map(cleanDisplayText).filter(Boolean).join(separator || ", ");
+  }
+
+  function safeText(value, fallback) {
+    const cleaned = cleanDisplayText(value);
+    return cleaned || fallback || "-";
+  }
+
+  const fixUtfLabel = cleanDisplayText;
 
   const qrCards = Array.isArray(typeof adminAssessmentCards !== "undefined" ? adminAssessmentCards : null)
     ? adminAssessmentCards
@@ -311,7 +414,7 @@
           type="text"
           name="company"
           placeholder="Es. Octo srl"
-          value="<%= filters && filters.company ? filters.company : '' %>"
+          value="<%= cleanDisplayText(filters && filters.company ? filters.company : '') %>"
         />
       </div>
 
@@ -364,7 +467,7 @@
         style="margin-top: 14px;"
         onsubmit="return confirm('Rigenerare le relazioni AI per tutti gli assessment attualmente filtrati?');"
       >
-        <input type="hidden" name="company" value="<%= filters && filters.company ? filters.company : '' %>" />
+        <input type="hidden" name="company" value="<%= cleanDisplayText(filters && filters.company ? filters.company : '') %>" />
         <input type="hidden" name="assessmentType" value="<%= filters && filters.assessmentType ? filters.assessmentType : '' %>" />
         <input type="hidden" name="fromDate" value="<%= filters && filters.fromDate ? filters.fromDate : '' %>" />
         <input type="hidden" name="toDate" value="<%= filters && filters.toDate ? filters.toDate : '' %>" />
@@ -379,16 +482,16 @@
         method="POST"
         action="/admin/recalculate-scoring-v2"
         style="margin-top: 10px;"
-        onsubmit="return confirm('Confermi il ricalcolo scoring V2 per tutti gli assessment attualmente filtrati? I punteggi verranno ricalcolati dalle risposte grezze e le relazioni AI verranno rigenerate.');"
+        onsubmit="return confirm('Confermi il ricalcolo scoring V2.2 per tutti gli assessment attualmente filtrati? I punteggi verranno ricalcolati dalle risposte grezze e le relazioni AI verranno rigenerate.');"
       >
-        <input type="hidden" name="company" value="<%= filters && filters.company ? filters.company : '' %>" />
+        <input type="hidden" name="company" value="<%= cleanDisplayText(filters && filters.company ? filters.company : '') %>" />
         <input type="hidden" name="assessmentType" value="<%= filters && filters.assessmentType ? filters.assessmentType : '' %>" />
         <input type="hidden" name="fromDate" value="<%= filters && filters.fromDate ? filters.fromDate : '' %>" />
         <input type="hidden" name="toDate" value="<%= filters && filters.toDate ? filters.toDate : '' %>" />
         <input type="hidden" name="regenerateAi" value="true" />
 
         <button type="submit" class="btn btn-secondary">
-          Ricalcola scoring V2 + rigenera AI
+          Ricalcola scoring V2.2 + rigenera AI
         </button>
       </form>
     <% } %>
@@ -421,14 +524,14 @@
         <% submissions.forEach(function(item) { %>
           <tr>
             <td><%= fixUtfLabel(item.assessmentTitle || "ZPI™ – Zenith Performance Index") %></td>
-            <td><%= item.name %></td>
-            <td><%= item.email || "-" %></td>
-            <td><%= item.candidateCompany || "-" %></td>
-            <td><%= item.role %></td>
-            <td><%= item.createdAtFormatted || new Date(item.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" }) %></td>
+            <td><%= safeText(item.name) %></td>
+            <td><%= safeText(item.email) %></td>
+            <td><%= safeText(item.candidateCompany) %></td>
+            <td><%= safeText(item.role) %></td>
+            <td><%= safeText(item.createdAtFormatted || new Date(item.createdAt).toLocaleString("it-IT", { timeZone: "Europe/Rome" })) %></td>
             <td><%= item.avgScore ?? "-" %></td>
-            <td><%= item.orientation %></td>
-            <td><%= item.topTraits && item.topTraits.length ? item.topTraits.join(", ") : "-" %></td>
+            <td><%= safeText(item.orientation) %></td>
+            <td><%= item.topTraits && item.topTraits.length ? cleanDisplayList(item.topTraits, ", ") : "-" %></td>
             <td>
               <% if (item.expandedReady) { %>
                 <span class="badge badge-ready">Pronta</span>
