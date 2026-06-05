@@ -8,7 +8,7 @@ import PDFDocument from "pdfkit";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
-import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
+import { ZPI_QUESTIONS, getScoredQuestions, ZPI_SCORE_DIMENSIONS_V2, ZPI_SCORING_VERSION } from "./questions.js";
 import { SPORT_QUESTIONS, getSportScoredQuestions } from "./sport-questions.js";
 
 const prisma = new PrismaClient({
@@ -548,7 +548,9 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
+  // SOLO DISPLAY: non cambia scoring, mapping, role-fit o nomi interni salvati.
+  "AffidabilitÃ  + autodisciplina": "Autodisciplina / affidabilitÃ ",
+  "Affidabilità + autodisciplina": "Autodisciplina / affidabilità",
   "Stress": "Gestione pressioni / Stress",
   "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
@@ -557,6 +559,8 @@ const DIMENSION_DESCRIPTIONS = {
   "Organizzazione e pianificazione": "misura la capacitÃ  di programmare il lavoro nel breve e nel lungo periodo",
   "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacitÃ  di avere successo",
   "AffidabilitÃ  + autodisciplina": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
+  "Autodisciplina / affidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
+  "Autodisciplina / affidabilità": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
   "AffidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
   "Sicurezza": "misura la struttura delle convinzioni della persona: quanto Ã¨ certa delle proprie idee, quanto le difende, quanto Ã¨ disposta a metterle in discussione e quanto il suo punto di vista Ã¨ concreto o teorico",
   "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",
@@ -653,6 +657,38 @@ function normalizeDimensionDefinitions(originalTrait) {
   return DIMENSION_DEFINITIONS[originalTrait] || [
     { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
   ];
+}
+
+function getQuestionScoreDimensions(question, sourceTrait) {
+  const v2Config = ZPI_SCORE_DIMENSIONS_V2?.[question?.key];
+
+  // V2: se la domanda è presente nella mappa, usiamo esattamente quella.
+  // Una lista vuota è intenzionale: item di contesto, da eliminare o da non usare nello scoring.
+  if (v2Config && Array.isArray(v2Config.dimensions)) {
+    return v2Config.dimensions;
+  }
+
+  // Compatibilità futura: permette di mettere direttamente scoreDimensions sulla domanda.
+  if (Array.isArray(question?.scoreDimensions)) {
+    return question.scoreDimensions;
+  }
+
+  // Fallback legacy: mantiene compatibili eventuali domande non ancora migrate.
+  return normalizeDimensionDefinitions(sourceTrait);
+}
+
+function getQuestionReverseForScoring(question) {
+  const v2Config = ZPI_SCORE_DIMENSIONS_V2?.[question?.key];
+
+  if (v2Config && typeof v2Config.reverse === "boolean") {
+    return v2Config.reverse;
+  }
+
+  if (typeof question?.reverseV2 === "boolean") {
+    return question.reverseV2;
+  }
+
+  return !!question?.reverse;
 }
 
 function histogramColor(score) {
@@ -964,7 +1000,7 @@ function buildManagementAdvice({ traits, roleFit }) {
     return "Il contesto più adatto è dinamico, con interazione, confronto e obiettivi visibili. È utile canalizzare l’energia relazionale su attività con responsabilità definite, evitando che la spinta comunicativa si disperda in iniziative poco prioritarie.";
   }
 
-  if (top.includes("Organizzazione e pianificazione") || top.includes("Affidabilità + autodisciplina")) {
+  if (top.includes("Organizzazione e pianificazione") || top.includes("Affidabilità + autodisciplina") || top.includes("Autodisciplina / affidabilità")) {
     return "È utile gestire il lavoro con processi chiari, responsabilità definite e spazio per presidiare attività operative o progettuali. Gli obiettivi devono essere misurabili e la continuità di esecuzione va riconosciuta con riscontri concreti.";
   }
 
@@ -1102,10 +1138,13 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
     if (!answer) return;
 
     const sourceTrait = question.trait || "Comportamento generale";
-    const value = scoreAnswer(answer, question.reverse, question);
+    const reverseForScoring = assessmentType === "zpi_hr"
+      ? getQuestionReverseForScoring(question)
+      : !!question.reverse;
+    const value = scoreAnswer(answer, reverseForScoring, question);
     const dimensions = assessmentType === "sport_performance"
       ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
-      : normalizeDimensionDefinitions(sourceTrait);
+      : getQuestionScoreDimensions(question, sourceTrait);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -1123,8 +1162,13 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
         questionId: question.id,
         sourceTrait,
         answer,
-        reverse: !!question.reverse,
-        value
+        reverse: reverseForScoring,
+        legacyReverse: !!question.reverse,
+        value,
+        scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : "legacy",
+        reviewStatus: ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.reviewStatus || null,
+        proposedDimension: ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.proposedDimension || null,
+        subDimension: ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.subDimension || null
       });
     });
   });
@@ -1340,6 +1384,166 @@ function buildReliability(answers, traits) {
     reliabilityScore,
     reliabilityLabel: reliabilityLabelFromScore(reliabilityScore),
     reliabilityFlags: flags
+  };
+}
+
+function buildRecalculatedZpiPayloadFromAnswers(assessment) {
+  if (!assessment?.result) {
+    throw new Error("AssessmentResult mancante.");
+  }
+
+  const previousPayload = assessment.result.traitsJson || {};
+  const assessmentType = assessment.assessmentType || previousPayload.assessmentType || "zpi_hr";
+
+  if (assessmentType !== "zpi_hr") {
+    return {
+      skipped: true,
+      reason: `Assessment type non supportato per ricalcolo ZPI V2: ${assessmentType}`
+    };
+  }
+
+  const answers = assessment.result.answersJson || {};
+  const answerCount = Object.values(answers).filter(Boolean).length;
+
+  if (!answerCount) {
+    return {
+      skipped: true,
+      reason: "Nessuna risposta grezza disponibile in answersJson."
+    };
+  }
+
+  const requestedRole = assessment.requestedRole || "non_specificato";
+  const traits = buildTraitsFromAnswers(answers, assessmentType);
+  const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
+  const avgScore = avg(mainTraits.map((t) => t.score));
+  const avgRange = range(avgScore);
+  const summary = buildSummary(traits, requestedRole);
+  const roleFit = calculateRoleFit(traits, requestedRole);
+  const managementAdvice = buildManagementAdvice({ traits, roleFit });
+  const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+
+  const traitsJson = {
+    assessmentType,
+    assessmentTitle: getAssessmentConfig(assessmentType).title,
+    traits,
+    mainTraits,
+    additionalParameters,
+    roleFit,
+    managementAdvice,
+    topTraits: summary.topTraits,
+    weakTraits: summary.weakTraits,
+    reliabilityFlags,
+    scoringVersion: ZPI_SCORING_VERSION,
+    scoringRecalculatedAt: new Date().toISOString(),
+    scoringRecalculatedFrom: previousPayload.scoringVersion || "legacy",
+    previousScoringSnapshot: {
+      avgScore: assessment.result.avgScore ?? null,
+      avgRange: assessment.result.avgRange ?? null,
+      orientation: assessment.result.orientation ?? null,
+      roleComment: assessment.result.roleComment ?? null,
+      reliabilityScore: assessment.result.reliabilityScore ?? null,
+      reliabilityLabel: assessment.result.reliabilityLabel ?? null,
+      traitCount: Array.isArray(previousPayload.traits) ? previousPayload.traits.length : 0,
+      mainTraitCount: Array.isArray(previousPayload.mainTraits) ? previousPayload.mainTraits.length : 0,
+      additionalParameterCount: Array.isArray(previousPayload.additionalParameters)
+        ? previousPayload.additionalParameters.length
+        : 0
+    }
+  };
+
+  return {
+    skipped: false,
+    assessmentType,
+    answers,
+    traits,
+    mainTraits,
+    additionalParameters,
+    avgScore,
+    avgRange,
+    summary,
+    roleFit,
+    managementAdvice,
+    reliabilityScore,
+    reliabilityLabel,
+    reliabilityFlags,
+    traitsJson
+  };
+}
+
+async function recalculateAssessmentScoringV2({
+  assessment,
+  companyName,
+  regenerateAi = true
+}) {
+  if (!assessment?.result) {
+    return {
+      status: "skipped",
+      reason: "AssessmentResult mancante."
+    };
+  }
+
+  if (assessment.result.isGenerating) {
+    return {
+      status: "skipped",
+      reason: "Relazione AI già in generazione."
+    };
+  }
+
+  const recalculated = buildRecalculatedZpiPayloadFromAnswers(assessment);
+
+  if (recalculated.skipped) {
+    return {
+      status: "skipped",
+      reason: recalculated.reason
+    };
+  }
+
+  await prisma.assessmentResult.update({
+    where: { assessmentId: assessment.id },
+    data: {
+      avgScore: recalculated.avgScore,
+      avgRange: recalculated.avgRange,
+      orientation: recalculated.summary.orientation,
+      roleComment: recalculated.summary.roleComment,
+      reliabilityScore: recalculated.reliabilityScore,
+      reliabilityLabel: recalculated.reliabilityLabel,
+      traitsJson: recalculated.traitsJson,
+
+      // La relazione AI precedente non è più coerente con il nuovo scoring.
+      expandedReportJson: null,
+      expandedReportGeneratedAt: null,
+      generationError: null,
+      isGenerating: false
+    }
+  });
+
+  if (regenerateAi) {
+    startExpandedReportJob({
+      assessmentId: assessment.id,
+      companyName,
+      role: assessment.requestedRole,
+      avgScore: recalculated.avgScore,
+      avgRange: recalculated.avgRange,
+      summary: {
+        orientation: recalculated.summary.orientation,
+        roleComment: recalculated.summary.roleComment,
+        roleFit: recalculated.roleFit,
+        managementAdvice: recalculated.managementAdvice
+      },
+      traits: recalculated.traits,
+      reliabilityScore: recalculated.reliabilityScore,
+      reliabilityLabel: recalculated.reliabilityLabel,
+      reliabilityFlags: recalculated.reliabilityFlags,
+      roleFit: recalculated.roleFit,
+      managementAdvice: recalculated.managementAdvice,
+      assessmentTitle: getAssessmentConfig(recalculated.assessmentType).title,
+      assessmentType: recalculated.assessmentType
+    });
+  }
+
+  return {
+    status: "recalculated",
+    regenerateAi
   };
 }
 
@@ -1624,7 +1828,7 @@ REGOLE SEMANTICHE CHIRURGICHE PER I TRATTI ZPI
 Queste regole valgono solo per expandedText, improvementPlan e skillAction dei singoli tratti. Non modificano generalSummary, compatibilità ruolo, istogrammi o punteggi.
 - Organizzazione e pianificazione: interpretala come capacità concreta di programmare il lavoro, mettere ordine, non disperdersi e non correre solo dietro alle urgenze. Non trasformarla in precisione mentale astratta.
 - Automotivazione: interpretala come spinta interna, ambizione e capacità di caricarsi verso il risultato. Non confonderla con entusiasmo generico o umore positivo.
-- Affidabilità / Autodisciplina: interpretala come continuità esecutiva, parola data, cura degli accordi, capacità di non rimandare e non lasciare attività non gestite. Non confonderla con organizzazione.
+- Autodisciplina / affidabilità: interpretala come continuità esecutiva, parola data, cura degli accordi, capacità di non rimandare e non lasciare attività non gestite. Non confonderla con organizzazione.
 - Gestione pressioni / Stress: non interpretarla come stress generico o fragilità emotiva. Da 30 a 60 indica gestione efficace e serenità operativa. Da 70 in su può indicare che la persona ha “incelofanato” una situazione difficile: mantiene equilibrio e compromessi, ma potrebbe non affrontare davvero il nodo. Da 0 a 20 indica una situazione/persona che inizia a drenare energia e attenzione. Sotto 0 indica conflitto o influenza negativa più evidente.
 - Dinamismo: interpretalo come energia di azione, movimento e prontezza nell’iniziare attività. Non confonderlo con motivazione, entusiasmo o stress.
 - Flessibilità comunicativa: interpretala come determinazione/assertività orientata al risultato, capacità di affrontare le situazioni di petto e sostenere una posizione. Non leggerla come empatia, diplomazia o morbidezza relazionale.
@@ -2558,7 +2762,9 @@ app.post("/q/:token", async (req, res) => {
           managementAdvice,
           topTraits: summary.topTraits,
           weakTraits: summary.weakTraits,
-          reliabilityFlags
+          reliabilityFlags,
+          scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : "legacy",
+          scoringCalculatedAt: new Date().toISOString()
         },
         answersJson: answers,
         isGenerating: false,
@@ -2797,6 +3003,99 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
   } catch (error) {
     console.error("Errore rigenerazione massiva relazioni:", error);
     return res.status(500).send("Errore durante la rigenerazione massiva delle relazioni.");
+  }
+});
+
+
+app.post("/admin/recalculate-scoring-v2", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const { where, filters } = buildAdminAssessmentWhere(
+      req.body || {},
+      req.session.admin.organizationId
+    );
+
+    const assessments = await prisma.assessment.findMany({
+      where,
+      include: {
+        result: true
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+
+    const regenerateAi = req.body?.regenerateAi !== "false";
+
+    let recalculated = 0;
+    let skipped = 0;
+    const skippedReasons = {};
+
+    for (const assessment of assessments) {
+      const result = await recalculateAssessmentScoringV2({
+        assessment,
+        companyName: req.session.admin.organizationName,
+        regenerateAi
+      });
+
+      if (result.status === "recalculated") {
+        recalculated += 1;
+      } else {
+        skipped += 1;
+        const reason = result.reason || "Motivo non specificato";
+        skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
+      }
+    }
+
+    console.log("[ADMIN] bulk ZPI V2 scoring recalculation completed", {
+      recalculated,
+      skipped,
+      skippedReasons,
+      regenerateAi,
+      filters
+    });
+
+    return res.redirect(`/admin${buildAdminQueryString(filters)}`);
+  } catch (error) {
+    console.error("Errore ricalcolo massivo scoring ZPI V2:", error);
+    return res.status(500).send("Errore durante il ricalcolo massivo scoring ZPI V2.");
+  }
+});
+
+app.post("/admin/:id/recalculate-scoring-v2", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: {
+        result: true
+      }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    const regenerateAi = req.body?.regenerateAi !== "false";
+
+    const result = await recalculateAssessmentScoringV2({
+      assessment,
+      companyName: req.session.admin.organizationName,
+      regenerateAi
+    });
+
+    console.log("[ADMIN] single ZPI V2 scoring recalculation", {
+      assessmentId: assessment.id,
+      status: result.status,
+      reason: result.reason || null,
+      regenerateAi
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore ricalcolo scoring ZPI V2:", error);
+    return res.status(500).send("Errore durante il ricalcolo scoring ZPI V2.");
   }
 });
 

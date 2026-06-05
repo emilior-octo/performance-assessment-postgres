@@ -373,6 +373,24 @@
           Rigenera relazioni filtrate
         </button>
       </form>
+
+
+      <form
+        method="POST"
+        action="/admin/recalculate-scoring-v2"
+        style="margin-top: 10px;"
+        onsubmit="return confirm('Confermi il ricalcolo scoring V2 per tutti gli assessment attualmente filtrati? I punteggi verranno ricalcolati dalle risposte grezze e le relazioni AI verranno rigenerate.');"
+      >
+        <input type="hidden" name="company" value="<%= filters && filters.company ? filters.company : '' %>" />
+        <input type="hidden" name="assessmentType" value="<%= filters && filters.assessmentType ? filters.assessmentType : '' %>" />
+        <input type="hidden" name="fromDate" value="<%= filters && filters.fromDate ? filters.fromDate : '' %>" />
+        <input type="hidden" name="toDate" value="<%= filters && filters.toDate ? filters.toDate : '' %>" />
+        <input type="hidden" name="regenerateAi" value="true" />
+
+        <button type="submit" class="btn btn-secondary">
+          Ricalcola scoring V2 + rigenera AI
+        </button>
+      </form>
     <% } %>
   </div>
 

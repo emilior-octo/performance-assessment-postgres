@@ -2997,6 +2997,2579 @@ export const ZPI_QUESTIONS = [
   }
 ];
 
+
+// ZPI V2 scoring map
+// ------------------------------------------------------------
+// Questa mappa NON cambia testi, domande, grafici, prompt o label finali.
+// Serve solo al motore di scoring per collegare ogni domanda alla dimensione
+// finale corretta del report, evitando il vecchio mapping ambiguo per trait sorgente.
+export const ZPI_SCORING_VERSION = "zpi_v2";
+
+export const ZPI_SCORE_DIMENSIONS_V2 = {
+  "q1": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q2": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q3": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q4": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q5": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q6": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q7": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Responsabilità / ownership",
+    "subDimension": "Centralità e presa in carico"
+  },
+  "q8": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Responsabilità / ownership",
+    "subDimension": "Centralità e presa in carico"
+  },
+  "q9": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q10": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q11": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "SPLIT",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Motivazione relazionale / energia positiva"
+  },
+  "q12": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autonomia / iniziativa",
+    "subDimension": "Iniziativa professionale"
+  },
+  "q13": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q14": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Indulgenza verso persone vicine"
+  },
+  "q15": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q16": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q17": {
+    "dimensions": [],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Da riclassificare",
+    "subDimension": "Auto-mapped generico"
+  },
+  "q18": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q19": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q20": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q21": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q22": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q23": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q24": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q25": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q26": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q27": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q28": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q29": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Responsabilità / ownership",
+    "subDimension": "Centralità e presa in carico"
+  },
+  "q30": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q31": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q32": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Far accettare idee/progetti",
+    "reverse": true
+  },
+  "q33": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autonomia / iniziativa",
+    "subDimension": "Iniziativa professionale"
+  },
+  "q34": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q35": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q36": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q37": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q38": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q39": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Meritocrazia / incentivo risultati"
+  },
+  "q40": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q41": {
+    "dimensions": [
+      {
+        "name": "Ascolto attivo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ascolto attivo",
+    "subDimension": "Apertura alla correzione degli altri"
+  },
+  "q42": {
+    "dimensions": [
+      {
+        "name": "Ascolto attivo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ascolto attivo",
+    "subDimension": "Approccio con persone difficili"
+  },
+  "q43": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Responsabilità / ownership",
+    "subDimension": "Centralità e presa in carico"
+  },
+  "q44": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q45": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q46": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q47": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Tolleranza logistica/trasferte"
+  },
+  "q48": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q49": {
+    "dimensions": [
+      {
+        "name": "Ascolto attivo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ascolto attivo",
+    "subDimension": "Comprensione punti di vista"
+  },
+  "q50": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Negoziazione e influenza diretta"
+  },
+  "q51": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q52": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q53": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q54": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autonomia / iniziativa",
+    "subDimension": "Iniziativa professionale"
+  },
+  "q55": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q56": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q57": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q58": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q59": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q60": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Valorizzazione e motivazione degli altri"
+  },
+  "q61": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q62": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q63": {
+    "dimensions": [
+      {
+        "name": "Ascolto attivo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Ascolto attivo",
+    "subDimension": "Sospensione del giudizio",
+    "reverse": false
+  },
+  "q64": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q65": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Creatività e innovazione",
+    "subDimension": "Ideazione/innovazione"
+  },
+  "q66": {
+    "dimensions": [],
+    "reviewStatus": "REMOVE",
+    "proposedDimension": "Da eliminare / non HR",
+    "subDimension": "Seduttività/presenza"
+  },
+  "q67": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Creatività e innovazione",
+    "subDimension": "Ideazione/innovazione"
+  },
+  "q68": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q69": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q70": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Tolleranza verso gli altri"
+  },
+  "q71": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q72": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q73": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q74": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Energia positiva nel gruppo"
+  },
+  "q75": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / Stress",
+    "subDimension": "Tenuta sotto pressione"
+  },
+  "q76": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q77": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q78": {
+    "dimensions": [],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Da riclassificare",
+    "subDimension": "Auto-mapped generico"
+  },
+  "q79": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Pianificazione preventiva"
+  },
+  "q80": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q81": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Creatività e innovazione",
+    "subDimension": "Ideazione/innovazione"
+  },
+  "q82": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q83": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Rinforzo positivo"
+  },
+  "q84": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q85": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q86": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q87": {
+    "dimensions": [
+      {
+        "name": "Vendite",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Vendite",
+    "subDimension": "Chiusura commerciale",
+    "reverse": true
+  },
+  "q88": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Creatività e innovazione",
+    "subDimension": "Ideazione/innovazione"
+  },
+  "q89": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q90": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q91": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Severità verso gli altri"
+  },
+  "q92": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q93": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q94": {
+    "dimensions": [
+      {
+        "name": "Vendite",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Vendite",
+    "subDimension": "Insistenza commerciale",
+    "reverse": true
+  },
+  "q95": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q96": {
+    "dimensions": [
+      {
+        "name": "Vendite",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Vendite",
+    "subDimension": "Spinta alla conclusione vendita"
+  },
+  "q97": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q98": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "MOVE",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Percezione di equità degli altri"
+  },
+  "q99": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q100": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q101": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / Stress",
+    "subDimension": "Tenuta sotto pressione"
+  },
+  "q102": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q103": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / Stress",
+    "subDimension": "Tenuta sotto pressione"
+  },
+  "q104": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Negoziazione e influenza diretta"
+  },
+  "q105": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q106": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q107": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q108": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Uso memoria vs strumenti",
+    "reverse": true
+  },
+  "q109": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Creatività e innovazione",
+    "subDimension": "Ideazione/innovazione"
+  },
+  "q110": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q111": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q112": {
+    "dimensions": [],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Da riclassificare",
+    "subDimension": "Auto-mapped generico"
+  },
+  "q113": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q114": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q115": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q116": {
+    "dimensions": [
+      {
+        "name": "Vendite",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Vendite",
+    "subDimension": "Accettazione provvigioni"
+  },
+  "q117": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q118": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q119": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q120": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q121": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q122": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q123": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q124": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Disagio nel convincere"
+  },
+  "q125": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q126": {
+    "dimensions": [
+      {
+        "name": "Ascolto attivo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ascolto attivo",
+    "subDimension": "Anticipo intenzioni dell'interlocutore"
+  },
+  "q127": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q128": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q129": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q130": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q131": {
+    "dimensions": [
+      {
+        "name": "Vendite",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Vendite",
+    "subDimension": "Franchezza con cliente"
+  },
+  "q132": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q133": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Attribuzione degli errori"
+  },
+  "q134": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Negoziazione e influenza diretta"
+  },
+  "q135": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q136": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q137": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Cura extra verso gli altri"
+  },
+  "q138": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Responsabilità / ownership",
+    "subDimension": "Centralità e presa in carico"
+  },
+  "q139": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q140": {
+    "dimensions": [
+      {
+        "name": "Ascolto attivo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ascolto attivo",
+    "subDimension": "Anticipo comunicazione implicita"
+  },
+  "q141": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Risultato/miglioramento"
+  },
+  "q142": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Disponibilità a cedere/aiutare"
+  },
+  "q143": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Perdono e tolleranza degli errori"
+  },
+  "q144": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q145": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q146": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Negoziazione e influenza diretta"
+  },
+  "q147": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q148": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q149": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q150": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q151": {
+    "dimensions": [],
+    "reviewStatus": "REMOVE",
+    "proposedDimension": "Da eliminare / approfondire",
+    "subDimension": "Percezione irrealtà"
+  },
+  "q152": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q153": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q154": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q155": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q156": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Risultato/miglioramento"
+  },
+  "q157": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Premio su risultati vs impegno"
+  },
+  "q158": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q159": {
+    "dimensions": [],
+    "reviewStatus": "CONTEXT",
+    "proposedDimension": "Contesto ruolo",
+    "subDimension": "Contatto clienti"
+  },
+  "q160": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q161": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q162": {
+    "dimensions": [],
+    "reviewStatus": "CONTEXT",
+    "proposedDimension": "Contesto ruolo",
+    "subDimension": "Contributo al fatturato"
+  },
+  "q163": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Risultato/miglioramento"
+  },
+  "q164": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q165": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q166": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q167": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q168": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q169": {
+    "dimensions": [
+      {
+        "name": "Dinamismo",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Energia sociale e comunicazione",
+    "subDimension": "Comunicazione/energia sociale"
+  },
+  "q170": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q171": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Responsabilità / ownership",
+    "subDimension": "Centralità e presa in carico"
+  },
+  "q172": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Stile incisivo"
+  },
+  "q173": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Risultato/miglioramento"
+  },
+  "q174": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q175": {
+    "dimensions": [
+      {
+        "name": "ResponsabilitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autonomia / iniziativa",
+    "subDimension": "Dipendenza da direttive"
+  },
+  "q176": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Premio uniforme vs merito"
+  },
+  "q177": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Impatto del carattere sugli altri"
+  },
+  "q178": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Finanza personale/prospettica"
+  },
+  "q179": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q180": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q181": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q183": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q184": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q185": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q187": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Estroversione/networking"
+  },
+  "q188": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q189": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q190": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Aiuto anche con sacrificio"
+  },
+  "q191": {
+    "dimensions": [
+      {
+        "name": "FlessibilitÃ  comunicativa",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Determinazione / assertività",
+    "subDimension": "Negoziazione e influenza diretta"
+  },
+  "q192": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW_REVERSE",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Rifiuto della mediocrità",
+    "reverse": false
+  },
+  "q193": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q195": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Adattabilità e rigidità"
+  },
+  "q196": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q197": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Risultato/miglioramento"
+  },
+  "q198": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q199": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / Stress",
+    "subDimension": "Tenuta sotto pressione"
+  },
+  "q200": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / Stress",
+    "subDimension": "Tenuta sotto pressione"
+  },
+  "q201": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q203": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q204": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q205": {
+    "dimensions": [
+      {
+        "name": "CapacitÃ  di gestione finanziaria",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "MOVE",
+    "proposedDimension": "Capacità di gestione finanziaria",
+    "subDimension": "Controllo spesa"
+  },
+  "q206": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Evitamento conflitto / sacrificio equità"
+  },
+  "q207": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q208": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Orientamento alla performance",
+    "subDimension": "Valutazione sui risultati"
+  },
+  "q209": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q210": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q211": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q212": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q213": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Visione e orientamento al futuro",
+    "subDimension": "Progettualità futura"
+  },
+  "q214": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q215": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Armonia relazionale anche con sacrificio"
+  },
+  "q216": {
+    "dimensions": [
+      {
+        "name": "Automotivazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Ambizione competitiva",
+    "subDimension": "Ambizione/status/competizione"
+  },
+  "q218": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q219": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sensibilità al riconoscimento",
+    "subDimension": "Feedback/critica"
+  },
+  "q220": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q221": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia relazionale",
+    "subDimension": "Fiducia/percezione rischio sociale"
+  },
+  "q222": {
+    "dimensions": [
+      {
+        "name": "AttendibilitÃ ",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "ALGORITHM",
+    "proposedDimension": "Indice di coerenza risposte",
+    "subDimension": "Controllo desiderabilità/coerenza"
+  },
+  "q223": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Adattabilità e rigidità"
+  },
+  "q225": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Networking e primo approccio"
+  },
+  "q226": {
+    "dimensions": [
+      {
+        "name": "EspansivitÃ ",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Espansività",
+    "subDimension": "Networking e primo approccio"
+  },
+  "q227": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Adattabilità e rigidità"
+  },
+  "q228": {
+    "dimensions": [
+      {
+        "name": "Organizzazione e pianificazione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Organizzazione e pianificazione",
+    "subDimension": "Metodo/priorità"
+  },
+  "q229": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q230": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  },
+  "q231": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q232": {
+    "dimensions": [
+      {
+        "name": "Stress",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Gestione pressioni / autocontrollo",
+    "subDimension": "Autoregolazione/confini"
+  },
+  "q233": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Adattabilità e rigidità"
+  },
+  "q234": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Adattabilità e rigidità"
+  },
+  "q235": {
+    "dimensions": [
+      {
+        "name": "Sicurezza",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Sicurezza / fiducia personale",
+    "subDimension": "Autoefficacia/stabilità"
+  },
+  "q236": {
+    "dimensions": [
+      {
+        "name": "Comprensione",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Comprensione relazionale",
+    "subDimension": "Valorizzazione delle persone"
+  },
+  "q237": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Riconoscimento continuità altrui"
+  },
+  "q239": {
+    "dimensions": [
+      {
+        "name": "Cooperazione",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Cooperazione",
+    "subDimension": "Customer care extra-mile"
+  },
+  "q240": {
+    "dimensions": [
+      {
+        "name": "Resistenza al cambiamento",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Resistenza al cambiamento",
+    "subDimension": "Rigidità/adattabilità"
+  },
+  "q241": {
+    "dimensions": [
+      {
+        "name": "Leadership naturale",
+        "category": "additional"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Leadership naturale",
+    "subDimension": "Guida/influenza"
+  },
+  "q242": {
+    "dimensions": [],
+    "reviewStatus": "REVIEW",
+    "proposedDimension": "Da riclassificare",
+    "subDimension": "Auto-mapped generico"
+  },
+  "q243": {
+    "dimensions": [
+      {
+        "name": "AffidabilitÃ  + autodisciplina",
+        "category": "trait"
+      }
+    ],
+    "reviewStatus": "KEEP",
+    "proposedDimension": "Autodisciplina / affidabilità",
+    "subDimension": "Continuità esecutiva"
+  }
+};
+
 export function getQuestionTexts() {
   return Object.fromEntries(ZPI_QUESTIONS.map((q) => [q.key, q.text]));
 }

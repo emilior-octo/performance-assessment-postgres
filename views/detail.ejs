@@ -289,6 +289,13 @@
           </form>
         <% } %>
 
+        <form method="POST" action="/admin/<%= submission.id %>/recalculate-scoring-v2" id="recalculate-scoring-v2-form">
+          <input type="hidden" name="regenerateAi" value="true">
+          <button class="btn btn-secondary" type="submit" id="recalculate-scoring-v2-button" onclick="return confirm('Confermi il ricalcolo scoring V2? I punteggi verranno ricalcolati dalle risposte grezze e la relazione AI verrà rigenerata.');">
+            Ricalcola scoring V2 + rigenera AI
+          </button>
+        </form>
+
         <form method="POST" action="/admin/<%= submission.id %>/duplicate-test">
           <button class="btn btn-secondary" type="submit">
             Duplica test veloce
@@ -367,7 +374,8 @@
   <script>
     const formsToDisable = [
       ["generate-expanded-form", "generate-expanded-button", "Generazione in corso..."],
-      ["regenerate-expanded-form", "regenerate-expanded-button", "Rigenerazione in corso..."]
+      ["regenerate-expanded-form", "regenerate-expanded-button", "Rigenerazione in corso..."],
+      ["recalculate-scoring-v2-form", "recalculate-scoring-v2-button", "Ricalcolo V2 in corso..."]
     ];
 
     formsToDisable.forEach(function ([formId, buttonId, loadingText]) {
