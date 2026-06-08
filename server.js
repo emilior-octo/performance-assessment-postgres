@@ -4769,8 +4769,6 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   drawSimpleSectionTitle(doc, "Relazione generale");
 
   if (validatedReportText) {
-    doc.fontSize(9).fillColor("#2f4b7c").text("Relazione validata da revisione Word caricata.", { align: "left" });
-    doc.moveDown(0.5);
     writeValidatedReportText(doc, validatedReportText);
   } else {
     const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
