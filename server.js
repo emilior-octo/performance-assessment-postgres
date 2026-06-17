@@ -9,7 +9,7 @@ import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
 import { ZPI_QUESTIONS, getScoredQuestions, ZPI_SCORE_DIMENSIONS_V2, ZPI_SCORING_VERSION } from "./questions.js";
-import { SPORT_QUESTIONS, getSportScoredQuestions } from "./sport-questions.js";
+import { SPORT_QUESTIONS, getSportScoredQuestions, SPORT_SCORE_DIMENSIONS_V2, SPORT_SCORING_VERSION, SPORT_FINAL_TRAITS, getSportQuestionScoreDimensions, getSportQuestionReverseForScoring } from "./sport-questions.js";
 
 const prisma = new PrismaClient({
   log: ["warn", "error"]
@@ -639,7 +639,16 @@ const DIMENSION_DESCRIPTIONS = {
   "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
   "Gestione prioritÃ ": "misura la capacitÃ  di distinguere ciÃ² che Ã¨ importante da ciÃ² che Ã¨ solo urgente",
   "CapacitÃ  di gestione finanziaria": "misura la capacitÃ  di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
-  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
+  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili",
+  "Goal Setting": "misura la capacità dell’atleta di definire obiettivi sportivi chiari, monitorabili e orientati alla crescita nel breve, medio e lungo periodo",
+  "Gestione Pressioni": "misura la capacità di restare lucido in gara, gestire errore, critiche, pubblico, aspettative e momenti competitivi delicati",
+  "Leadership": "misura la tendenza a diventare riferimento positivo per compagni, staff e gruppo attraverso esempio, responsabilità e atteggiamento costruttivo",
+  "Etica Personale": "misura correttezza, rispetto delle regole, integrità personale, affidabilità comportamentale e coerenza dentro e fuori dal campo",
+  "Proattività": "misura la capacità di proporre soluzioni, prendere iniziativa e reagire in modo pratico davanti a problemi, difficoltà o nuove sfide",
+  "Adattamento": "misura la capacità di adattarsi a ruoli, compagni, schemi, feedback, decisioni del mister e cambiamenti tecnici o organizzativi",
+  "Resistenza al Cambiamento": "misura il modo in cui l’atleta reagisce al cambiamento: apertura, rigidità, disponibilità a rivedere abitudini e accettare novità",
+  "Eustress": "misura la capacità di trasformare tensione, stress pre-gara e pressione competitiva in energia utile alla prestazione",
+  "Attendibilità": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
 };
 
 const ZPI_EVO_TRAIT_GUIDE = {
@@ -749,6 +758,51 @@ function getQuestionReverseForScoring(question) {
   }
 
   return !!question?.reverse;
+}
+
+function getAssessmentQuestionDimensions(question, sourceTrait, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return getSportQuestionScoreDimensions(question, sourceTrait);
+  }
+
+  return getQuestionScoreDimensions(question, sourceTrait);
+}
+
+function getAssessmentQuestionReverse(question, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return getSportQuestionReverseForScoring(question);
+  }
+
+  return getQuestionReverseForScoring(question);
+}
+
+function sportDimensionOrder(name) {
+  const order = new Map((SPORT_FINAL_TRAITS || []).map((item, index) => [item, index]));
+  return order.has(name) ? order.get(name) : 999;
+}
+
+function reliabilityScoreToDimensionScore(score) {
+  const value = Math.max(0, Math.min(100, Number(score || 0)));
+  return Math.round(value * 0.3);
+}
+
+function attachSportReliabilityDimension(traits, reliabilityScore, reliabilityLabel, reliabilityFlags = []) {
+  const list = Array.isArray(traits) ? traits.filter((item) => displayDimensionName(item?.name) !== "Attendibilità") : [];
+
+  list.push({
+    name: "Attendibilità",
+    category: DIMENSION_CATEGORY.TRAIT,
+    score: reliabilityScoreToDimensionScore(reliabilityScore),
+    range: reliabilityLabelFromScore(reliabilityScore),
+    questionCount: 0,
+    items: [],
+    synthetic: true,
+    reliabilityLabel,
+    reliabilityFlags,
+    scoringVersion: SPORT_SCORING_VERSION
+  });
+
+  return list.sort((a, b) => sportDimensionOrder(a.name) - sportDimensionOrder(b.name));
 }
 
 function histogramColor(score) {
@@ -1042,6 +1096,91 @@ function calculateRoleFit(dimensions, requestedRole) {
   };
 }
 
+function calculateSportRoleFit(dimensions, requestedRole) {
+  const relevant = (Array.isArray(dimensions) ? dimensions : [])
+    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT)
+    .filter((item) => displayDimensionName(item?.name) !== "Attendibilità");
+
+  const values = relevant.map((item) => scoreToPercent(item.score));
+  const score = values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+
+  return {
+    roleKey: "sport_performance",
+    score,
+    label: roleFitLabel(score),
+    details: relevant.map((item) => ({
+      name: item.name,
+      score: item.score,
+      percent: scoreToPercent(item.score),
+      weight: 1
+    })),
+    note: "La compatibilità con il contesto sportivo è una lettura orientativa e va verificata con staff tecnico, osservazione in allenamento e comportamento in gara."
+  };
+}
+
+function calculateAssessmentRoleFit(dimensions, requestedRole, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return calculateSportRoleFit(dimensions, requestedRole);
+  }
+
+  return calculateRoleFit(dimensions, requestedRole);
+}
+
+function buildSportSummary(traits, role) {
+  const { traits: mainTraits } = splitDimensions(traits);
+  const relevant = mainTraits.filter((item) => displayDimensionName(item?.name) !== "Attendibilità");
+  const sorted = [...relevant].sort((a, b) => b.score - a.score);
+  const top = sorted.slice(0, 3).map((t) => t.name);
+  const low = [...sorted].reverse().slice(0, 2).map((t) => t.name);
+
+  const orientation = top.length
+    ? `profilo sportivo orientato a ${top.map(displayDimensionName).join(", ")}`
+    : "profilo sportivo da approfondire";
+
+  return {
+    orientation,
+    topTraits: top,
+    weakTraits: low,
+    roleComment: "La lettura va riferita al contesto sportivo, considerando allenamento, gara, rapporto con mister e compagni, continuità prestativa e comportamento dentro e fuori dal campo."
+  };
+}
+
+function buildAssessmentSummary(traits, role, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return buildSportSummary(traits, role);
+  }
+
+  return buildSummary(traits, role);
+}
+
+function buildSportManagementAdvice({ traits, roleFit }) {
+  const { traits: mainTraits } = splitDimensions(traits);
+  const relevant = mainTraits.filter((item) => displayDimensionName(item?.name) !== "Attendibilità");
+  const low = [...relevant].sort((a, b) => a.score - b.score).slice(0, 3).map((trait) => displayDimensionName(trait.name));
+
+  if (low.includes("Gestione Pressioni") || low.includes("Eustress")) {
+    return "È utile lavorare con obiettivi di gara chiari, feedback brevi e momenti di confronto dopo allenamento o partita. Nei passaggi di maggiore pressione conviene verificare come l’atleta gestisce errore, critica, pubblico e aspettative.";
+  }
+
+  if (low.includes("Etica Personale") || low.includes("Leadership")) {
+    return "È consigliabile osservare con attenzione comportamento nello spogliatoio, rispetto delle regole, rapporto con compagni e staff, disponibilità a mettersi a servizio del gruppo e coerenza fuori dal campo.";
+  }
+
+  if (low.includes("Goal Setting") || low.includes("Automotivazione")) {
+    return "È utile aiutare l’atleta a trasformare obiettivi generici in traguardi concreti, verificabili e collegati ad allenamento, ruolo, crescita tecnica e continuità nel tempo.";
+  }
+
+  return "Si consiglia una lettura integrata tra questionario, colloquio con l’atleta e osservazione sul campo, valorizzando i tratti più solidi e presidiando le aree meno continue con obiettivi semplici, feedback concreti e verifiche periodiche.";
+}
+
+function buildAssessmentManagementAdvice({ traits, roleFit, assessmentType = "zpi_hr" }) {
+  if (assessmentType === "sport_performance") {
+    return buildSportManagementAdvice({ traits, roleFit });
+  }
+
+  return buildManagementAdvice({ traits, roleFit });
+}
+
 function buildManagementAdvice({ traits, roleFit }) {
   const { traits: mainTraits } = splitDimensions(traits);
   const byName = new Map(mainTraits.map((trait) => [displayDimensionName(trait.name), trait]));
@@ -1198,13 +1337,9 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
     if (!answer) return;
 
     const sourceTrait = question.trait || "Comportamento generale";
-    const reverseForScoring = assessmentType === "zpi_hr"
-      ? getQuestionReverseForScoring(question)
-      : !!question.reverse;
+    const reverseForScoring = getAssessmentQuestionReverse(question, assessmentType);
     const value = scoreAnswer(answer, reverseForScoring, question);
-    const dimensions = assessmentType === "sport_performance"
-      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
-      : getQuestionScoreDimensions(question, sourceTrait);
+    const dimensions = getAssessmentQuestionDimensions(question, sourceTrait, assessmentType);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -1225,10 +1360,16 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
         reverse: reverseForScoring,
         legacyReverse: !!question.reverse,
         value,
-        scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : "legacy",
-        reviewStatus: ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.reviewStatus || null,
-        proposedDimension: ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.proposedDimension || null,
-        subDimension: ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.subDimension || null
+        scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : SPORT_SCORING_VERSION,
+        reviewStatus: assessmentType === "zpi_hr"
+          ? (ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.reviewStatus || null)
+          : (SPORT_SCORE_DIMENSIONS_V2?.[question.key]?.reviewStatus || null),
+        proposedDimension: assessmentType === "zpi_hr"
+          ? (ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.proposedDimension || null)
+          : (SPORT_SCORE_DIMENSIONS_V2?.[question.key]?.proposedDimension || null),
+        subDimension: assessmentType === "zpi_hr"
+          ? (ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.subDimension || null)
+          : (SPORT_SCORE_DIMENSIONS_V2?.[question.key]?.subDimension || null)
       });
     });
   });
@@ -1248,6 +1389,10 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
       };
     })
     .sort((a, b) => {
+      if (assessmentType === "sport_performance") {
+        return sportDimensionOrder(a.name) - sportDimensionOrder(b.name);
+      }
+
       const orderA = DIMENSION_ORDER.has(a.name) ? DIMENSION_ORDER.get(a.name) : 999;
       const orderB = DIMENSION_ORDER.has(b.name) ? DIMENSION_ORDER.get(b.name) : 999;
       return orderA - orderB;
@@ -1366,8 +1511,8 @@ function reliabilityPromptGuidance(score, flags = []) {
   return `Le risposte hanno un indice di coerenza basso: l'intera relazione deve essere letta come ipotesi da verificare. Non scrivere conclusioni nette. Non dare indicazioni troppo prescrittive. Per ogni tratto, privilegia formulazioni esplorative e invita a verificare il comportamento con esempi concreti, colloquio e osservazione diretta.${flagText}`;
 }
 
-function buildReliability(answers, traits) {
-  const scoredQuestions = getScoredQuestions();
+function buildReliability(answers, traits, assessmentType = "zpi_hr") {
+  const scoredQuestions = getAssessmentConfig(assessmentType).getScoredQuestions();
   const answered = scoredQuestions.filter((q) => answers[q.key]);
   const total = answered.length;
 
@@ -1477,10 +1622,10 @@ function buildRecalculatedZpiPayloadFromAnswers(assessment) {
   const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
   const avgScore = avg(mainTraits.map((t) => t.score));
   const avgRange = range(avgScore);
-  const summary = buildSummary(traits, requestedRole);
-  const roleFit = calculateRoleFit(traits, requestedRole);
-  const managementAdvice = buildManagementAdvice({ traits, roleFit });
-  const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+  const summary = buildAssessmentSummary(traits, requestedRole, assessmentType);
+  const roleFit = calculateAssessmentRoleFit(traits, requestedRole, assessmentType);
+  const managementAdvice = buildAssessmentManagementAdvice({ traits, roleFit, assessmentType });
+  const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits, assessmentType);
 
   const traitsJson = {
     assessmentType,
@@ -1805,6 +1950,24 @@ async function generateExpandedReportPayload({
     ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
     : "";
   const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
+  const sportPromptGuidance = assessmentType === "sport_performance"
+    ? `
+REGOLE SPECIFICHE HUMAN & SPORT PERFORMANCE
+- Il questionario è sportivo: interpreta la relazione nel contesto di atleta, allenamento, gara, staff tecnico, mister, squadra e spogliatoio.
+- Usa solo questi tratti finali se presenti nel JSON: Goal Setting, Automotivazione, Eustress, Gestione Pressioni, Leadership, Etica Personale, Proattività, Adattamento, Resistenza al Cambiamento, Attendibilità.
+- Non trasformare il report in una relazione HR aziendale: evita riferimenti a clienti, azienda, colleghi, vendite, mansioni amministrative o gestione commerciale se non pertinenti.
+- Goal Setting riguarda obiettivi sportivi, metodo, traguardi di breve/medio/lungo periodo e capacità di monitorare la crescita.
+- Automotivazione riguarda spinta interna, continuità, disciplina personale e capacità di restare orientato alla crescita anche nei momenti difficili.
+- Eustress riguarda la capacità di trasformare tensione e stress pre-gara in energia utile.
+- Gestione Pressioni riguarda lucidità, errore, critica, aspettative, pubblico, sconfitta, provocazioni e momenti decisivi.
+- Leadership riguarda esempio positivo, guida del gruppo, supporto ai compagni, atteggiamento nello spogliatoio e influenza costruttiva.
+- Etica Personale riguarda rispetto, integrità, parola data, regole, lealtà, correttezza verso compagni, staff, arbitri, società e avversari.
+- Proattività riguarda iniziativa, problem solving, disponibilità a proporre soluzioni e reazione pratica davanti alle difficoltà.
+- Adattamento riguarda capacità di modificare ruolo, schema, abitudini, metodo di allenamento, feedback e rapporto con compagni diversi.
+- Resistenza al Cambiamento va letta come rigidità o apertura davanti alle novità: punteggi alti indicano maggiore disponibilità a non opporsi al cambiamento, punteggi bassi indicano maggiore rischio di rigidità.
+- Attendibilità va scritta come nell'altro questionario: Attendibilità SÌ, Attendibilità FORZATA oppure Attendibilità NO, senza giudizi accusatori.
+`
+    : "";
 
   const input = `
 Sei un consulente organizzativo senior.
@@ -1868,7 +2031,7 @@ CONTESTO
 ${theoreticalProfileNote ? `- Nota attendibilitÃ : ${theoreticalProfileNote}` : ""}
 ${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
 ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
-
+${sportPromptGuidance}
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
@@ -2522,8 +2685,8 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
 
   const fullTraits = [...fullMainTraits, ...fullAdditionalParameters];
 
-  const roleFit = payload.roleFit || calculateRoleFit(fullTraits, requestedRole);
-  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits: fullTraits, roleFit });
+  const roleFit = payload.roleFit || calculateAssessmentRoleFit(fullTraits, requestedRole, assessmentType);
+  const managementAdvice = payload.managementAdvice || buildAssessmentManagementAdvice({ traits: fullTraits, roleFit, assessmentType });
 
   const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
   const theoreticalSignal = getTheoreticalProfileSignal(fullTraits);
@@ -2776,19 +2939,28 @@ app.post("/q/:token", async (req, res) => {
 
     const assessmentType = getLinkAssessmentType(link);
     const answers = collectAnswers(req.body, assessmentType);
-    const traits = buildTraitsFromAnswers(answers, assessmentType);
+    const baseTraits = buildTraitsFromAnswers(answers, assessmentType);
+    const baseReliability = buildReliability(answers, baseTraits, assessmentType);
+    const traits = assessmentType === "sport_performance"
+      ? attachSportReliabilityDimension(
+          baseTraits,
+          baseReliability.reliabilityScore,
+          baseReliability.reliabilityLabel,
+          baseReliability.reliabilityFlags
+        )
+      : baseTraits;
     const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
-    const avgScore = avg(mainTraits.map((t) => t.score));
+    const avgScore = avg(mainTraits.filter((t) => displayDimensionName(t.name) !== "Attendibilità").map((t) => t.score));
     const avgRange = range(avgScore);
     const requestedRole = normalizeRequestedRole(
       req.body.requestedRole,
       req.body.requestedRoleOther,
       link.requestedRole
     );
-    const summary = buildSummary(traits, requestedRole);
-    const roleFit = calculateRoleFit(traits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits, roleFit });
-    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+    const summary = buildAssessmentSummary(traits, requestedRole, assessmentType);
+    const roleFit = calculateAssessmentRoleFit(traits, requestedRole, assessmentType);
+    const managementAdvice = buildAssessmentManagementAdvice({ traits, roleFit, assessmentType });
+    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = baseReliability;
 
     const assessment = await prisma.assessment.create({
       data: {
@@ -2823,7 +2995,7 @@ app.post("/q/:token", async (req, res) => {
           topTraits: summary.topTraits,
           weakTraits: summary.weakTraits,
           reliabilityFlags,
-          scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : "legacy",
+          scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : SPORT_SCORING_VERSION,
           scoringCalculatedAt: new Date().toISOString()
         },
         answersJson: answers,
@@ -3371,7 +3543,7 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
 
       reliabilityScore = typeof source.result.reliabilityScore === "number"
         ? source.result.reliabilityScore
-        : buildReliability(answers, traits).reliabilityScore;
+        : buildReliability(answers, traits, assessmentType).reliabilityScore;
 
       reliabilityLabel = source.result.reliabilityLabel || reliabilityLabelFromScore(reliabilityScore);
       reliabilityFlags = Array.isArray(sourcePayload.reliabilityFlags) ? sourcePayload.reliabilityFlags : [];
@@ -3392,16 +3564,24 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
         duplicatedAt: new Date().toISOString()
       };
     } else {
-      traits = buildTraitsFromAnswers(answers, assessmentType);
+      const baseTraits = buildTraitsFromAnswers(answers, assessmentType);
+      const reliability = buildReliability(answers, baseTraits, assessmentType);
+      traits = assessmentType === "sport_performance"
+        ? attachSportReliabilityDimension(
+            baseTraits,
+            reliability.reliabilityScore,
+            reliability.reliabilityLabel,
+            reliability.reliabilityFlags
+          )
+        : baseTraits;
       const splitRecalculated = splitDimensions(traits);
       mainTraits = splitRecalculated.traits;
       additionalParameters = splitRecalculated.additionalParameters;
-      avgScore = avg(mainTraits.map((t) => t.score));
+      avgScore = avg(mainTraits.filter((t) => displayDimensionName(t.name) !== "Attendibilità").map((t) => t.score));
       avgRange = range(avgScore);
-      summary = buildSummary(traits, requestedRole);
-      roleFit = calculateRoleFit(traits, requestedRole);
-      managementAdvice = buildManagementAdvice({ traits, roleFit });
-      const reliability = buildReliability(answers, traits);
+      summary = buildAssessmentSummary(traits, requestedRole, assessmentType);
+      roleFit = calculateAssessmentRoleFit(traits, requestedRole, assessmentType);
+      managementAdvice = buildAssessmentManagementAdvice({ traits, roleFit, assessmentType });
       reliabilityScore = reliability.reliabilityScore;
       reliabilityLabel = reliability.reliabilityLabel;
       reliabilityFlags = reliability.reliabilityFlags;
