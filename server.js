@@ -293,7 +293,7 @@ function normalizePdfVisibleText(text) {
     .replace(/\baffidabilit(?=\s|$)/gi, "affidabilità")
     .replace(/\bResponsabilit(?=\s|$)/g, "Responsabilità")
     .replace(/\bEspansivit(?=\s|$)/g, "Espansività")
-    .replace(/\bAttendibilit(?=\s|$)/g, "Attendibilità")
+    .replace(/\bAttendibilit(?=[:;,.!?\s]|$)/g, "Attendibilità")
     .replace(/\bpriorit(?=\s|$)/g, "priorità")
     .replace(/\bmodalit(?=\s|$)/g, "modalità")
     .replace(/\brigidit(?=\s|$)/g, "rigidità")
@@ -2376,6 +2376,23 @@ function shouldAddResponsibilityOpinionNote(normalized) {
 
 function responsibilityOpinionNote() {
   return "La persona tende a contrariarsi, anche non manifestandolo, quando il suo interlocutore ha un'opinione diversa.";
+}
+
+function capitalizeFirstLetter(text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function truthfulnessPdfStatusText(truthfulness) {
+  if (!truthfulness) return "";
+
+  const label = String(truthfulness.label || "")
+    .replace(/SÌ|SÃŒ|SI/i, "sì")
+    .replace(/FORZATA/i, "forzata")
+    .replace(/NO/i, "no");
+
+  return `${label}. ${capitalizeFirstLetter(truthfulness.text)}`.trim();
 }
 
 function stripLeadingTruthfulnessStatus(text) {
@@ -4646,7 +4663,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
     if (!expandedText) {
       if (displayName === "Attendibilità" && truthfulness) {
-        expandedText = `${truthfulness.label}. ${truthfulness.text}`;
+        expandedText = truthfulnessPdfStatusText(truthfulness);
       } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
         expandedText = stressFallbackExpandedText(value);
       } else if (evoGuide?.interpretation) {
@@ -4657,7 +4674,7 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
     }
 
     if (displayName === "Attendibilità") {
-      const statusText = `${truthfulness.label}. ${truthfulness.text}`;
+      const statusText = truthfulnessPdfStatusText(truthfulness);
       const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
       expandedText = stripLeadingTruthfulnessStatus(expandedText);
