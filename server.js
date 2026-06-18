@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import zlib from "zlib";
@@ -227,6 +227,8 @@ function normalizeTextPayload(value) {
       .replace(/la risorsa/gi, "la persona")
       .replace(/La risorsa/g, "La persona")
       .replace(/\d{1,3}\s*\/\s*100/g, "")
+      .replace(/\bAttendibilit(?:à|Ã )?\s*:\s*s\./gi, "Attendibilità: sì.")
+      .replace(/\bAttendibilità\s*:\s*s\./gi, "Attendibilità: sì.")
       .replace(/\s{2,}/g, " ")
       .trim();
   }
@@ -294,6 +296,8 @@ function normalizePdfVisibleText(text) {
     .replace(/\bResponsabilit(?=\s|$)/g, "Responsabilità")
     .replace(/\bEspansivit(?=\s|$)/g, "Espansività")
     .replace(/\bAttendibilit(?=[:;,.!?\s]|$)/g, "Attendibilità")
+    .replace(/\bAttendibilit(?:à|Ã )?\s*:\s*s\./gi, "Attendibilità: sì.")
+    .replace(/\bAttendibilità\s*:\s*s\./gi, "Attendibilità: sì.")
     .replace(/\bpriorit(?=\s|$)/g, "priorità")
     .replace(/\bmodalit(?=\s|$)/g, "modalità")
     .replace(/\brigidit(?=\s|$)/g, "rigidità")
@@ -2387,12 +2391,16 @@ function capitalizeFirstLetter(text) {
 function truthfulnessPdfStatusText(truthfulness) {
   if (!truthfulness) return "";
 
-  const label = String(truthfulness.label || "")
-    .replace(/SÌ|SÃŒ|SI/i, "sì")
-    .replace(/FORZATA/i, "forzata")
-    .replace(/NO/i, "no");
+  const rawLabel = normalizeBrokenUtf8(String(truthfulness.label || "")).toLowerCase();
+  let status = "sì";
 
-  return `${label}. ${capitalizeFirstLetter(truthfulness.text)}`.trim();
+  if (rawLabel.includes("forzata")) {
+    status = "forzata";
+  } else if (/\bno\b/.test(rawLabel)) {
+    status = "no";
+  }
+
+  return `Attendibilità: ${status}. ${capitalizeFirstLetter(truthfulness.text)}`.trim();
 }
 
 function stripLeadingTruthfulnessStatus(text) {

@@ -5462,7 +5462,7 @@ export const SPORT_QUESTIONS = [
 ];
 
 
-export const SPORT_SCORING_VERSION = "sport-v2-1";
+export const SPORT_SCORING_VERSION = "sport-v2-2";
 
 export const SPORT_FINAL_TRAITS = [
   "Goal Setting",
@@ -5483,7 +5483,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5492,7 +5492,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5501,7 +5501,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5510,7 +5510,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5519,7 +5519,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5528,7 +5528,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5537,7 +5537,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5546,7 +5546,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5555,7 +5555,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5564,7 +5564,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Goal setting"
   },
@@ -5573,7 +5573,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5582,7 +5582,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5591,7 +5591,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5600,7 +5600,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5609,7 +5609,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5618,7 +5618,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5627,7 +5627,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5636,7 +5636,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5645,7 +5645,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5654,7 +5654,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Automotivazione"
   },
@@ -5663,7 +5663,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Eustress", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Eustress",
     subDimension: "Eustress"
   },
@@ -5672,7 +5672,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Eustress", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Eustress",
     subDimension: "Eustress"
   },
@@ -5681,7 +5681,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Eustress", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Eustress",
     subDimension: "Eustress"
   },
@@ -5690,7 +5690,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Eustress", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Eustress",
     subDimension: "Eustress"
   },
@@ -5699,7 +5699,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5708,7 +5708,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5717,7 +5717,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5726,7 +5726,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5735,7 +5735,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5744,7 +5744,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5753,7 +5753,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5762,7 +5762,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5771,7 +5771,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5780,7 +5780,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5789,7 +5789,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5798,7 +5798,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5807,7 +5807,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5816,7 +5816,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5825,7 +5825,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5834,7 +5834,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5843,7 +5843,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: true,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Gestione delle pressioni"
   },
@@ -5852,7 +5852,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5861,7 +5861,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5870,7 +5870,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5879,7 +5879,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5888,7 +5888,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5897,7 +5897,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5906,7 +5906,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Leadership naturale"
   },
@@ -5915,7 +5915,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5924,7 +5924,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5933,7 +5933,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5942,7 +5942,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5951,7 +5951,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5960,7 +5960,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5969,7 +5969,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5978,7 +5978,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5987,7 +5987,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -5996,7 +5996,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -6005,7 +6005,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -6014,7 +6014,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -6023,7 +6023,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Affidabilità ed etica personale"
   },
@@ -6032,7 +6032,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Proattività",
     subDimension: "Proattività e capacità di adattamento"
   },
@@ -6041,7 +6041,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Proattività e capacità di adattamento"
   },
@@ -6050,7 +6050,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Proattività e capacità di adattamento"
   },
@@ -6059,17 +6059,17 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Proattività",
     subDimension: "Proattività e capacità di adattamento"
   },
   "s65": {
     dimensions: [
-      { name: "Adattamento", category: "trait" }
+      { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Adattamento",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Proattività e capacità di adattamento"
   },
   "s66": {
@@ -6077,7 +6077,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Proattività",
     subDimension: "Proattività e capacità di adattamento"
   },
@@ -6086,17 +6086,17 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Proattività e capacità di adattamento"
   },
   "s68": {
     dimensions: [
-      { name: "Adattamento", category: "trait" }
+      { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Adattamento",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Proattività e capacità di adattamento"
   },
   "s69": {
@@ -6104,7 +6104,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6113,7 +6113,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6122,7 +6122,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6131,7 +6131,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6140,7 +6140,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6149,7 +6149,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6158,7 +6158,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6167,35 +6167,35 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Resistenza al cambiamento"
   },
   "s77": {
     dimensions: [
-      { name: "Adattamento", category: "trait" }
+      { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Adattamento",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
   "s78": {
     dimensions: [
-      { name: "Adattamento", category: "trait" }
+      { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Adattamento",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
   "s79": {
     dimensions: [
-      { name: "Adattamento", category: "trait" }
+      { name: "Resistenza al Cambiamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Adattamento",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Resistenza al Cambiamento",
     subDimension: "Resistenza al cambiamento"
   },
   "s80": {
@@ -6203,7 +6203,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Proattività",
     subDimension: "Resistenza al cambiamento"
   },
@@ -6212,7 +6212,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6221,7 +6221,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6230,26 +6230,24 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s84": {
     dimensions: [
-      { name: "Goal Setting", category: "trait" }
+      { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Goal Setting",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s85": {
-    dimensions: [
-      { name: "Gestione Pressioni", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Gestione Pressioni",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s86": {
@@ -6257,7 +6255,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6266,7 +6264,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6275,35 +6273,31 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s89": {
     dimensions: [
-      { name: "Goal Setting", category: "trait" }
+      { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Goal Setting",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s90": {
-    dimensions: [
-      { name: "Gestione Pressioni", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Gestione Pressioni",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s91": {
-    dimensions: [
-      { name: "Gestione Pressioni", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Gestione Pressioni",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s92": {
@@ -6311,7 +6305,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6320,7 +6314,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6329,7 +6323,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6338,26 +6332,26 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Proattività",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s96": {
     dimensions: [
-      { name: "Goal Setting", category: "trait" }
+      { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Goal Setting",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s97": {
     dimensions: [
-      { name: "Goal Setting", category: "trait" }
+      { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Goal Setting",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s98": {
@@ -6365,7 +6359,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
@@ -6374,17 +6368,17 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Proattività",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s100": {
     dimensions: [
-      { name: "Etica Personale", category: "trait" }
+      { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Automotivazione",
     subDimension: "Sacrificio e lavoro duro"
   },
   "s101": {
@@ -6392,17 +6386,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s102": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s103": {
@@ -6410,7 +6402,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6419,7 +6411,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6428,17 +6420,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s106": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s107": {
@@ -6446,17 +6436,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s108": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s109": {
@@ -6464,7 +6452,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6473,17 +6461,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s111": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s112": {
@@ -6491,17 +6477,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s113": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s114": {
@@ -6509,7 +6493,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6518,7 +6502,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6527,17 +6511,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s117": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
   "s118": {
@@ -6545,7 +6527,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6554,7 +6536,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6563,7 +6545,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Lavoro di squadra e ascolto attivo"
   },
@@ -6572,17 +6554,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s122": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s123": {
@@ -6590,17 +6570,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s124": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s125": {
@@ -6608,7 +6586,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
@@ -6617,7 +6595,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
@@ -6626,17 +6604,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s128": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s129": {
@@ -6644,17 +6620,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s130": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s131": {
@@ -6662,7 +6636,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
@@ -6671,7 +6645,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
@@ -6680,17 +6654,17 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s134": {
     dimensions: [
-      { name: "Adattamento", category: "trait" }
+      { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Adattamento",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Proattività",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s135": {
@@ -6698,26 +6672,24 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s136": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s137": {
     dimensions: [
-      { name: "Automotivazione", category: "trait" }
+      { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Automotivazione",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Proattività",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s138": {
@@ -6725,7 +6697,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
@@ -6734,17 +6706,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s140": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Equilibrio vita personale e gestione del tempo"
   },
   "s141": {
@@ -6752,7 +6722,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6761,7 +6731,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6770,7 +6740,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6779,17 +6749,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s145": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s146": {
@@ -6797,26 +6765,22 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Responsabilità economica sportiva"
   },
   "s147": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s148": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s149": {
@@ -6824,35 +6788,29 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s150": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s151": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s152": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s153": {
@@ -6860,17 +6818,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Responsabilità economica sportiva"
   },
   "s154": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s155": {
@@ -6878,7 +6834,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6887,17 +6843,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s157": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Responsabilità economica sportiva"
   },
   "s158": {
@@ -6905,7 +6859,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6914,7 +6868,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6923,7 +6877,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Responsabilità economica sportiva"
   },
@@ -6932,7 +6886,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6941,7 +6895,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6950,7 +6904,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Goal Setting", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Goal Setting",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6959,7 +6913,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6968,7 +6922,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6977,7 +6931,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6986,7 +6940,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -6995,7 +6949,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7004,7 +6958,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7013,7 +6967,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7022,7 +6976,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7031,7 +6985,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Gestione Pressioni", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Gestione Pressioni",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7040,17 +6994,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
   "s174": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Mentalità vincente e disciplina"
   },
   "s175": {
@@ -7058,7 +7010,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7067,7 +7019,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7076,7 +7028,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7085,17 +7037,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Adattamento", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Adattamento",
     subDimension: "Mentalità vincente e disciplina"
   },
   "s179": {
-    dimensions: [
-      { name: "Goal Setting", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Goal Setting",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Mentalità vincente e disciplina"
   },
   "s180": {
@@ -7103,7 +7053,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Mentalità vincente e disciplina"
   },
@@ -7112,7 +7062,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Valori sportivi e crescita personale"
   },
@@ -7121,17 +7071,17 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s183": {
     dimensions: [
-      { name: "Automotivazione", category: "trait" }
+      { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Automotivazione",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Proattività",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s184": {
@@ -7139,7 +7089,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Valori sportivi e crescita personale"
   },
@@ -7148,17 +7098,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s186": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s187": {
@@ -7166,17 +7114,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s188": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s189": {
@@ -7184,26 +7130,22 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s190": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s191": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s192": {
@@ -7211,17 +7153,17 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s193": {
     dimensions: [
-      { name: "Automotivazione", category: "trait" }
+      { name: "Proattività", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Automotivazione",
+    reviewStatus: "sport_v2_2",
+    proposedDimension: "Proattività",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s194": {
@@ -7229,17 +7171,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s195": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s196": {
@@ -7247,7 +7187,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Automotivazione", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Automotivazione",
     subDimension: "Valori sportivi e crescita personale"
   },
@@ -7256,17 +7196,15 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s198": {
-    dimensions: [
-      { name: "Etica Personale", category: "trait" }
-    ],
+    dimensions: [],
     reverse: false,
-    reviewStatus: "sport_v2",
-    proposedDimension: "Etica Personale",
+    reviewStatus: "sport_v2_2_context_only",
+    proposedDimension: "Contesto / item non usato nello scoring finale",
     subDimension: "Valori sportivi e crescita personale"
   },
   "s199": {
@@ -7274,7 +7212,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Leadership", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Leadership",
     subDimension: "Valori sportivi e crescita personale"
   },
@@ -7283,7 +7221,7 @@ export const SPORT_SCORE_DIMENSIONS_V2 = {
       { name: "Etica Personale", category: "trait" }
     ],
     reverse: false,
-    reviewStatus: "sport_v2",
+    reviewStatus: "sport_v2_2",
     proposedDimension: "Etica Personale",
     subDimension: "Valori sportivi e crescita personale"
   }
