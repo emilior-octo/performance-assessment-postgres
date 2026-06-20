@@ -476,6 +476,37 @@ function getRoleOptionsForAssessment(assessmentType = "zpi_hr") {
   return assessmentType === "sport_performance" ? SPORT_ROLE_OPTIONS : ROLE_OPTIONS;
 }
 
+const SPORT_EXECUTIVE_ROLE_VALUES = new Set([
+  "presidente",
+  "vice_presidente",
+  "dirigente",
+  "direttore_generale",
+  "direttore_sportivo"
+]);
+
+function isSportExecutiveRole(role) {
+  const value = String(role || "").trim().toLowerCase();
+
+  if (SPORT_EXECUTIVE_ROLE_VALUES.has(value)) return true;
+
+  return /\b(presidente|vice\s*presidente|dirigente|direttore\s+generale|direttore\s+sportivo)\b/i.test(value);
+}
+
+function isExecutiveAssessmentRole(role, assessmentType = "zpi_hr") {
+  if (isDirectionalExecutiveRole(role)) return true;
+  return assessmentType === "sport_performance" && isSportExecutiveRole(role);
+}
+
+function stripExecutiveRoleFitPhrases(text) {
+  return String(text || "")
+    .replace(/\bLa tua compatibilit[àa]\s+con\s+il\s+ruolo[^.]*\.\s*/gi, "")
+    .replace(/\bLa compatibilit[àa]\s+con\s+il\s+ruolo[^.]*\.\s*/gi, "")
+    .replace(/\bCompatibilit[àa]\s+con\s+il\s+ruolo\s+ricoperto\s*:\s*\d{1,3}%\s*/gi, "")
+    .replace(/\bLa lettura rispetto al ruolo[^.]*\.\s*/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 function normalizeRequestedRole(bodyRole, bodyOtherRole, fallbackRole) {
   const role = String(bodyRole || "").trim();
   const other = String(bodyOtherRole || "").trim();
@@ -896,7 +927,10 @@ function isDirectionalExecutiveRole(role) {
 }
 
 function isDirectionalExecutiveNormalized(normalized = {}) {
-  return isDirectionalExecutiveRole(normalized?.roleFit?.roleKey || normalized?.requestedRole || "");
+  return isExecutiveAssessmentRole(
+    normalized?.requestedRole || normalized?.roleFit?.roleKey || "",
+    normalized?.assessmentType || "zpi_hr"
+  );
 }
 const ROLE_FIT_WEIGHTS = {
   direzione: {
@@ -1974,6 +2008,19 @@ async function generateExpandedReportPayload({
     ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
     : "";
   const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
+  const sportExecutivePromptGuidance = isExecutiveAssessmentRole(role, assessmentType)
+    ? `
+REGOLA PRIORITARIA PER RUOLI DIRETTIVI SPORTIVI
+- Il ruolo target è direttivo/societario sportivo: Presidente, Vice Presidente, Dirigente, Direttore Generale o Direttore Sportivo.
+- In questo caso NON devi trattare la persona come una risorsa da gestire.
+- Non citare percentuali di compatibilità con il ruolo.
+- Non scrivere "Indicazione pratica per la gestione".
+- Non scrivere "Come gestirlo nella pratica".
+- I rimedi pratici, quando presenti, devono essere rivolti direttamente alla persona: "Per te può essere utile...", "Potresti...", "Ti aiuta...".
+- La relazione deve parlare a una figura direttiva che usa il report per consapevolezza personale e governo del contesto sportivo.
+`
+    : "";
+
   const sportPromptGuidance = assessmentType === "sport_performance"
     ? `
 REGOLE SPECIFICHE HUMAN & SPORT PERFORMANCE
@@ -2056,6 +2103,7 @@ ${theoreticalProfileNote ? `- Nota attendibilitÃ : ${theoreticalProfileNote}` 
 ${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
 ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
 ${sportPromptGuidance}
+${sportExecutivePromptGuidance}
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
@@ -2744,6 +2792,7 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const securityTheory = theoreticalSecuritySignal(fullTraits, reliabilityFlags);
 
   return {
+    assessmentType,
     traits: fullTraits,
     mainTraits: fullMainTraits,
     additionalParameters: fullAdditionalParameters,
@@ -3739,12 +3788,16 @@ function buildEditableWordHtml({ assessment, normalized, expanded }) {
   const title = assessment.result?.traitsJson?.assessmentTitle || getAssessmentConfig(assessment.assessmentType).title;
   const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
   const traits = Array.isArray(expanded?.traits) ? expanded.traits : [];
+  const executiveAssessmentRole = isExecutiveAssessmentRole(
+    assessment?.requestedRole,
+    normalized?.assessmentType || assessment?.assessmentType || "zpi_hr"
+  );
 
   const traitHtml = traits.map((trait) => {
     const title = trait.displayName || trait.name || "Tratto";
     const description = trait.description ? `<p><em>(${escapeHtml(trait.description)})</em></p>` : "";
     const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(trait.improvementPlan || "-")}</p>` : "";
-    const action = trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
+    const action = !executiveAssessmentRole && trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
 
     return `
       <h2>${escapeHtml(title)}</h2>
@@ -4651,7 +4704,10 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 
   const directionalExecutive = isDirectionalExecutiveNormalized(normalized);
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
-  const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const cleanedGeneralSummaryBase = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const cleanedGeneralSummary = directionalExecutive
+    ? stripExecutiveRoleFitPhrases(cleanedGeneralSummaryBase)
+    : cleanedGeneralSummaryBase;
   const aiTraits = Array.isArray(expandedReportJson.traits) ? expandedReportJson.traits : [];
 
   const aiTraitByName = new Map();
@@ -4770,13 +4826,19 @@ function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) 
 }
 
 function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
-  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+  const assessmentType = normalized?.assessmentType || assessment?.assessmentType || "zpi_hr";
+  const executiveAssessmentRole = isExecutiveAssessmentRole(assessment?.requestedRole, assessmentType);
+
+  if (expanded?.generalSummary) {
+    const generalSummary = stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+    return executiveAssessmentRole ? stripExecutiveRoleFitPhrases(generalSummary) : generalSummary;
+  }
 
   const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
   const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
-  const roleFitText = normalized?.roleFit?.score != null && !isDirectionalExecutiveRole(assessment?.requestedRole)
+  const roleFitText = normalized?.roleFit?.score != null && !executiveAssessmentRole
     ? `La compatibilità con il ruolo ricoperto è pari al ${normalized.roleFit.score}%. `
     : "";
   const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
@@ -5000,7 +5062,9 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     writeParagraphs(doc, generalRelation);
   }
 
-  if (roleFit?.score != null && !isDirectionalExecutiveRole(assessment.requestedRole)) {
+  const executiveAssessmentRole = isExecutiveAssessmentRole(assessment.requestedRole, assessmentType);
+
+  if (roleFit?.score != null && !executiveAssessmentRole) {
     doc.moveDown(0.1);
     doc.fontSize(12).fillColor("black").text(`CompatibilitÃ  con il ruolo ricoperto: ${roleFit.score}%`, {
       align: "left"
@@ -5008,7 +5072,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.moveDown(0.6);
   }
 
-  if (!isDirectionalExecutiveRole(assessment.requestedRole)) {
+  if (!executiveAssessmentRole) {
     doc.moveDown(0.2);
     doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
     doc.moveDown(0.2);
@@ -5049,7 +5113,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
           doc.moveDown(0.3);
         }
 
-        if (t.showSkillAction !== false) {
+        if (!executiveAssessmentRole && t.showSkillAction !== false) {
           doc.fontSize(11).text(
             `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
           );
