@@ -460,10 +460,22 @@
           <p class="eyebrow">Questionario assessment</p>
           <h1><%= typeof assessmentTitle !== "undefined" ? assessmentTitle : "ZPI™ – Zenith Performance Index" %></h1>
 
-          <p class="intro">
-            Compila il questionario rispondendo in modo spontaneo e coerente con il tuo comportamento abituale nel contesto lavorativo.
-            Non esistono risposte giuste o sbagliate.
-          </p>
+          <% if (assessmentType === "sport_performance") { %>
+            <div class="intro">
+              <p><strong>Caro atleta,</strong></p>
+              <p>
+                questo questionario non è un esame e non esistono risposte giuste o sbagliate. È uno strumento che ti aiuterà a conoscerti meglio come sportivo e come persona, facendo emergere i tuoi punti di forza e le aree su cui puoi crescere.
+              </p>
+              <p>
+                Ricorda: sii autentico e rispondi con sincerità. Questo questionario è un’occasione per riflettere, crescere e diventare più consapevole delle tue qualità, dentro e fuori dal campo.
+              </p>
+            </div>
+          <% } else { %>
+            <p class="intro">
+              Compila il questionario rispondendo in modo spontaneo e coerente con il tuo comportamento abituale nel contesto lavorativo.
+              Non esistono risposte giuste o sbagliate.
+            </p>
+          <% } %>
         </div>
       </header>
 
@@ -493,12 +505,12 @@
             </div>
 
             <div class="field">
-              <label for="candidateCompany">Azienda / Cliente di riferimento</label>
-              <input id="candidateCompany" type="text" name="candidateCompany" placeholder="Es. Zenith 360" />
+              <label for="candidateCompany"><%= assessmentType === "sport_performance" ? "Società / Club di riferimento" : "Azienda / Cliente di riferimento" %></label>
+              <input id="candidateCompany" type="text" name="candidateCompany" placeholder="<%= assessmentType === "sport_performance" ? "Es. Zenith FC" : "Es. Zenith 360" %>" />
             </div>
 
             <div class="field field-full">
-              <label for="requestedRole">Ruolo ricoperto / ruolo di riferimento</label>
+              <label for="requestedRole"><%= assessmentType === "sport_performance" ? "Ruolo sportivo / ruolo di riferimento" : "Ruolo ricoperto / ruolo di riferimento" %></label>
               <select id="requestedRole" name="requestedRole" required>
                 <option value="" disabled selected>Seleziona un ruolo</option>
                 <% (roleOptions || []).forEach(function(role) { %>
@@ -524,28 +536,57 @@
           <h2>Istruzioni per la compilazione</h2>
 
           <div class="instructions-box">
-            <p>
-              Per ogni domanda scegli una sola risposta, in modo spontaneo e sincero.
-            </p>
+            <% if (assessmentType === "sport_performance") { %>
+              <p>
+                <strong>Come rispondere:</strong>
+              </p>
 
-            <p>
-              Non esistono risposte giuste o sbagliate: ciò che conta è descrivere come sei davvero oggi,
-              senza pensare a come “dovresti” essere.
-            </p>
+              <p>
+                Scegli sempre una sola risposta, quella che senti più vera per te, senza pensarci troppo.
+              </p>
 
-            <p>
-              Il sistema analizza la coerenza delle risposte per garantire risultati più affidabili.
-              In caso di troppe incongruenze, potrebbe essere richiesta una nuova compilazione.
-            </p>
+              <p>
+                Non c’è un modo corretto di rispondere: anche ciò che può sembrare negativo può rivelare risorse importanti.
+              </p>
 
-            <p>
-              Questa valutazione ha finalità esclusivamente attitudinali e informative:
-              non rappresenta un test medico o psicologico.
-            </p>
+              <p>
+                <strong>Le tre opzioni di risposta:</strong><br>
+                a. Sì, oppure tendenzialmente sì<br>
+                b. Incerto / non saprei<br>
+                c. No, oppure tendenzialmente no
+              </p>
 
-            <p>
-              Grazie per la collaborazione e buona compilazione.
-            </p>
+              <p>
+                Questa valutazione ha finalità esclusivamente attitudinali e informative: non rappresenta un test medico o psicologico.
+              </p>
+
+              <p>
+                Grazie per la collaborazione e buona compilazione.
+              </p>
+            <% } else { %>
+              <p>
+                Per ogni domanda scegli una sola risposta, in modo spontaneo e sincero.
+              </p>
+
+              <p>
+                Non esistono risposte giuste o sbagliate: ciò che conta è descrivere come sei davvero oggi,
+                senza pensare a come “dovresti” essere.
+              </p>
+
+              <p>
+                Il sistema analizza la coerenza delle risposte per garantire risultati più affidabili.
+                In caso di troppe incongruenze, potrebbe essere richiesta una nuova compilazione.
+              </p>
+
+              <p>
+                Questa valutazione ha finalità esclusivamente attitudinali e informative:
+                non rappresenta un test medico o psicologico.
+              </p>
+
+              <p>
+                Grazie per la collaborazione e buona compilazione.
+              </p>
+            <% } %>
 
             <div class="privacy-box">
               <p style="margin-top:0;">
