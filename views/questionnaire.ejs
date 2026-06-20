@@ -367,15 +367,6 @@
       margin: 0 0 14px;
     }
 
-    .instructions-box ul {
-      margin: 0 0 14px 20px;
-      padding: 0;
-    }
-
-    .instructions-box li {
-      margin-bottom: 8px;
-    }
-
     .privacy-box {
       margin-top: 24px;
       padding: 18px;
@@ -469,18 +460,10 @@
           <p class="eyebrow">Questionario assessment</p>
           <h1><%= typeof assessmentTitle !== "undefined" ? assessmentTitle : "ZPI™ – Zenith Performance Index" %></h1>
 
-          <% if (assessmentType === "sport_performance") { %>
-            <p class="intro">
-              Caro atleta, questo questionario non è un esame e non esistono risposte giuste o sbagliate.
-              È uno strumento che ti aiuterà a conoscerti meglio come sportivo e come persona,
-              facendo emergere i tuoi punti di forza e le aree su cui puoi crescere.
-            </p>
-          <% } else { %>
-            <p class="intro">
-              Compila il questionario rispondendo in modo spontaneo e coerente con il tuo comportamento abituale nel contesto lavorativo.
-              Non esistono risposte giuste o sbagliate.
-            </p>
-          <% } %>
+          <p class="intro">
+            Compila il questionario rispondendo in modo spontaneo e coerente con il tuo comportamento abituale nel contesto lavorativo.
+            Non esistono risposte giuste o sbagliate.
+          </p>
         </div>
       </header>
 
@@ -538,64 +521,31 @@
         </section>
 
         <section class="card instructions-card">
-          <h2><%= assessmentType === "sport_performance" ? "Introduzione e istruzioni" : "Istruzioni per la compilazione" %></h2>
+          <h2>Istruzioni per la compilazione</h2>
 
           <div class="instructions-box">
-            <% if (assessmentType === "sport_performance") { %>
-              <p>
-                <strong>Caro atleta,</strong>
-              </p>
+            <p>
+              Per ogni domanda scegli una sola risposta, in modo spontaneo e sincero.
+            </p>
 
-              <p>
-                questo questionario non è un esame e non esistono risposte giuste o sbagliate.
-                È uno strumento che ti aiuterà a conoscerti meglio come sportivo e come persona,
-                facendo emergere i tuoi punti di forza e le aree su cui puoi crescere.
-              </p>
+            <p>
+              Non esistono risposte giuste o sbagliate: ciò che conta è descrivere come sei davvero oggi,
+              senza pensare a come “dovresti” essere.
+            </p>
 
-              <p>
-                <strong>Come rispondere:</strong>
-              </p>
+            <p>
+              Il sistema analizza la coerenza delle risposte per garantire risultati più affidabili.
+              In caso di troppe incongruenze, potrebbe essere richiesta una nuova compilazione.
+            </p>
 
-              <ul>
-                <li>Scegli sempre una sola risposta, quella che senti più vera per te, senza pensarci troppo.</li>
-                <li>Non c’è un modo corretto di rispondere: anche ciò che può sembrare negativo può rivelare risorse importanti.</li>
-              </ul>
+            <p>
+              Questa valutazione ha finalità esclusivamente attitudinali e informative:
+              non rappresenta un test medico o psicologico.
+            </p>
 
-              <p>
-                <strong>Le tre opzioni di risposta:</strong><br>
-                a. Sì, oppure tendenzialmente sì<br>
-                b. Incerto / non saprei<br>
-                c. No, oppure tendenzialmente no
-              </p>
-
-              <p>
-                Ricorda: sii autentico e rispondi con sincerità. Questo questionario è un’occasione
-                per riflettere, crescere e diventare più consapevole delle tue qualità, dentro e fuori dal campo.
-              </p>
-            <% } else { %>
-              <p>
-                Per ogni domanda scegli una sola risposta, in modo spontaneo e sincero.
-              </p>
-
-              <p>
-                Non esistono risposte giuste o sbagliate: ciò che conta è descrivere come sei davvero oggi,
-                senza pensare a come “dovresti” essere.
-              </p>
-
-              <p>
-                Il sistema analizza la coerenza delle risposte per garantire risultati più affidabili.
-                In caso di troppe incongruenze, potrebbe essere richiesta una nuova compilazione.
-              </p>
-
-              <p>
-                Questa valutazione ha finalità esclusivamente attitudinali e informative:
-                non rappresenta un test medico o psicologico.
-              </p>
-
-              <p>
-                Grazie per la collaborazione e buona compilazione.
-              </p>
-            <% } %>
+            <p>
+              Grazie per la collaborazione e buona compilazione.
+            </p>
 
             <div class="privacy-box">
               <p style="margin-top:0;">
