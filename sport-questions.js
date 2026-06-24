@@ -359,7 +359,7 @@ export const SPORT_QUESTIONS = [
   {
     "id": 13,
     "key": "s13",
-    "text": "In che misura il pensiero del tuo percorso sportivo ti stimola a continuare anche nei momenti difficili?",
+    "text": "Quanto ti incoraggia ricordare i traguardi raggiunti nello sport quando le cose si fanno difficili?",
     "trait": "Automotivazione",
     "reverse": false,
     "responseType": "likert",
