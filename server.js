@@ -20,6 +20,81 @@ process.on("beforeExit", async () => {
 });
 
 
+process.on("unhandledRejection", (error) => {
+  console.error("[UNHANDLED_REJECTION]", {
+    code: error?.code,
+    message: error?.message,
+    stack: error?.stack
+  });
+});
+
+function isPrismaConnectionError(error) {
+  const message = String(error?.message || "");
+  return (
+    error?.code === "P1001" ||
+    error?.name === "PrismaClientInitializationError" ||
+    /Can't reach database server/i.test(message) ||
+    /Timed out fetching a new connection/i.test(message) ||
+    /Connection terminated/i.test(message) ||
+    /ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND/i.test(message)
+  );
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withPrismaRetry(operation, label = "Prisma operation", attempts = 4) {
+  let lastError;
+
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      if (!isPrismaConnectionError(error) || attempt >= attempts) {
+        throw error;
+      }
+
+      const delay = 400 * attempt;
+      console.warn(`[DB_RETRY] ${label} failed with ${error.code || error.name || "error"}; retry ${attempt}/${attempts} in ${delay}ms`);
+      await sleep(delay);
+    }
+  }
+
+  throw lastError;
+}
+
+function installAsyncRouteSafety(appInstance) {
+  ["get", "post", "put", "patch", "delete"].forEach((method) => {
+    const originalMethod = appInstance[method].bind(appInstance);
+
+    appInstance[method] = (path, ...handlers) => {
+      const safeHandlers = handlers.map((handler) => {
+        if (typeof handler !== "function") return handler;
+
+        return function safeRouteHandler(req, res, next) {
+          try {
+            const result = handler(req, res, next);
+
+            if (result && typeof result.then === "function") {
+              result.catch(next);
+            }
+
+            return result;
+          } catch (error) {
+            return next(error);
+          }
+        };
+      });
+
+      return originalMethod(path, ...safeHandlers);
+    };
+  });
+}
+
+
 function formatDateTimeRome(date) {
   if (!date) return "-";
 
@@ -341,6 +416,7 @@ const openai = process.env.OPENAI_API_KEY
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
+installAsyncRouteSafety(app);
 const PORT = Number(process.env.PORT || 3001);
 
 app.set("trust proxy", 1);
@@ -1274,10 +1350,10 @@ async function requireAdmin(req, res, next) {
   }
 
   try {
-    const admin = await prisma.adminUser.findUnique({
+    const admin = await withPrismaRetry(() => prisma.adminUser.findUnique({
       where: { id: req.session.admin.id },
       include: { organization: true }
-    });
+    }), "requireAdmin.findUnique", 3);
 
     if (!admin || admin.isActive === false) {
       return req.session.destroy(() => res.redirect("/admin/login"));
@@ -2849,24 +2925,30 @@ function getAssessmentToken(type = "zpi_hr") {
 }
 
 async function findAssessmentLinkByType(type = "zpi_hr") {
-  const token = getAssessmentToken(type);
+  return withPrismaRetry(async () => {
+    const token = getAssessmentToken(type);
 
-  const directLink = await prisma.assessmentLink.findUnique({
-    where: { token },
-    include: { organization: true }
-  });
+    const directLink = await prisma.assessmentLink.findUnique({
+      where: { token },
+      include: { organization: true }
+    });
 
-  if (directLink?.isActive) return directLink;
+    if (directLink?.isActive) return directLink;
 
-  return prisma.assessmentLink.findFirst({
-    where: { isActive: true, assessmentType: type },
-    include: { organization: true },
-    orderBy: { createdAt: "asc" }
-  }).catch(() => prisma.assessmentLink.findFirst({
-    where: { isActive: true },
-    include: { organization: true },
-    orderBy: { createdAt: "asc" }
-  }));
+    const typeLink = await prisma.assessmentLink.findFirst({
+      where: { isActive: true, assessmentType: type },
+      include: { organization: true },
+      orderBy: { createdAt: "asc" }
+    });
+
+    if (typeLink) return typeLink;
+
+    return prisma.assessmentLink.findFirst({
+      where: { isActive: true },
+      include: { organization: true },
+      orderBy: { createdAt: "asc" }
+    });
+  }, `findAssessmentLinkByType:${type}`, 4);
 }
 
 app.get("/questionnaires", async (_req, res) => {
@@ -2997,10 +3079,10 @@ app.get("/admin/qr/sport/download", requireAdmin, async (_req, res) => {
 
 
 app.get("/q/:token", async (req, res) => {
-  const link = await prisma.assessmentLink.findUnique({
+  const link = await withPrismaRetry(() => prisma.assessmentLink.findUnique({
     where: { token: req.params.token },
     include: { organization: true }
-  });
+  }), "assessmentLink.findUnique:q-token", 4);
 
   if (!link || !link.isActive) {
     return res.status(404).send("Link questionario non valido o non attivo.");
@@ -3138,10 +3220,10 @@ app.get("/admin/login", (_req, res) => {
 app.post("/admin/login", async (req, res) => {
   const { email, password } = req.body;
 
-  const admin = await prisma.adminUser.findUnique({
+  const admin = await withPrismaRetry(() => prisma.adminUser.findUnique({
     where: { email },
     include: { organization: true }
-  });
+  }), "adminLogin.findUnique", 3);
 
   if (!admin || admin.isActive === false) {
     return res.status(401).render("admin-login", {
@@ -5133,6 +5215,29 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
 
   doc.end();
 });
+
+app.use((error, req, res, next) => {
+  console.error("[EXPRESS_ERROR]", {
+    path: req?.originalUrl,
+    method: req?.method,
+    code: error?.code,
+    name: error?.name,
+    message: error?.message
+  });
+
+  if (res.headersSent) {
+    return next(error);
+  }
+
+  if (isPrismaConnectionError(error)) {
+    return res.status(503).send(
+      "Database temporaneamente non raggiungibile. Riprova tra qualche secondo."
+    );
+  }
+
+  return res.status(500).send("Errore interno del server.");
+});
+
 
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on http://127.0.0.1:${PORT}`);
