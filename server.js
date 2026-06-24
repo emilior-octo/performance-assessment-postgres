@@ -1,4 +1,4 @@
-﻿import "dotenv/config";
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import zlib from "zlib";
@@ -8,8 +8,8 @@ import PDFDocument from "pdfkit";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { PrismaClient } from "@prisma/client";
-import { ZPI_QUESTIONS, getScoredQuestions } from "./questions.js";
-import { SPORT_QUESTIONS, getSportScoredQuestions } from "./sport-questions.js";
+import { ZPI_QUESTIONS, getScoredQuestions, ZPI_SCORE_DIMENSIONS_V2, ZPI_SCORING_VERSION } from "./questions.js";
+import { SPORT_QUESTIONS, getSportScoredQuestions, SPORT_SCORE_DIMENSIONS_V2, SPORT_SCORING_VERSION, SPORT_FINAL_TRAITS, getSportQuestionScoreDimensions, getSportQuestionReverseForScoring } from "./sport-questions.js";
 
 const prisma = new PrismaClient({
   log: ["warn", "error"]
@@ -90,6 +90,250 @@ function buildAdminQueryString(filters = {}) {
 }
 
 
+
+function normalizeBrokenUtf8(text) {
+  const value = String(text ?? "");
+
+  if (!/[ÃÂâ�]/.test(value)) {
+    return value;
+  }
+
+  let repaired = value;
+
+  try {
+    const decoded = Buffer.from(value, "latin1").toString("utf8");
+    const badBefore = (value.match(/[ÃÂâ�]/g) || []).length;
+    const badAfter = (decoded.match(/[ÃÂâ�]/g) || []).length;
+
+    if (badAfter < badBefore || /[àèéìòùÀÈÉÌÒÙ’“”–—™€]/.test(decoded)) {
+      repaired = decoded;
+    }
+  } catch (_error) {
+    repaired = value;
+  }
+
+  return String(repaired || "")
+    .replace(/Ã€|A\u0300/g, "À")
+    .replace(/Ãˆ|E\u0300/g, "È")
+    .replace(/Ã‰/g, "É")
+    .replace(/ÃŒ|I\u0300/g, "Ì")
+    .replace(/Ã’|O\u0300/g, "Ò")
+    .replace(/Ã™|U\u0300/g, "Ù")
+    .replace(/Ã[\u00A0 ]/g, "à")
+    .replace(/Ã¡/g, "á")
+    .replace(/Ã¨/g, "è")
+    .replace(/Ã©/g, "é")
+    .replace(/Ã¬/g, "ì")
+    .replace(/Ã­/g, "í")
+    .replace(/Ã²/g, "ò")
+    .replace(/Ã³/g, "ó")
+    .replace(/Ã¹/g, "ù")
+    .replace(/Ãº/g, "ú")
+    .replace(/Ã§/g, "ç")
+    .replace(/Ã±/g, "ñ")
+    .replace(/Ã¼/g, "ü")
+    .replace(/Ã¶/g, "ö")
+    .replace(/Ã¤/g, "ä")
+    .replace(/Â°/g, "°")
+    .replace(/Â«/g, "«")
+    .replace(/Â»/g, "»")
+    .replace(/Â/g, "")
+    .replace(/â€™/g, "’")
+    .replace(/â€˜/g, "‘")
+    .replace(/â€œ/g, "“")
+    .replace(/â€/g, "”")
+    .replace(/â€“/g, "–")
+    .replace(/â€”/g, "—")
+    .replace(/â€¦/g, "…")
+    .replace(/â€¢/g, "•")
+    .replace(/â„¢/g, "™")
+    .replace(/â‚¬/g, "€")
+    .replace(/�/g, "");
+}
+
+
+function normalizeItalianTextArtifacts(text) {
+  return String(text ?? "")
+    .replace(/\bdellapersona\b/gi, "della persona")
+    .replace(/\bfuori da s\b/gi, "fuori da sé")
+    .replace(/\bdentro di s\b/gi, "dentro di sé")
+    .replace(/\bda s(?=\s|[.,;:!?]|$)/gi, "da sé")
+    .replace(/\bd[’']quipe\b/gi, "d’équipe")
+    .replace(/\bdquipe\b/gi, "d’équipe")
+    .replace(/\bequipe\b/gi, "équipe")
+    .replace(/\bIl rischio per quello\b/g, "Il rischio è quello")
+    .replace(/\bil rischio per quello\b/g, "il rischio è quello")
+    .replace(/\bse il cambiamento spiegato\b/gi, "se il cambiamento è spiegato")
+    .replace(/\bquando il contesto confuso\b/gi, "quando il contesto è confuso")
+    .replace(/\bquesto rilevante\b/gi, "questo è rilevante")
+    .replace(/\bquesto aspetto rilevante\b/gi, "questo aspetto è rilevante")
+    .replace(/\bquesto ti aiuta\b/gi, "questo ti aiuta")
+    .replace(/\bpu\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "può")
+    .replace(/\bPu\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "Può")
+    .replace(/\bpi\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "più")
+    .replace(/\bPi\b(?=\s+[A-Za-zÀ-ÖØ-öø-ÿ])/g, "Più")
+    .replace(/\bper(?=\s+(davanti|quando|in presenza|di fronte|se invece|nel caso)\b)/gi, "però")
+    .replace(/\bfacilit(?=\s|[.,;:!?]|$)/gi, "facilità")
+    .replace(/\badattabilit(?=\s|[.,;:!?]|$)/gi, "adattabilità")
+    .replace(/\binstabilit(?=\s|[.,;:!?]|$)/gi, "instabilità")
+    .replace(/\bflessibilit(?=\s|[.,;:!?]|$)/gi, "flessibilità")
+    .replace(/\bresponsabilit(?=\s|[.,;:!?]|$)/gi, "responsabilità")
+    .replace(/\baffidabilit(?=\s|[.,;:!?]|$)/gi, "affidabilità")
+    .replace(/\bcapacit(?=\s|[.,;:!?]|$)/gi, "capacità")
+    .replace(/\bcontinuit(?=\s|[.,;:!?]|$)/gi, "continuità")
+    .replace(/\bmodalit(?=\s|[.,;:!?]|$)/gi, "modalità")
+    .replace(/\bpriorit(?=\s|[.,;:!?]|$)/gi, "priorità")
+    .replace(/\battivit(?=\s|[.,;:!?]|$)/gi, "attività")
+    .replace(/\bqualit(?=\s|[.,;:!?]|$)/gi, "qualità")
+    .replace(/\bpossibilit(?=\s|[.,;:!?]|$)/gi, "possibilità")
+    .replace(/\bvisibilit(?=\s|[.,;:!?]|$)/gi, "visibilità")
+    .replace(/\bdisponibilit(?=\s|[.,;:!?]|$)/gi, "disponibilità")
+    .replace(/\bcompatibilit(?=\s|[.,;:!?]|$)/gi, "compatibilità")
+    .replace(/\boperativit(?=\s|[.,;:!?]|$)/gi, "operatività")
+    .replace(/\bproduttivit(?=\s|[.,;:!?]|$)/gi, "produttività")
+    .replace(/\butilit(?=\s|[.,;:!?]|$)/gi, "utilità")
+    .replace(/\bsolidit(?=\s|[.,;:!?]|$)/gi, "solidità")
+    .replace(/\bnecessit(?=\s|[.,;:!?]|$)/gi, "necessità")
+    .replace(/\bdifficolt(?=\s|[.,;:!?]|$)/gi, "difficoltà")
+    .replace(/\bquando il contesto Ã¨ confuso\b/gi, "quando il contesto è confuso")
+    .replace(/\bquando il contesto e confuso\b/gi, "quando il contesto è confuso")
+    .replace(/\bse il cambiamento e spiegato\b/gi, "se il cambiamento è spiegato")
+    .replace(/\bIl rischio e quello\b/g, "Il rischio è quello")
+    .replace(/\bil rischio e quello\b/g, "il rischio è quello")
+    .replace(/\bpiu\b/gi, "più")
+    .replace(/\bpuo\b/gi, "può")
+    .replace(/\bperche\b/gi, "perché")
+    .replace(/\bse stessi\b/gi, "sé stessi")
+    .replace(/\bse stesso\b/gi, "sé stesso")
+    .replace(/\bda se\b/gi, "da sé")
+    .replace(/\bin se\b/gi, "in sé")
+    .replace(/\bsu se\b/gi, "su sé")
+    .replace(/\bverso se\b/gi, "verso sé");
+}
+
+function normalizeTextPayload(value) {
+  if (Array.isArray(value)) return value.map((item) => normalizeTextPayload(item));
+
+  if (value && typeof value === "object" && !(value instanceof Date) && !Buffer.isBuffer(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeTextPayload(item)])
+    );
+  }
+
+  if (typeof value === "string") {
+    return normalizeItalianTextArtifacts(normalizeBrokenUtf8(value))
+      .replace(/La risorsa può essere gestita/gi, "Può essere utile lavorare")
+      .replace(/La risorsa può rendere/gi, "La persona può rendere")
+      .replace(/la risorsa/gi, "la persona")
+      .replace(/La risorsa/g, "La persona")
+      .replace(/\d{1,3}\s*\/\s*100/g, "")
+      .replace(/\bAttendibilit(?:à|Ã )?\s*:\s*s\./gi, "Attendibilità: sì.")
+      .replace(/\bAttendibilità\s*:\s*s\./gi, "Attendibilità: sì.")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+  }
+
+  return value;
+}
+
+function normalizePdfVisibleText(text) {
+  // Correzione SOLO VISIVA per rendering PDF/Word: non va usata su nomi interni,
+  // mapping, scoring, filtri o JSON salvati. Serve solo a ripulire output già calcolato.
+  return normalizeItalianTextArtifacts(normalizeBrokenUtf8(text))
+    .replace(/ResponsabilitÃ\b/g, "Responsabilità")
+    .replace(/ResponsabilitÃ\s/g, "Responsabilità ")
+    .replace(/ResponsabilitÃ$/g, "Responsabilità")
+    .replace(/EspansivitÃ\b/g, "Espansività")
+    .replace(/EspansivitÃ\s/g, "Espansività ")
+    .replace(/EspansivitÃ$/g, "Espansività")
+    .replace(/AttendibilitÃ\b/g, "Attendibilità")
+    .replace(/AttendibilitÃ\s/g, "Attendibilità ")
+    .replace(/AttendibilitÃ$/g, "Attendibilità")
+    .replace(/prioritÃ\b/g, "priorità")
+    .replace(/prioritÃ\s/g, "priorità ")
+    .replace(/prioritÃ$/g, "priorità")
+    .replace(/modalitÃ\b/g, "modalità")
+    .replace(/modalitÃ\s/g, "modalità ")
+    .replace(/modalitÃ$/g, "modalità")
+    .replace(/rigiditÃ\b/g, "rigidità")
+    .replace(/rigiditÃ\s/g, "rigidità ")
+    .replace(/rigiditÃ$/g, "rigidità")
+    .replace(/continuitÃ\b/g, "continuità")
+    .replace(/continuitÃ\s/g, "continuità ")
+    .replace(/continuitÃ$/g, "continuità")
+    .replace(/utilitÃ\b/g, "utilità")
+    .replace(/utilitÃ\s/g, "utilità ")
+    .replace(/utilitÃ$/g, "utilità")
+    .replace(/soliditÃ\b/g, "solidità")
+    .replace(/soliditÃ\s/g, "solidità ")
+    .replace(/soliditÃ$/g, "solidità")
+    .replace(/attivitÃ\b/g, "attività")
+    .replace(/attivitÃ\s/g, "attività ")
+    .replace(/attivitÃ$/g, "attività")
+    .replace(/capacitÃ\b/g, "capacità")
+    .replace(/capacitÃ\s/g, "capacità ")
+    .replace(/capacitÃ$/g, "capacità")
+    .replace(/compatibilitÃ\b/g, "compatibilità")
+    .replace(/compatibilitÃ\s/g, "compatibilità ")
+    .replace(/compatibilitÃ$/g, "compatibilità")
+    .replace(/EtÃ\b/g, "Età")
+    .replace(/EtÃ\s/g, "Età ")
+    .replace(/EtÃ$/g, "Età")
+    .replace(/puÃ²/g, "può")
+    .replace(/\bpu(?=\s+(essere|avere|risultare|dare|emergere|accettare|invece|percepire|mostrare|rendere|creare|succedere|portare|aiutare|diventare|funzionare|tradursi|richiedere|sostenere|modificare|generare|appoggiarsi|subire|fare|restare|variare|riuscire|preferire|mettere|vivere|accogliere|cercare|mantenere|apparire|offrire|produrre|facilitare|riflettere|indicare|rappresentare|rivelare|dipendere|servire)\b)/gi, "può")
+    .replace(/\bpi(?=\s+(efficace|chiaro|chiara|chiari|chiare|deciso|decisa|decisi|decise|solido|solida|solidi|solide|stabile|stabili|marcato|marcata|marcati|marcate|facile|facili|utile|utili|strutturato|strutturata|strutturati|strutturate|forte|forti|rapido|rapida|rapidi|rapide|complesso|complessa|complessi|complesse|profondo|profonda|profondi|profonde)\b)/gi, "più")
+    .replace(/\bgi(?=\s+(conosciuto|conosciuta|conosciuti|conosciute|presente|presenti|chiaro|chiara|chiari|chiare|visto|vista|visti|viste|fatto|fatta|fatti|fatte|stato|stata|stati|state|maturo|matura|maturi|mature)\b)/gi, "già")
+    .replace(/\bperch(?=\s)/gi, "perché")
+    .replace(/\bqualit(?=\s|$)/gi, "qualità")
+    .replace(/\bopportunit(?=\s|$)/gi, "opportunità")
+    .replace(/\bnecessit(?=\s|$)/gi, "necessità")
+    .replace(/\bdifficolt(?=\s|$)/gi, "difficoltà")
+    .replace(/\bambiguit(?=\s|$)/gi, "ambiguità")
+    .replace(/\bdisponibilit(?=\s|$)/gi, "disponibilità")
+    .replace(/\bvisibilit(?=\s|$)/gi, "visibilità")
+    .replace(/\btracciabilit(?=\s|$)/gi, "tracciabilità")
+    .replace(/\baffidabilit(?=\s|$)/gi, "affidabilità")
+    .replace(/\bResponsabilit(?=\s|$)/g, "Responsabilità")
+    .replace(/\bEspansivit(?=\s|$)/g, "Espansività")
+    .replace(/\bAttendibilit(?=[:;,.!?\s]|$)/g, "Attendibilità")
+    .replace(/\bAttendibilit(?:à|Ã )?\s*:\s*s\./gi, "Attendibilità: sì.")
+    .replace(/\bAttendibilità\s*:\s*s\./gi, "Attendibilità: sì.")
+    .replace(/\bpriorit(?=\s|$)/g, "priorità")
+    .replace(/\bmodalit(?=\s|$)/g, "modalità")
+    .replace(/\brigidit(?=\s|$)/g, "rigidità")
+    .replace(/\bcontinuit(?=\s|$)/g, "continuità")
+    .replace(/\butilit(?=\s|$)/g, "utilità")
+    .replace(/\bsolidit(?=\s|$)/g, "solidità")
+    .replace(/\battivit(?=\s|$)/g, "attività")
+    .replace(/\bcapacit(?=\s|$)/g, "capacità")
+    .replace(/\bcompatibilit(?=\s|$)/g, "compatibilità")
+    .replace(/\boperativit(?=[:;,.!?\s]|$)/gi, "operatività")
+    .replace(/\bproduttivit(?=[:;,.!?\s]|$)/gi, "produttività")
+    .replace(/\bcontinuit(?=[:;,.!?\s]|$)/gi, "continuità")
+    .replace(/\bresponsabilit(?=[:;,.!?\s]|$)/gi, "responsabilità")
+    .replace(/\bpriorit(?=[:;,.!?\s]|$)/gi, "priorità")
+    .replace(/\battivit(?=[:;,.!?\s]|$)/gi, "attività")
+    .replace(/\bcapacit(?=[:;,.!?\s]|$)/gi, "capacità")
+    .replace(/\bpi(?=\s+(efficac|util|chiar|concret|solid|stabil|marcat|facil|strutturat|fort|rapid|compless|profond|vicin|amp|adatt|coerent|puntual|frequent|semplic|specific|motivanti|decis|produttiv|visibil)\w*\b)/gi, "più")
+    .replace(/\bpu(?=\s+(essere|avere|risultare|dare|emergere|accettare|invece|percepire|mostrare|rendere|creare|succedere|portare|aiutare|diventare|funzionare|tradursi|richiedere|sostenere|modificare|generare|appoggiarsi|subire|fare|restare|variare|riuscire|preferire|mettere|vivere|accogliere|cercare|mantenere|apparire|offrire|produrre|facilitare|riflettere|indicare|rappresentare|rivelare|dipendere|servire|favorire|rivedere|incidere|limitare|mostrarsi|tradurre|contribuire|sostenere|perdere|gestire|aiutare|diventare|richiedere)\b)/gi, "può")
+    .replace(/\bgi(?=\s+(conosciut|present|chiar|vist|fatt|stat|matur|consolidat|format|emers|attiv|avviat|definit)\w*\b)/gi, "già")
+    .replace(/(^|\n)(\s*)Attendibilità\s+(S[IÌ]|FORZATA|NO)\s*[.:]/g, "$1$2Attendibilità: $3.")
+    .replace(/(^|\n)(\s*)Attendibilit[aà]\s+(S[IÌ]|FORZATA|NO)\s*[.:]/gi, "$1$2Attendibilità: $3.")
+    .replace(/\bEt(?=:|\s|$)/g, "Età")
+    .replace(/[\u0018\u0019]/g, "’");
+}
+
+function patchPdfTextNormalization(doc) {
+  if (!doc || doc.__zpiTextNormalizationPatched) return doc;
+
+  const originalText = doc.text.bind(doc);
+  doc.text = (text, ...args) => originalText(normalizePdfVisibleText(text), ...args);
+  doc.__zpiTextNormalizationPatched = true;
+
+  return doc;
+}
+
+
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -159,7 +403,12 @@ const ASSESSMENT_TYPES = {
 };
 
 function getAssessmentConfig(type = "zpi_hr") {
-  return ASSESSMENT_TYPES[type] || ASSESSMENT_TYPES.zpi_hr;
+  const config = ASSESSMENT_TYPES[type] || ASSESSMENT_TYPES.zpi_hr;
+  return {
+    ...config,
+    title: normalizeBrokenUtf8(config.title),
+    shortTitle: normalizeBrokenUtf8(config.shortTitle)
+  };
 }
 
 function inferAssessmentTypeFromToken(token = "") {
@@ -209,6 +458,54 @@ const ROLE_OPTIONS = [
 
   { value: "altro", label: "Altro" }
 ];
+
+const SPORT_ROLE_OPTIONS = [
+  { value: "presidente", label: "Presidente" },
+  { value: "vice_presidente", label: "Vice Presidente" },
+  { value: "dirigente", label: "Dirigente" },
+  { value: "direttore_generale", label: "Direttore Generale" },
+  { value: "direttore_sportivo", label: "Direttore Sportivo" },
+  { value: "allenatore", label: "Allenatore" },
+  { value: "massaggiatore", label: "Massaggiatore" },
+  { value: "medico_sociale", label: "Medico Sociale" },
+  { value: "magazziniere", label: "Magazziniere" },
+  { value: "calciatore_atleta", label: "Calciatore/Atleta" }
+];
+
+function getRoleOptionsForAssessment(assessmentType = "zpi_hr") {
+  return assessmentType === "sport_performance" ? SPORT_ROLE_OPTIONS : ROLE_OPTIONS;
+}
+
+const SPORT_EXECUTIVE_ROLE_VALUES = new Set([
+  "presidente",
+  "vice_presidente",
+  "dirigente",
+  "direttore_generale",
+  "direttore_sportivo"
+]);
+
+function isSportExecutiveRole(role) {
+  const value = String(role || "").trim().toLowerCase();
+
+  if (SPORT_EXECUTIVE_ROLE_VALUES.has(value)) return true;
+
+  return /\b(presidente|vice\s*presidente|dirigente|direttore\s+generale|direttore\s+sportivo)\b/i.test(value);
+}
+
+function isExecutiveAssessmentRole(role, assessmentType = "zpi_hr") {
+  if (isDirectionalExecutiveRole(role)) return true;
+  return assessmentType === "sport_performance" && isSportExecutiveRole(role);
+}
+
+function stripExecutiveRoleFitPhrases(text) {
+  return String(text || "")
+    .replace(/\bLa tua compatibilit[àa]\s+con\s+il\s+ruolo[^.]*\.\s*/gi, "")
+    .replace(/\bLa compatibilit[àa]\s+con\s+il\s+ruolo[^.]*\.\s*/gi, "")
+    .replace(/\bCompatibilit[àa]\s+con\s+il\s+ruolo\s+ricoperto\s*:\s*\d{1,3}%\s*/gi, "")
+    .replace(/\bLa lettura rispetto al ruolo[^.]*\.\s*/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 function normalizeRequestedRole(bodyRole, bodyOtherRole, fallbackRole) {
   const role = String(bodyRole || "").trim();
@@ -363,7 +660,9 @@ const HISTOGRAM_COLORS = {
 const ZENITH_INDIGO = "#2F4B7C";
 
 const DISPLAY_LABELS = {
-  "AffidabilitÃ  + autodisciplina": "AffidabilitÃ ",
+  // SOLO DISPLAY: non cambia scoring, mapping, role-fit o nomi interni salvati.
+  "AffidabilitÃ  + autodisciplina": "Autodisciplina / affidabilitÃ ",
+  "Affidabilità + autodisciplina": "Autodisciplina / affidabilità",
   "Stress": "Gestione pressioni / Stress",
   "CapacitÃ  di gestiÃ³ne finanziaria": "CapacitÃ  di gestione finanziaria"
 };
@@ -372,6 +671,8 @@ const DIMENSION_DESCRIPTIONS = {
   "Organizzazione e pianificazione": "misura la capacitÃ  di programmare il lavoro nel breve e nel lungo periodo",
   "Automotivazione": "misura quanto la persona crede in se stessa e nelle proprie capacitÃ  di avere successo",
   "AffidabilitÃ  + autodisciplina": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
+  "Autodisciplina / affidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
+  "Autodisciplina / affidabilità": "misura coscienziosità, senso di responsabilità, accuratezza e capacità di mantenere ciò che viene affidato",
   "AffidabilitÃ ": "misura coscienziositÃ , senso di responsabilitÃ , accuratezza e capacitÃ  di mantenere ciÃ² che viene affidato",
   "Sicurezza": "misura la struttura delle convinzioni della persona: quanto Ã¨ certa delle proprie idee, quanto le difende, quanto Ã¨ disposta a metterle in discussione e quanto il suo punto di vista Ã¨ concreto o teorico",
   "Stress": "misura la presenza di pressioni, contrasti o situazioni che possono drenare energia e luciditÃ ",
@@ -390,27 +691,43 @@ const DIMENSION_DESCRIPTIONS = {
   "Vendite": "misura la predisposizione a proporre, influenzare, negoziare e sostenere una proposta commerciale",
   "Gestione prioritÃ ": "misura la capacitÃ  di distinguere ciÃ² che Ã¨ importante da ciÃ² che Ã¨ solo urgente",
   "CapacitÃ  di gestione finanziaria": "misura la capacitÃ  di generare reddito autonomo, risparmiare e gestire le risorse economiche in ottica futura",
-  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
+  "AttendibilitÃ ": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili",
+  "Goal Setting": "misura la capacità dell’atleta di definire obiettivi sportivi chiari, monitorabili e orientati alla crescita nel breve, medio e lungo periodo",
+  "Gestione Pressioni": "misura la capacità di restare lucido in gara, gestire errore, critiche, pubblico, aspettative e momenti competitivi delicati",
+  "Leadership": "misura la tendenza a diventare riferimento positivo per compagni, staff e gruppo attraverso esempio, responsabilità e atteggiamento costruttivo",
+  "Etica Personale": "misura correttezza, rispetto delle regole, integrità personale, affidabilità comportamentale e coerenza dentro e fuori dal campo",
+  "Proattività": "misura la capacità di proporre soluzioni, prendere iniziativa e reagire in modo pratico davanti a problemi, difficoltà o nuove sfide",
+  "Adattamento": "misura la capacità di adattarsi a ruoli, compagni, schemi, feedback, decisioni del mister e cambiamenti tecnici o organizzativi",
+  "Resistenza al Cambiamento": "misura il modo in cui l’atleta reagisce al cambiamento: apertura, rigidità, disponibilità a rivedere abitudini e accettare novità",
+  "Eustress": "misura la capacità di trasformare tensione, stress pre-gara e pressione competitiva in energia utile alla prestazione",
+  "Attendibilità": "misura se le risposte risultano sincere, forzate o non sufficientemente attendibili"
 };
 
 const ZPI_EVO_TRAIT_GUIDE = {
-  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "programma bene a breve, tende a essere ordinata, precisa e puntuale nelle consegne" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, pur potendo confondersi se il carico Ã¨ alto" }, { min: 10, text: "ha bisogno di aiuto nel trasformare il lavoro in piani e programmazione settimanale" }, { min: -10, text: "il tratto inizia a manifestarsi negativamente: il lavoro puÃ² non essere organizzato con continuitÃ " }, { min: -100, text: "tendenza marcata a disorganizzazione e dispersione" }] },
-  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "motivazione molto elevata, con forte fiducia nelle proprie capacitÃ " }, { min: 40, text: "molto motivata e ambiziosa, adatta a ruoli che richiedono spinta personale" }, { min: 0, text: "si automotiva, ma puÃ² non riuscire sempre ad accendere o trascinare gli altri" }, { min: -30, text: "ha bisogno di motivazione esterna, soprattutto nei momenti di difficoltÃ " }, { min: -100, text: "crede poco in se stessa e puÃ² aver rinunciato a scopi o obiettivi importanti" }] },
-  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile, mantiene gli accordi e dÃ  peso alla parola data" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere" }, { min: 20, text: "puÃ² non curare fino in fondo alcuni aspetti del ruolo" }, { min: 0, text: "tende a rimandare o lasciare attivitÃ  non completamente gestite" }, { min: -100, text: "richiede direttive chiare e controllo costante per mantenere continuitÃ " }] },
+  "Organizzazione e pianificazione": { evo: "Vision Organizzativa", bands: [{ min: 50, text: "capacità concreta di programmare il lavoro a breve, mantenere ordine operativo e rispettare consegne e scadenze" }, { min: 30, text: "fascia intermedia positiva: in genere riesce a programmarsi, ma può confondersi o disperdersi quando ci sono molte cose da fare" }, { min: 10, text: "ha bisogno di aiuto per trasformare il lavoro in piani, priorità e programmazione settimanale" }, { min: -10, text: "tendenza a correre dietro alle urgenze senza programmare davvero, con rischio di dispersione" }, { min: -100, text: "forte disorganizzazione operativa e marcata dispersione nella gestione delle attività" }] },
+  "Automotivazione": { evo: "Automotivazione", bands: [{ min: 70, text: "spinta personale molto elevata, con forte fiducia nelle proprie possibilità; attenzione all’eccesso di considerazione di sé" }, { min: 40, text: "molto motivata e ambiziosa, con buona spinta autonoma verso il risultato" }, { min: 0, text: "riesce ad automotivarsi, ma può avere difficoltà ad accendere o motivare gli altri" }, { min: -30, text: "ha bisogno di motivazione, carica e riconoscimento esterni, soprattutto nei momenti di difficoltà" }, { min: -100, text: "crede poco nelle proprie possibilità e può essersi allontanata da scopi o obiettivi importanti" }] },
+  "AffidabilitÃ ": { evo: "Autodisciplina", bands: [{ min: 60, text: "molto affidabile: dà peso alla parola data, mantiene gli accordi e sostiene la continuità esecutiva anche quando costa sacrificio" }, { min: 40, text: "decisamente affidabile, opera con buon senso del dovere e con uno scambio corretto rispetto al ruolo" }, { min: 20, text: "può non curare fino in fondo alcuni aspetti del ruolo, soprattutto sotto pressione o quando il controllo diminuisce" }, { min: 0, text: "tende a rimandare, tamponare o lasciare attività non completamente gestite; la continuità esecutiva va presidiata" }, { min: -100, text: "può essere produttiva con direttive chiare e controllo costante, ma l’incostanza rischia di lasciare cose non gestite" }] },
   "Sicurezza": { evo: "Convinzioni", bands: [{ min: 70, text: "convinzioni molto radicate: puÃ² avere una visione d'insieme forte, ma rischia di diventare teorica o rigida se non verifica le idee nell'azione" }, { min: 50, text: "convinzioni strutturate e stabili: tende a sostituire se stessa con dati e criteri, ma puÃ² essere poco facile farle cambiare idea" }, { min: 10, text: "mantiene un punto di vista abbastanza stabile, pur potendo metterlo in discussione davanti a dati o alternative migliori" }, { min: -20, text: "puÃ² mettere facilmente in discussione le proprie idee e cercare riferimenti esterni, con rischio di influenzabilitÃ " }, { min: -100, text: "convinzioni poco stabili: puÃ² essere vittima di ciÃ² che non conosce, cercando sicurezza fuori da sÃ©" }] },
-  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "gestisce la situazione ma puÃ² accettare compromessi che mantengono un equilibrio non evolutivo" }, { min: 30, text: "gestisce efficacemente stress e pressione" }, { min: 0, text: "puÃ² esserci una persona o situazione che crea preoccupazione e drena energia" }, { min: -30, text: "sono presenti conflitti o influenze negative che possono generare alti e bassi" }, { min: -70, text: "forte condizione di stress o pressione da approfondire" }, { min: -100, text: "agitazione marcata legata a conflitti o pressioni significative" }] },
-  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica, avvia rapidamente ciÃ² che deve fare" }, { min: 50, text: "attiva, preferisce attivitÃ  dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo, puÃ² preferire routine e contesti stabili" }, { min: 0, text: "poco attiva, puÃ² fare fatica ad avviare nuove attivitÃ " }, { min: -100, text: "bassa energia di azione e difficoltÃ  a mettersi in moto" }] },
-  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; attenzione a non risultare dominante" }, { min: 60, text: "concreta, assertiva e capace di affrontare le situazioni di petto" }, { min: 40, text: "buon focus sul risultato e discreta assertivitÃ " }, { min: 20, text: "puÃ² manifestare lentezza produttiva o difficoltÃ  a incidere" }, { min: -100, text: "tende ad aggirare i problemi e puÃ² perdere focus sui risultati" }] },
-  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "propositiva, tende a farsi carico dei problemi e a mettersi in discussione" }, { min: 30, text: "proattiva e orientata alle soluzioni" }, { min: 10, text: "si prende responsabilitÃ  soprattutto per ciÃ² che dipende direttamente da lei" }, { min: -10, text: "puÃ² iniziare a ragionare da effetto, soprattutto sotto pressione" }, { min: -100, text: "tende a sentirsi effetto degli eventi e puÃ² subire le situazioni" }] },
-  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, osservando da piÃ¹ punti di vista" }, { min: 10, text: "comprende abbastanza bene persone e situazioni" }, { min: -20, text: "quando non comprende puÃ² iniziare a criticare o valutare parzialmente" }, { min: -100, text: "comunicazione critica e poco motivante, con difficoltÃ  a comprendere punti di vista diversi" }] },
+  "Gestione pressioni / Stress": { evo: "Gestione Pressioni", bands: [{ min: 70, text: "può aver incelofanato una situazione o una persona che crea difficoltà: all’esterno mantiene equilibrio, ma tende ad accettare compromessi senza affrontare fino in fondo il nodo" }, { min: 30, text: "gestisce efficacemente eventuali situazioni di stress o pressione: la persona è sostanzialmente serena e, anche se ha qualche pressione, riesce a gestirla" }, { min: 0, text: "può esserci una persona o situazione che la ostacola o la preoccupa, con rischio di drenare energia, buonumore e attenzione" }, { min: -30, text: "sono presenti situazioni di conflitto o influenze negative evidenti, con possibili alti e bassi e riprese discontinue" }, { min: -70, text: "vive una forte condizione di stress legata a conflitti o pressioni, con rischio di errori e distrazioni" }, { min: -100, text: "agitazione marcata causata da una situazione conflittuale o da pressioni molto significative" }] },
+  "Dinamismo": { evo: "Dinamismo", bands: [{ min: 70, text: "molto attiva e dinamica: inizia rapidamente ciò che deve fare e preferisce contesti in movimento" }, { min: 50, text: "attiva: avvia abbastanza rapidamente i lavori e preferisce attività dinamiche a quelle troppo sedentarie" }, { min: 30, text: "attiva ma non troppo: può preferire routine e lavori più tranquilli rispetto ad attività molto movimentate" }, { min: 0, text: "poco attiva: può fare fatica a mettere energia nell’avviare nuove attività e preferire lavori sedentari" }, { min: -100, text: "bassa energia di azione e forte difficoltà ad avviare anche attività di routine" }] },
+  "FlessibilitÃ  comunicativa": { evo: "Determinazione", bands: [{ min: 80, text: "molto autorevole, diretta e orientata al risultato; può convincere gli altri, ma deve evitare eccesso di dominanza o impazienza" }, { min: 60, text: "concreta e assertiva: affronta le situazioni di petto e sostiene con efficacia la propria posizione" }, { min: 40, text: "mantiene un buon focus sul risultato e una discreta assertività, utile anche in ambito commerciale" }, { min: 20, text: "può manifestare lentezza produttiva o difficoltà a incidere, chiedendo le cose senza vera assertività" }, { min: -100, text: "tende ad aggirare i problemi, non affronta le situazioni di petto e può perdere focus sui risultati" }] },
+  "ResponsabilitÃ ": { evo: "CentralitÃ ", bands: [{ min: 60, text: "molto propositiva: tende a farsi carico dei problemi, mettersi in discussione e muoversi da causa rispetto alle situazioni" }, { min: 30, text: "proattiva nei rapporti con gli altri, orientata alle soluzioni e al problem solving" }, { min: 10, text: "si prende responsabilità soprattutto per ciò che dipende direttamente da lei, ma può essere permalosa se messa in discussione" }, { min: -10, text: "non sempre propositiva: può ragionare da effetto e reagire soprattutto sotto pressione o quando incontra disaccordi" }, { min: -100, text: "tende a sentirsi effetto degli eventi, attribuire le cause all’esterno e subire le situazioni" }] },
+  "Ascolto attivo": { evo: "Comprensione", bands: [{ min: 60, text: "comprende molto bene persone e situazioni, sa mettersi nei panni dell’altro e tende a vedere il buono negli altri" }, { min: 10, text: "comprende abbastanza bene persone e situazioni, analizza senza troppi pregiudizi e può correggere positivamente gli altri" }, { min: -20, text: "non sempre comprende gli altri: quando qualcosa non rientra nella sua valutazione può criticare o leggere la situazione in modo parziale" }, { min: -100, text: "fatica a comprendere punti di vista diversi e può avere una comunicazione critica, centrata sugli errori" }] },
   "Comprensione": { evo: "Empatia", bands: [{ min: 60, text: "mette gli altri a proprio agio e coglie bene stati dâ€™animo e bisogni" }, { min: 20, text: "calorosa, disponibile e attenta agli altri" }, { min: -20, text: "puÃ² mostrare freddezza o distacco, soprattutto in situazioni di disaccordo" }, { min: -100, text: "generalmente distaccata e fredda, con rischio di risultare poco sensibile" }] },
   "EspansivitÃ ": { evo: "Estroversione", bands: [{ min: 70, text: "fortemente spigliata, disinibita e calorosa nellâ€™approccio" }, { min: 40, text: "aperta e cordiale nel primo approccio" }, { min: 20, text: "selettiva e formale, ma capace di approcciare se necessario" }, { min: 0, text: "traspare un poâ€™ di timidezza con persone nuove" }, { min: -40, text: "non fa facilmente il primo passo e puÃ² restare sulle sue" }, { min: -100, text: "chiusa, ritirata o impacciata con persone che non conosce" }] }
 };
 
 function evoGuideForDimension(name, score) {
   const displayName = displayDimensionName(name);
-  const guide = ZPI_EVO_TRAIT_GUIDE[displayName];
+  const guide =
+    ZPI_EVO_TRAIT_GUIDE[displayName] ||
+    ZPI_EVO_TRAIT_GUIDE[normalizeBrokenUtf8(displayName)] ||
+    Object.entries(ZPI_EVO_TRAIT_GUIDE).find(([guideName]) => {
+      return dimensionAiMatchKey(guideName) === dimensionAiMatchKey(displayName);
+    })?.[1];
+
   if (!guide) return null;
+
   const value = chartScore(score);
   const band = guide.bands.find((item) => value >= item.min) || guide.bands[guide.bands.length - 1];
   return { evoParameter: guide.evo, chartScore: value, interpretation: band.text };
@@ -418,9 +735,9 @@ function evoGuideForDimension(name, score) {
 
 function truthfulnessStatusFromScore(score) {
   const value = Number(score || 0);
-  if (value >= 50) return { label: "AttendibilitÃ  SÃŒ", text: "le risposte risultano complessivamente coerenti e il profilo puÃ² essere letto con buona fiducia, pur restando da confrontare con colloquio e osservazione concreta." };
-  if (value >= 30) return { label: "AttendibilitÃ  FORZATA", text: "le risposte appaiono parzialmente controllate o orientate a presentarsi in modo favorevole; il profilo va letto con prudenza e verificato con esempi reali." };
-  return { label: "AttendibilitÃ  NO", text: "le risposte non offrono una base sufficientemente coerente; la relazione va considerata indicativa e richiede approfondimento diretto prima di trarre conclusioni operative." };
+  if (value >= 50) return { label: "Attendibilità: SÌ", text: "le risposte risultano complessivamente coerenti e il profilo puÃ² essere letto con buona fiducia, pur restando da confrontare con colloquio e osservazione concreta." };
+  if (value >= 30) return { label: "Attendibilità: FORZATA", text: "le risposte appaiono parzialmente controllate o orientate a presentarsi in modo favorevole; il profilo va letto con prudenza e verificato con esempi reali." };
+  return { label: "Attendibilità: NO", text: "le risposte non offrono una base sufficientemente coerente; la relazione va considerata indicativa e richiede approfondimento diretto prima di trarre conclusioni operative." };
 }
 
 function stripForbiddenGeneralRelationPhrases(text) {
@@ -432,17 +749,19 @@ function stripForbiddenGeneralRelationPhrases(text) {
 
 
 function displayDimensionName(name) {
-  const value = String(name || "").trim();
+  const value = normalizeBrokenUtf8(String(name || "").trim());
   const normalizedValue = value
     .replace(/gestiÃ³ne/gi, "gestione")
-    .replace(/gestiÃ²ne/gi, "gestione");
+    .replace(/gestiÃ²ne/gi, "gestione")
+    .replace(/gestióne/gi, "gestione")
+    .replace(/gestiòne/gi, "gestione");
 
-  return DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue;
+  return normalizeBrokenUtf8(DISPLAY_LABELS[value] || DISPLAY_LABELS[normalizedValue] || normalizedValue);
 }
 
 function dimensionDescription(name) {
   const displayName = displayDimensionName(name);
-  return DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "";
+  return normalizeBrokenUtf8(DIMENSION_DESCRIPTIONS[displayName] || DIMENSION_DESCRIPTIONS[String(name || "").trim()] || "");
 }
 
 function withDisplayMeta(item) {
@@ -459,6 +778,83 @@ function normalizeDimensionDefinitions(originalTrait) {
   return DIMENSION_DEFINITIONS[originalTrait] || [
     { name: String(originalTrait || "Dinamismo"), category: DIMENSION_CATEGORY.TRAIT }
   ];
+}
+
+function getQuestionScoreDimensions(question, sourceTrait) {
+  const v2Config = ZPI_SCORE_DIMENSIONS_V2?.[question?.key];
+
+  // V2: se la domanda è presente nella mappa, usiamo esattamente quella.
+  // Una lista vuota è intenzionale: item di contesto, da eliminare o da non usare nello scoring.
+  if (v2Config && Array.isArray(v2Config.dimensions)) {
+    return v2Config.dimensions;
+  }
+
+  // Compatibilità futura: permette di mettere direttamente scoreDimensions sulla domanda.
+  if (Array.isArray(question?.scoreDimensions)) {
+    return question.scoreDimensions;
+  }
+
+  // Fallback legacy: mantiene compatibili eventuali domande non ancora migrate.
+  return normalizeDimensionDefinitions(sourceTrait);
+}
+
+function getQuestionReverseForScoring(question) {
+  const v2Config = ZPI_SCORE_DIMENSIONS_V2?.[question?.key];
+
+  if (v2Config && typeof v2Config.reverse === "boolean") {
+    return v2Config.reverse;
+  }
+
+  if (typeof question?.reverseV2 === "boolean") {
+    return question.reverseV2;
+  }
+
+  return !!question?.reverse;
+}
+
+function getAssessmentQuestionDimensions(question, sourceTrait, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return getSportQuestionScoreDimensions(question, sourceTrait);
+  }
+
+  return getQuestionScoreDimensions(question, sourceTrait);
+}
+
+function getAssessmentQuestionReverse(question, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return getSportQuestionReverseForScoring(question);
+  }
+
+  return getQuestionReverseForScoring(question);
+}
+
+function sportDimensionOrder(name) {
+  const order = new Map((SPORT_FINAL_TRAITS || []).map((item, index) => [item, index]));
+  return order.has(name) ? order.get(name) : 999;
+}
+
+function reliabilityScoreToDimensionScore(score) {
+  const value = Math.max(0, Math.min(100, Number(score || 0)));
+  return Math.round(value * 0.3);
+}
+
+function attachSportReliabilityDimension(traits, reliabilityScore, reliabilityLabel, reliabilityFlags = []) {
+  const list = Array.isArray(traits) ? traits.filter((item) => displayDimensionName(item?.name) !== "Attendibilità") : [];
+
+  list.push({
+    name: "Attendibilità",
+    category: DIMENSION_CATEGORY.TRAIT,
+    score: reliabilityScoreToDimensionScore(reliabilityScore),
+    range: reliabilityLabelFromScore(reliabilityScore),
+    questionCount: 0,
+    items: [],
+    synthetic: true,
+    reliabilityLabel,
+    reliabilityFlags,
+    scoringVersion: SPORT_SCORING_VERSION
+  });
+
+  return list.sort((a, b) => sportDimensionOrder(a.name) - sportDimensionOrder(b.name));
 }
 
 function histogramColor(score) {
@@ -497,6 +893,9 @@ function normalizeRoleKey(role) {
   const directValues = new Set(ROLE_OPTIONS.map((item) => item.value));
   if (directValues.has(value)) return value;
 
+  const sportRoleValues = new Set(SPORT_ROLE_OPTIONS.map((item) => item.value));
+  if (sportRoleValues.has(value)) return "altro";
+
   if (/direzione|imprenditore|ceo|founder|titolare/.test(value)) return "direzione";
   if (/operations|produzione|logistica|magazzin|operaio|operai|supply/.test(value)) return "operations";
   if (/responsabile amministrativo|responsabile amministrazione/.test(value)) return "responsabile_amministrativo";
@@ -514,6 +913,25 @@ function normalizeRoleKey(role) {
   return "altro";
 }
 
+
+function isDirectionalExecutiveRole(role) {
+  const value = String(role || "").trim().toLowerCase();
+  return (
+    value === "direzione" ||
+    value.includes("direzione") ||
+    value.includes("imprenditore") ||
+    value.includes("titolare") ||
+    value.includes("ceo") ||
+    value.includes("founder")
+  );
+}
+
+function isDirectionalExecutiveNormalized(normalized = {}) {
+  return isExecutiveAssessmentRole(
+    normalized?.requestedRole || normalized?.roleFit?.roleKey || "",
+    normalized?.assessmentType || "zpi_hr"
+  );
+}
 const ROLE_FIT_WEIGHTS = {
   direzione: {
     "Automotivazione": 1.35,
@@ -736,29 +1154,114 @@ function calculateRoleFit(dimensions, requestedRole) {
   };
 }
 
+function calculateSportRoleFit(dimensions, requestedRole) {
+  const relevant = (Array.isArray(dimensions) ? dimensions : [])
+    .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT)
+    .filter((item) => displayDimensionName(item?.name) !== "Attendibilità");
+
+  const values = relevant.map((item) => scoreToPercent(item.score));
+  const score = values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+
+  return {
+    roleKey: "sport_performance",
+    score,
+    label: roleFitLabel(score),
+    details: relevant.map((item) => ({
+      name: item.name,
+      score: item.score,
+      percent: scoreToPercent(item.score),
+      weight: 1
+    })),
+    note: "La compatibilità con il contesto sportivo è una lettura orientativa e va verificata con staff tecnico, osservazione in allenamento e comportamento in gara."
+  };
+}
+
+function calculateAssessmentRoleFit(dimensions, requestedRole, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return calculateSportRoleFit(dimensions, requestedRole);
+  }
+
+  return calculateRoleFit(dimensions, requestedRole);
+}
+
+function buildSportSummary(traits, role) {
+  const { traits: mainTraits } = splitDimensions(traits);
+  const relevant = mainTraits.filter((item) => displayDimensionName(item?.name) !== "Attendibilità");
+  const sorted = [...relevant].sort((a, b) => b.score - a.score);
+  const top = sorted.slice(0, 3).map((t) => t.name);
+  const low = [...sorted].reverse().slice(0, 2).map((t) => t.name);
+
+  const orientation = top.length
+    ? `profilo sportivo orientato a ${top.map(displayDimensionName).join(", ")}`
+    : "profilo sportivo da approfondire";
+
+  return {
+    orientation,
+    topTraits: top,
+    weakTraits: low,
+    roleComment: "La lettura va riferita al contesto sportivo, considerando allenamento, gara, rapporto con mister e compagni, continuità prestativa e comportamento dentro e fuori dal campo."
+  };
+}
+
+function buildAssessmentSummary(traits, role, assessmentType = "zpi_hr") {
+  if (assessmentType === "sport_performance") {
+    return buildSportSummary(traits, role);
+  }
+
+  return buildSummary(traits, role);
+}
+
+function buildSportManagementAdvice({ traits, roleFit }) {
+  const { traits: mainTraits } = splitDimensions(traits);
+  const relevant = mainTraits.filter((item) => displayDimensionName(item?.name) !== "Attendibilità");
+  const low = [...relevant].sort((a, b) => a.score - b.score).slice(0, 3).map((trait) => displayDimensionName(trait.name));
+
+  if (low.includes("Gestione Pressioni") || low.includes("Eustress")) {
+    return "È utile lavorare con obiettivi di gara chiari, feedback brevi e momenti di confronto dopo allenamento o partita. Nei passaggi di maggiore pressione conviene verificare come l’atleta gestisce errore, critica, pubblico e aspettative.";
+  }
+
+  if (low.includes("Etica Personale") || low.includes("Leadership")) {
+    return "È consigliabile osservare con attenzione comportamento nello spogliatoio, rispetto delle regole, rapporto con compagni e staff, disponibilità a mettersi a servizio del gruppo e coerenza fuori dal campo.";
+  }
+
+  if (low.includes("Goal Setting") || low.includes("Automotivazione")) {
+    return "È utile aiutare l’atleta a trasformare obiettivi generici in traguardi concreti, verificabili e collegati ad allenamento, ruolo, crescita tecnica e continuità nel tempo.";
+  }
+
+  return "Si consiglia una lettura integrata tra questionario, colloquio con l’atleta e osservazione sul campo, valorizzando i tratti più solidi e presidiando le aree meno continue con obiettivi semplici, feedback concreti e verifiche periodiche.";
+}
+
+function buildAssessmentManagementAdvice({ traits, roleFit, assessmentType = "zpi_hr" }) {
+  if (assessmentType === "sport_performance") {
+    return buildSportManagementAdvice({ traits, roleFit });
+  }
+
+  return buildManagementAdvice({ traits, roleFit });
+}
+
 function buildManagementAdvice({ traits, roleFit }) {
   const { traits: mainTraits } = splitDimensions(traits);
-  const byName = new Map(mainTraits.map((trait) => [trait.name, trait]));
-  const top = [...mainTraits].sort((a, b) => b.score - a.score).slice(0, 3).map((trait) => trait.name);
-  const low = [...mainTraits].sort((a, b) => a.score - b.score).slice(0, 3).map((trait) => trait.name);
+  const byName = new Map(mainTraits.map((trait) => [displayDimensionName(trait.name), trait]));
+  const top = [...mainTraits].sort((a, b) => b.score - a.score).slice(0, 3).map((trait) => displayDimensionName(trait.name));
+  const low = [...mainTraits].sort((a, b) => a.score - b.score).slice(0, 3).map((trait) => displayDimensionName(trait.name));
 
   if (roleFit?.score >= 75) {
-    return "La risorsa puÃ² essere gestita con obiettivi chiari, margini progressivi di autonomia e momenti di confronto periodici. Il profilo suggerisce una buona coerenza con il ruolo: Ã¨ utile valorizzare i tratti piÃ¹ solidi assegnando responsabilitÃ  osservabili e indicatori di risultato condivisi.";
+    return "È utile lavorare con obiettivi chiari, margini progressivi di autonomia e momenti di confronto periodici. Il profilo suggerisce una buona coerenza con il ruolo: i tratti più solidi vanno tradotti in responsabilità osservabili e indicatori di risultato condivisi.";
   }
 
-  if (low.includes("Stress") || (byName.get("Stress")?.score ?? 0) < 0) {
-    return "Ãˆ consigliabile inserire la risorsa in un contesto con prioritÃ  chiare, feedback frequenti e carichi progressivi. Nelle fasi piÃ¹ intense conviene evitare ambiguitÃ  operative e prevedere punti di controllo ravvicinati, cosÃ¬ da ridurre dispersione e pressione non necessaria.";
+  if (low.includes("Gestione pressioni / Stress") || low.includes("Stress") || (byName.get("Gestione pressioni / Stress")?.score ?? 0) < 0) {
+    return "È consigliabile prevedere priorità chiare, feedback frequenti e carichi progressivi. Nelle fasi più intense conviene evitare ambiguità operative e inserire punti di controllo ravvicinati, così da ridurre dispersione e pressione non necessaria.";
   }
 
-  if (top.includes("EspansivitÃ ") || top.includes("Dinamismo")) {
-    return "La risorsa puÃ² rendere meglio in contesti dinamici, con interazione, confronto e obiettivi visibili. Ãˆ utile canalizzare lâ€™energia relazionale su attivitÃ  con responsabilitÃ  definite, evitando che la spinta comunicativa si disperda in iniziative poco prioritarie.";
+  if (top.includes("Espansività") || top.includes("Dinamismo")) {
+    return "Il contesto più adatto è dinamico, con interazione, confronto e obiettivi visibili. È utile canalizzare l’energia relazionale su attività con responsabilità definite, evitando che la spinta comunicativa si disperda in iniziative poco prioritarie.";
   }
 
-  if (top.includes("Organizzazione e pianificazione") || top.includes("AffidabilitÃ  + autodisciplina")) {
-    return "La risorsa puÃ² essere gestita efficacemente con processi chiari, responsabilitÃ  definite e spazio per presidiare attivitÃ  operative o progettuali. Ãˆ utile affidarle obiettivi misurabili e riconoscere la continuitÃ  di esecuzione.";
+  if (top.includes("Organizzazione e pianificazione") || top.includes("Affidabilità + autodisciplina") || top.includes("Autodisciplina / affidabilità")) {
+    return "È utile gestire il lavoro con processi chiari, responsabilità definite e spazio per presidiare attività operative o progettuali. Gli obiettivi devono essere misurabili e la continuità di esecuzione va riconosciuta con riscontri concreti.";
   }
 
-  return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide andrebbero presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilitÃ  concrete.";
+  return "Si consiglia una gestione bilanciata, con obiettivi chiari, feedback regolari e un contesto coerente con i tratti emersi. Le aree meno solide vanno presidiate con affiancamento operativo, mentre i punti forti vanno tradotti in responsabilità concrete.";
 }
 
 function isSuperAdmin(admin) {
@@ -892,10 +1395,9 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
     if (!answer) return;
 
     const sourceTrait = question.trait || "Comportamento generale";
-    const value = scoreAnswer(answer, question.reverse, question);
-    const dimensions = assessmentType === "sport_performance"
-      ? [{ name: sourceTrait, category: DIMENSION_CATEGORY.TRAIT }]
-      : normalizeDimensionDefinitions(sourceTrait);
+    const reverseForScoring = getAssessmentQuestionReverse(question, assessmentType);
+    const value = scoreAnswer(answer, reverseForScoring, question);
+    const dimensions = getAssessmentQuestionDimensions(question, sourceTrait, assessmentType);
 
     dimensions.forEach((dimension) => {
       if (!dimension?.name || !dimension?.category) return;
@@ -913,8 +1415,19 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
         questionId: question.id,
         sourceTrait,
         answer,
-        reverse: !!question.reverse,
-        value
+        reverse: reverseForScoring,
+        legacyReverse: !!question.reverse,
+        value,
+        scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : SPORT_SCORING_VERSION,
+        reviewStatus: assessmentType === "zpi_hr"
+          ? (ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.reviewStatus || null)
+          : (SPORT_SCORE_DIMENSIONS_V2?.[question.key]?.reviewStatus || null),
+        proposedDimension: assessmentType === "zpi_hr"
+          ? (ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.proposedDimension || null)
+          : (SPORT_SCORE_DIMENSIONS_V2?.[question.key]?.proposedDimension || null),
+        subDimension: assessmentType === "zpi_hr"
+          ? (ZPI_SCORE_DIMENSIONS_V2?.[question.key]?.subDimension || null)
+          : (SPORT_SCORE_DIMENSIONS_V2?.[question.key]?.subDimension || null)
       });
     });
   });
@@ -934,6 +1447,10 @@ function buildTraitsFromAnswers(answers, assessmentType = "zpi_hr") {
       };
     })
     .sort((a, b) => {
+      if (assessmentType === "sport_performance") {
+        return sportDimensionOrder(a.name) - sportDimensionOrder(b.name);
+      }
+
       const orderA = DIMENSION_ORDER.has(a.name) ? DIMENSION_ORDER.get(a.name) : 999;
       const orderB = DIMENSION_ORDER.has(b.name) ? DIMENSION_ORDER.get(b.name) : 999;
       return orderA - orderB;
@@ -1052,8 +1569,8 @@ function reliabilityPromptGuidance(score, flags = []) {
   return `Le risposte hanno un indice di coerenza basso: l'intera relazione deve essere letta come ipotesi da verificare. Non scrivere conclusioni nette. Non dare indicazioni troppo prescrittive. Per ogni tratto, privilegia formulazioni esplorative e invita a verificare il comportamento con esempi concreti, colloquio e osservazione diretta.${flagText}`;
 }
 
-function buildReliability(answers, traits) {
-  const scoredQuestions = getScoredQuestions();
+function buildReliability(answers, traits, assessmentType = "zpi_hr") {
+  const scoredQuestions = getAssessmentConfig(assessmentType).getScoredQuestions();
   const answered = scoredQuestions.filter((q) => answers[q.key]);
   const total = answered.length;
 
@@ -1133,6 +1650,166 @@ function buildReliability(answers, traits) {
   };
 }
 
+function buildRecalculatedZpiPayloadFromAnswers(assessment) {
+  if (!assessment?.result) {
+    throw new Error("AssessmentResult mancante.");
+  }
+
+  const previousPayload = assessment.result.traitsJson || {};
+  const assessmentType = assessment.assessmentType || previousPayload.assessmentType || "zpi_hr";
+
+  if (assessmentType !== "zpi_hr") {
+    return {
+      skipped: true,
+      reason: `Assessment type non supportato per ricalcolo ZPI V2: ${assessmentType}`
+    };
+  }
+
+  const answers = assessment.result.answersJson || {};
+  const answerCount = Object.values(answers).filter(Boolean).length;
+
+  if (!answerCount) {
+    return {
+      skipped: true,
+      reason: "Nessuna risposta grezza disponibile in answersJson."
+    };
+  }
+
+  const requestedRole = assessment.requestedRole || "non_specificato";
+  const traits = buildTraitsFromAnswers(answers, assessmentType);
+  const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
+  const avgScore = avg(mainTraits.map((t) => t.score));
+  const avgRange = range(avgScore);
+  const summary = buildAssessmentSummary(traits, requestedRole, assessmentType);
+  const roleFit = calculateAssessmentRoleFit(traits, requestedRole, assessmentType);
+  const managementAdvice = buildAssessmentManagementAdvice({ traits, roleFit, assessmentType });
+  const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits, assessmentType);
+
+  const traitsJson = {
+    assessmentType,
+    assessmentTitle: getAssessmentConfig(assessmentType).title,
+    traits,
+    mainTraits,
+    additionalParameters,
+    roleFit,
+    managementAdvice,
+    topTraits: summary.topTraits,
+    weakTraits: summary.weakTraits,
+    reliabilityFlags,
+    scoringVersion: ZPI_SCORING_VERSION,
+    scoringRecalculatedAt: new Date().toISOString(),
+    scoringRecalculatedFrom: previousPayload.scoringVersion || "legacy",
+    previousScoringSnapshot: {
+      avgScore: assessment.result.avgScore ?? null,
+      avgRange: assessment.result.avgRange ?? null,
+      orientation: assessment.result.orientation ?? null,
+      roleComment: assessment.result.roleComment ?? null,
+      reliabilityScore: assessment.result.reliabilityScore ?? null,
+      reliabilityLabel: assessment.result.reliabilityLabel ?? null,
+      traitCount: Array.isArray(previousPayload.traits) ? previousPayload.traits.length : 0,
+      mainTraitCount: Array.isArray(previousPayload.mainTraits) ? previousPayload.mainTraits.length : 0,
+      additionalParameterCount: Array.isArray(previousPayload.additionalParameters)
+        ? previousPayload.additionalParameters.length
+        : 0
+    }
+  };
+
+  return {
+    skipped: false,
+    assessmentType,
+    answers,
+    traits,
+    mainTraits,
+    additionalParameters,
+    avgScore,
+    avgRange,
+    summary,
+    roleFit,
+    managementAdvice,
+    reliabilityScore,
+    reliabilityLabel,
+    reliabilityFlags,
+    traitsJson
+  };
+}
+
+async function recalculateAssessmentScoringV2({
+  assessment,
+  companyName,
+  regenerateAi = true
+}) {
+  if (!assessment?.result) {
+    return {
+      status: "skipped",
+      reason: "AssessmentResult mancante."
+    };
+  }
+
+  if (assessment.result.isGenerating) {
+    return {
+      status: "skipped",
+      reason: "Relazione AI già in generazione."
+    };
+  }
+
+  const recalculated = buildRecalculatedZpiPayloadFromAnswers(assessment);
+
+  if (recalculated.skipped) {
+    return {
+      status: "skipped",
+      reason: recalculated.reason
+    };
+  }
+
+  await prisma.assessmentResult.update({
+    where: { assessmentId: assessment.id },
+    data: {
+      avgScore: recalculated.avgScore,
+      avgRange: recalculated.avgRange,
+      orientation: recalculated.summary.orientation,
+      roleComment: recalculated.summary.roleComment,
+      reliabilityScore: recalculated.reliabilityScore,
+      reliabilityLabel: recalculated.reliabilityLabel,
+      traitsJson: recalculated.traitsJson,
+
+      // La relazione AI precedente non è più coerente con il nuovo scoring.
+      expandedReportJson: null,
+      expandedReportGeneratedAt: null,
+      generationError: null,
+      isGenerating: false
+    }
+  });
+
+  if (regenerateAi) {
+    startExpandedReportJob({
+      assessmentId: assessment.id,
+      companyName,
+      role: assessment.requestedRole,
+      avgScore: recalculated.avgScore,
+      avgRange: recalculated.avgRange,
+      summary: {
+        orientation: recalculated.summary.orientation,
+        roleComment: recalculated.summary.roleComment,
+        roleFit: recalculated.roleFit,
+        managementAdvice: recalculated.managementAdvice
+      },
+      traits: recalculated.traits,
+      reliabilityScore: recalculated.reliabilityScore,
+      reliabilityLabel: recalculated.reliabilityLabel,
+      reliabilityFlags: recalculated.reliabilityFlags,
+      roleFit: recalculated.roleFit,
+      managementAdvice: recalculated.managementAdvice,
+      assessmentTitle: getAssessmentConfig(recalculated.assessmentType).title,
+      assessmentType: recalculated.assessmentType
+    });
+  }
+
+  return {
+    status: "recalculated",
+    regenerateAi
+  };
+}
+
 async function withTimeout(promise, ms, label = "Operazione") {
   let timeoutId;
 
@@ -1153,6 +1830,58 @@ function normalizeTraitName(name) {
   return String(name || "")
     .replace(/\s*\(duplicato controllo\)\s*/gi, "")
     .trim();
+}
+
+function normalizeDimensionKeyText(name) {
+  return normalizeBrokenUtf8(String(name || ""))
+    .replace(/\u00A0/g, " ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function dimensionAiMatchKey(name) {
+  // Chiave SOLO per collegare il testo AI alla dimensione già calcolata.
+  // Non modifica scoring, istogrammi, DB, canonical names o mapping.
+  const raw = normalizeTraitName(name);
+  const normalized = normalizeDimensionNameForDisplay(raw);
+  const displayed = displayDimensionName(normalized);
+  const key = normalizeDimensionKeyText(displayed || normalized || raw);
+
+  const aliases = new Map([
+    ["stress", "gestione pressioni stress"],
+    ["gestione della pressione", "gestione pressioni stress"],
+    ["gestione pressioni", "gestione pressioni stress"],
+    ["gestione pressioni stress", "gestione pressioni stress"],
+
+    ["affidabilita", "affidabilita autodisciplina"],
+    ["autodisciplina", "affidabilita autodisciplina"],
+    ["autodisciplina affidabilita", "affidabilita autodisciplina"],
+    ["affidabilita autodisciplina", "affidabilita autodisciplina"],
+
+    ["responsabilita e ownership", "responsabilita"],
+    ["centralita", "responsabilita"],
+
+    ["estroversione", "espansivita"],
+    ["estroversione e networking", "espansivita"],
+
+    ["gestione priorita", "gestione priorita"],
+    ["priorita", "gestione priorita"],
+
+    ["capacita di gestione finanziaria", "capacita di gestione finanziaria"],
+    ["gestione finanziaria", "capacita di gestione finanziaria"],
+    ["autonomia economica e iniziativa", "capacita di gestione finanziaria"],
+
+    ["indice di attendibilita", "attendibilita"],
+    ["attendibilita si", "attendibilita"],
+    ["attendibilita forzata", "attendibilita"],
+    ["attendibilita no", "attendibilita"]
+  ]);
+
+  return aliases.get(key) || key;
 }
 
 function isPlaceholderText(value) {
@@ -1211,7 +1940,7 @@ function buildAiTraitsForPrompt(traits) {
       const name = displayDimensionName(normalizeTraitName(trait.name));
       const value = chartScore(trait.score);
       const evoGuide = evoGuideForDimension(name, trait.score);
-      const truthfulness = name === "AttendibilitÃ " ? truthfulnessStatusFromScore(value) : null;
+      const truthfulness = name === "Attendibilità" ? truthfulnessStatusFromScore(value) : null;
 
       return {
         name,
@@ -1279,10 +2008,85 @@ async function generateExpandedReportPayload({
     ? `${convictionChange.label}: ${convictionChange.interpretation} Chiave di sblocco: ${convictionChange.unlockKey}`
     : "";
   const securityTheoryNote = securityTheory ? `${securityTheory.label}: ${securityTheory.text}` : "";
+  const sportExecutivePromptGuidance = isExecutiveAssessmentRole(role, assessmentType)
+    ? `
+REGOLA PRIORITARIA PER RUOLI DIRETTIVI SPORTIVI
+- Il ruolo target è direttivo/societario sportivo: Presidente, Vice Presidente, Dirigente, Direttore Generale o Direttore Sportivo.
+- In questo caso NON devi trattare la persona come una risorsa da gestire.
+- Non citare percentuali di compatibilità con il ruolo.
+- Non scrivere "Indicazione pratica per la gestione".
+- Non scrivere "Come gestirlo nella pratica".
+- I rimedi pratici, quando presenti, devono essere rivolti direttamente alla persona: "Per te può essere utile...", "Potresti...", "Ti aiuta...".
+- La relazione deve parlare a una figura direttiva che usa il report per consapevolezza personale e governo del contesto sportivo.
+`
+    : "";
+
+  const sportPromptGuidance = assessmentType === "sport_performance"
+    ? `
+REGOLE SPECIFICHE HUMAN & SPORT PERFORMANCE
+- Il questionario è sportivo: interpreta la relazione nel contesto di atleta, allenamento, gara, staff tecnico, mister, squadra e spogliatoio.
+- Usa solo questi tratti finali se presenti nel JSON: Goal Setting, Automotivazione, Eustress, Gestione Pressioni, Leadership, Etica Personale, Proattività, Adattamento, Resistenza al Cambiamento, Attendibilità.
+- Non trasformare il report in una relazione HR aziendale: evita riferimenti a clienti, azienda, colleghi, vendite, mansioni amministrative o gestione commerciale se non pertinenti.
+- Goal Setting riguarda obiettivi sportivi, metodo, traguardi di breve/medio/lungo periodo e capacità di monitorare la crescita.
+- Automotivazione riguarda spinta interna, continuità, disciplina personale e capacità di restare orientato alla crescita anche nei momenti difficili.
+- Eustress riguarda la capacità di trasformare tensione e stress pre-gara in energia utile.
+- Gestione Pressioni riguarda lucidità, errore, critica, aspettative, pubblico, sconfitta, provocazioni e momenti decisivi.
+- Leadership riguarda esempio positivo, guida del gruppo, supporto ai compagni, atteggiamento nello spogliatoio e influenza costruttiva.
+- Etica Personale riguarda rispetto, integrità, parola data, regole, lealtà, correttezza verso compagni, staff, arbitri, società e avversari.
+- Proattività riguarda iniziativa, problem solving, disponibilità a proporre soluzioni e reazione pratica davanti alle difficoltà.
+- Adattamento riguarda capacità di modificare ruolo, schema, abitudini, metodo di allenamento, feedback e rapporto con compagni diversi.
+- Resistenza al Cambiamento va letta come rigidità o apertura davanti alle novità: punteggi alti indicano maggiore disponibilità a non opporsi al cambiamento, punteggi bassi indicano maggiore rischio di rigidità.
+- Attendibilità va scritta come nell'altro questionario: Attendibilità SÌ, Attendibilità FORZATA oppure Attendibilità NO, senza giudizi accusatori.
+`
+    : "";
 
   const input = `
 Sei un consulente organizzativo senior.
 Genera una relazione professionale in italiano per un assessment comportamentale. Se il questionario Ã¨ sportivo, usa un tono adatto ad atleta, staff tecnico, squadra e contesto di performance.
+
+ISTRUZIONE OBBLIGATORIA E PRIORITARIA PER generalSummary
+Il campo generalSummary è l’unica sezione che deve parlare direttamente alla persona che ha compilato il test.
+
+generalSummary DEVE:
+- essere scritto SEMPRE in seconda persona singolare;
+- iniziare con una formula naturale come "Nel lavoro tendi a...", "Quando ti trovi...", "In questo ruolo puoi..." oppure "Per te può essere utile...";
+- usare formule dirette come "tu", "tendi", "puoi", "potresti", "per te", "la tua compatibilità", "ti aiuta";
+- mantenere un tono umano, concreto, osservativo e professionale;
+- parlare alla persona, non dellapersona;
+- citare compatibilità con il ruolo e indice di coerenza in modo naturale, sempre rivolgendosi direttamente alla persona.
+
+STILE OBBLIGATORIO DI generalSummary
+Scrivi con la stessa impostazione di questi esempi:
+- "Nel lavoro tendi a cercare ordine, priorità chiare e una buona gestione delle attività..."
+- "La tua compatibilità con il ruolo risulta alta..."
+- "Allo stesso tempo, per te può essere utile lavorare su..."
+- "Questo suggerisce di verificare sul campo..."
+
+generalSummary NON DEVE MAI usare:
+- "il profilo"
+- "il profilo mostra"
+- "il profilo evidenzia"
+- "la persona"
+- "la risorsa"
+- "il candidato"
+- "il soggetto"
+- "emerge"
+- "emergono"
+- "si osserva"
+- "si evidenzia"
+- "risulta utile approfondire"
+- "sarà utile approfondire"
+- "viene evidenziato"
+- formule impersonali, passive o da report HR aziendale.
+
+Se generalSummary contiene una di queste formule, la risposta è errata e deve essere riscritta in seconda persona.
+
+REGOLE DI TONO PER LE SEZIONI
+- generalSummary: seconda persona singolare, rivolto direttamente alla persona che ha compilato il test.
+- expandedText: tono consulenziale HR/organizzativo in terza persona.
+- improvementPlan: tono HR/organizzativo in terza persona, salvo ruolo direzione/imprenditore/titolare/CEO/founder.
+- skillAction: tono HR/organizzativo in terza persona.
+- Se il ruolo è direzione/imprenditore/titolare/CEO/founder, improvementPlan deve parlare direttamente alla persona e skillAction non deve contenere indicazioni su come gestirla.
 
 CONTESTO
 - Questionario: ${assessmentTitle}
@@ -1293,12 +2097,13 @@ CONTESTO
 - Lettura rispetto al ruolo: ${summary.roleComment}
 - CompatibilitÃ  con il ruolo ricoperto: ${roleFit?.label || "Non disponibile"}
 - Consiglio generale di gestione: ${managementAdvice || "Non disponibile"}
-- Indice di coerenza delle risposte: ${reliabilityLabel} (${reliabilityScore}/100)
+- Indice di coerenza delle risposte: ${reliabilityLabel}
 - Filtro di lettura da applicare a tutta la relazione: ${reliabilityGuidance}
 ${theoreticalProfileNote ? `- Nota attendibilitÃ : ${theoreticalProfileNote}` : ""}
 ${securityTheoryNote ? `- Nota su Sicurezza/Convinzioni: ${securityTheoryNote}` : ""}
 ${convictionChangeNote ? `- Lettura Sicurezza/Resistenza: ${convictionChangeNote}` : ""}
-
+${sportPromptGuidance}
+${sportExecutivePromptGuidance}
 TRATTI E PARAMETRI VALUTATI
 ${JSON.stringify(traitsForPrompt, null, 2)}
 
@@ -1313,6 +2118,17 @@ MAPPATURA EVO E PARAMETRIZZAZIONE
 - Se evoGuide Ã¨ presente, l'analisi deve rispettare quella descrizione e puÃ² ampliarla in modo consulenziale, senza contraddirla.
 - Per il tratto AttendibilitÃ  devi usare il campo truthfulness e indicare chiaramente una delle tre letture: AttendibilitÃ  SÃŒ, AttendibilitÃ  FORZATA, AttendibilitÃ  NO. Non usare formulazioni vaghe. Scrivi in modo professionale: non usare espressioni come "dice bugie" o "dice palle" nel report finale.
 - Se Ã¨ presente la Nota attendibilitÃ  "Profilo teorico", devi integrarla nell'AttendibilitÃ  una sola volta, spiegando che la prevalenza di punteggi molto alti rende il questionario teorico e richiede verifica tramite colloquio/osservazione.
+
+REGOLE SEMANTICHE CHIRURGICHE PER I TRATTI ZPI
+Queste regole valgono solo per expandedText, improvementPlan e skillAction dei singoli tratti. Non modificano generalSummary, compatibilità ruolo, istogrammi o punteggi.
+- Organizzazione e pianificazione: interpretala come capacità concreta di programmare il lavoro, mettere ordine, non disperdersi e non correre solo dietro alle urgenze. Non trasformarla in precisione mentale astratta.
+- Automotivazione: interpretala come spinta interna, ambizione e capacità di caricarsi verso il risultato. Non confonderla con entusiasmo generico o umore positivo.
+- Autodisciplina / affidabilità: interpretala come continuità esecutiva, parola data, cura degli accordi, capacità di non rimandare e non lasciare attività non gestite. Non confonderla con organizzazione.
+- Gestione pressioni / Stress: non interpretarla come stress generico o fragilità emotiva. Da 30 a 60 indica gestione efficace e serenità operativa. Da 70 in su può indicare che la persona ha “incelofanato” una situazione difficile: mantiene equilibrio e compromessi, ma potrebbe non affrontare davvero il nodo. Da 0 a 20 indica una situazione/persona che inizia a drenare energia e attenzione. Sotto 0 indica conflitto o influenza negativa più evidente.
+- Dinamismo: interpretalo come energia di azione, movimento e prontezza nell’iniziare attività. Non confonderlo con motivazione, entusiasmo o stress.
+- Flessibilità comunicativa: interpretala come determinazione/assertività orientata al risultato, capacità di affrontare le situazioni di petto e sostenere una posizione. Non leggerla come empatia, diplomazia o morbidezza relazionale.
+- Responsabilità: interpretala come centralità/locus of control operativo: essere causa, mettersi in discussione, problem solving e proattività. Non confonderla con affidabilità o serietà generica.
+- Ascolto attivo: interpretalo come comprensione delle persone e delle situazioni, capacità di mettersi nei panni dell’altro, vedere punti di vista diversi e non giudicare subito. Non ridurlo ad ascolto tecnico o raccolta informazioni.
 
 PRINCIPI DI LETTURA
 - Non descrivere la persona come se fosse definita una volta per tutte: descrivi il suo funzionamento comportamentale attuale nel lavoro.
@@ -1331,6 +2147,11 @@ REGOLE DI LETTURA DEI PUNTEGGI
 - Per valori molto alti, non celebrare in modo assoluto: descrivi il tratto come molto marcato e aggiungi prudenza professionale, spiegando che la continuitÃ  del comportamento va verificata nei fatti. Non accusare mai la persona di non essere sincera.
 - Se il tratto ResponsabilitÃ  Ã¨ in area migliorabile bassa, includi il concetto che la persona puÃ² contrariarsi quando l'interlocutore ha un'opinione diversa, anche se non lo manifesta apertamente.
 
+REGOLA SPECIALE PER DIREZIONE / IMPRENDITORE
+- Se il ruolo target è direzione, imprenditore, titolare, CEO o founder, non scrivere indicazioni su come gestire la persona.
+- In questi casi i rimedi pratici devono essere rivolti direttamente alla persona che ha fatto il test: usa formule come "per te può essere utile", "potresti", "ti aiuta".
+- Evita "la risorsa", "il candidato", "come gestirlo" e formule manageriali rivolte a un responsabile.
+
 ISTRUZIONI GENERALI
 1. Scrivi in modo semplice, diretto e utile per un imprenditore o responsabile di PMI.
 2. Non usare linguaggio clinico, diagnostico o psicologico-medico.
@@ -1342,7 +2163,7 @@ ISTRUZIONI GENERALI
 8. Non trasformare l'analisi del tratto in una lista di consigli: prima interpreta il comportamento, poi solo nei campi dedicati indica eventuali azioni pratiche coerenti.
 9. Usa frasi brevi, chiare e senza gergo manageriale complesso.
 10. Compila generalManagementAdvice con un consiglio generale pratico, ma non contraddittorio rispetto ai tratti emersi.
-11. Nella relazione generale cita in modo naturale la compatibilitÃ  con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata.
+11. Nella relazione generale cita in modo naturale la compatibilitÃ  con il ruolo ricoperto e l'indice di coerenza delle risposte, senza creare una nota ripetitiva separata e sempre in seconda persona.
 12. Non scrivere mai frasi come "La persona Ã¨ stata valutata in riferimento al ruolo di..." o "La risorsa Ã¨ stata valutata in riferimento al ruolo di...".
 
 ISTRUZIONI PER OGNI TRATTO
@@ -1352,7 +2173,9 @@ Per ogni tratto restituisci:
 - skillAction: indicazione gestionale solo se il tratto Ã¨ sotto 50 su scala -100/+100. Se il tratto Ã¨ da 50 a 100, non dare indicazioni pratiche di gestione: limitati a una frase breve di valorizzazione contestuale, perchÃ© questa sezione non verrÃ  mostrata nella relazione finale. Non deve contraddire expandedText.
 
 STILE DI SCRITTURA
-- Scrivi come un consulente che parla a un imprenditore, non a uno psicologo e non a un grande reparto HR.
+- Per generalSummary scrivi come un consulente che restituisce il profilo direttamente alla persona che ha compilato il test.
+- Per expandedText, improvementPlan e skillAction scrivi invece come un consulente organizzativo che parla a imprenditore, manager o referente operativo.
+- Non usare tono da psicologo clinico o grande reparto HR.
 - Usa parole semplici e frasi brevi.
 - Non iniziare mai un approfondimento con frasi definitorie tipo "Misura...", "Valuta...", "Indica..." se ripetono la descrizione del tratto.
 - Evita formule ripetitive tra i tratti.
@@ -1368,7 +2191,7 @@ IMPORTANTE
 - Per skill deboli, parla di sviluppo, compensazione, presidio o affiancamento.
 - Per skill forti, parla di valorizzazione, leva organizzativa, applicazione nel team.
 - Usa esclusivamente i nomi di tratti e parametri aggiuntivi ricevuti nel JSON.
-- Quando parli di Gestione pressioni / Stress, interpretalo come fonti di preoccupazione, pressione o distrazione presenti nellâ€™ambiente personale o professionale, non come semplice tensione emotiva generica.
+- Quando parli di Gestione pressioni / Stress, usa la regola semantica chirurgica sopra: 30-60 = gestione efficace/serenità; 70+ = possibile equilibrio mantenuto senza affrontare il nodo; 0-20 = elemento che inizia a drenare attenzione; sotto 0 = conflitto o influenza negativa più evidente.
 - Quando parli di CapacitÃ  di gestione finanziaria, interpretala come capacitÃ  pratica di generare reddito autonomo, risparmiare e gestire risorse economiche con continuitÃ  e visione futura.
 - Non usare la parola inglese skill nel testo finale: usa competenza, capacitÃ  o tratto.
 - Non usare espressioni come â€œKPIâ€, â€œstakeholderâ€, â€œperformance reviewâ€, â€œcoachingâ€, â€œdebriefingâ€, salvo tradurle in parole semplici.
@@ -1402,7 +2225,7 @@ IMPORTANTE
 
   console.log("[EXPANDED] OpenAI call done");
 
-  return cleanExpandedReport(JSON.parse(response.output_text));
+  return normalizeTextPayload(cleanExpandedReport(JSON.parse(response.output_text)));
 }
 
 function startExpandedReportJob({
@@ -1627,6 +2450,27 @@ function responsibilityOpinionNote() {
   return "La persona tende a contrariarsi, anche non manifestandolo, quando il suo interlocutore ha un'opinione diversa.";
 }
 
+function capitalizeFirstLetter(text) {
+  const value = String(text || "").trim();
+  if (!value) return "";
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function truthfulnessPdfStatusText(truthfulness) {
+  if (!truthfulness) return "";
+
+  const rawLabel = normalizeBrokenUtf8(String(truthfulness.label || "")).toLowerCase();
+  let status = "sì";
+
+  if (rawLabel.includes("forzata")) {
+    status = "forzata";
+  } else if (/\bno\b/.test(rawLabel)) {
+    status = "no";
+  }
+
+  return `Attendibilità: ${status}. ${capitalizeFirstLetter(truthfulness.text)}`.trim();
+}
+
 function stripLeadingTruthfulnessStatus(text) {
   let value = String(text || "").trim();
 
@@ -1638,7 +2482,7 @@ function stripLeadingTruthfulnessStatus(text) {
   // Noi aggiungiamo giÃ  il prefisso ufficiale da codice, quindi rimuoviamo
   // qualunque prefisso AttendibilitÃ  generato dall'AI all'inizio del testo.
   const truthfulnessPattern =
-    /^AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:AttendibilitÃ \s+(SÃŒ|SI|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
+    /^Attendibilit(?:à|Ã )\s*:?[\s]*(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*(?:le\s+risposte\s+)?[^.]+\.(?:\s*(?:Attendibilit(?:à|Ã )\s*:?[\s]*(SÌ|SÃŒ|SI|Sì|SÃ¬|FORZATA|NO)\s*[:.]\s*)?(?:le\s+risposte\s+)?[^.]+\.)?/i;
 
   while (truthfulnessPattern.test(value)) {
     value = value.replace(truthfulnessPattern, "").trim();
@@ -1892,30 +2736,71 @@ function getNormalizedAnalysis(payload = {}, requestedRole = "") {
   const rawTraits = Array.isArray(payload.traits) ? payload.traits : [];
   const traits = mergeDimensionList(rawTraits);
   const split = splitDimensions(traits);
+
   const mainTraits = mergeDimensionList(Array.isArray(payload.mainTraits) ? payload.mainTraits : split.traits)
     .filter((item) => item.category === DIMENSION_CATEGORY.TRAIT);
+
   const additionalParameters = mergeDimensionList(Array.isArray(payload.additionalParameters) ? payload.additionalParameters : split.additionalParameters)
     .filter((item) => item.category === DIMENSION_CATEGORY.ADDITIONAL);
-  const roleFit = payload.roleFit || calculateRoleFit(traits, requestedRole);
-  const managementAdvice = payload.managementAdvice || buildManagementAdvice({ traits, roleFit });
+
+  const assessmentType = payload.assessmentType || "zpi_hr";
+  const isSportAssessment = assessmentType === "sport_performance";
+
+  // ZPI usa una griglia fissa di tratti/parametri per mantenere sempre lo stesso istogramma.
+  // Human & Sport Performance ha tratti propri: NON va forzato dentro la griglia ZPI,
+  // altrimenti quasi tutti i valori finiscono a fallback 0 nel PDF.
+  // Patch isolata: non tocca scoring, mapping ZPI, chartScore, DB o AI.
+  const fullMainTraits = isSportAssessment
+    ? mainTraits
+    : TRAIT_DIMENSIONS.map((name) => {
+        return mainTraits.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
+          name,
+          category: DIMENSION_CATEGORY.TRAIT,
+          score: 0,
+          range: range(0),
+          questionCount: 0,
+          items: []
+        };
+      });
+
+  const fullAdditionalParameters = isSportAssessment
+    ? additionalParameters
+    : ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => {
+        return additionalParameters.find((item) => normalizeDimensionNameForDisplay(item.name) === normalizeDimensionNameForDisplay(name)) || {
+          name,
+          category: DIMENSION_CATEGORY.ADDITIONAL,
+          score: 0,
+          range: range(0),
+          questionCount: 0,
+          items: []
+        };
+      });
+
+  const fullTraits = [...fullMainTraits, ...fullAdditionalParameters];
+
+  const roleFit = payload.roleFit || calculateAssessmentRoleFit(fullTraits, requestedRole, assessmentType);
+  const managementAdvice = payload.managementAdvice || buildAssessmentManagementAdvice({ traits: fullTraits, roleFit, assessmentType });
 
   const existingReliabilityFlags = Array.isArray(payload.reliabilityFlags) ? payload.reliabilityFlags : [];
-  const theoreticalSignal = getTheoreticalProfileSignal(traits);
+  const theoreticalSignal = getTheoreticalProfileSignal(fullTraits);
   const theoreticalFlag = theoreticalProfileFlag(theoreticalSignal);
   const reliabilityFlags = theoreticalFlag && !hasTheoreticalProfileFlag(existingReliabilityFlags)
     ? [...existingReliabilityFlags, theoreticalFlag]
     : existingReliabilityFlags;
-  const convictionChange = convictionChangePattern(traits);
-  const securityTheory = theoreticalSecuritySignal(traits, reliabilityFlags);
+
+  const convictionChange = convictionChangePattern(fullTraits);
+  const securityTheory = theoreticalSecuritySignal(fullTraits, reliabilityFlags);
 
   return {
-    traits,
-    mainTraits,
-    additionalParameters,
+    assessmentType,
+    traits: fullTraits,
+    mainTraits: fullMainTraits,
+    additionalParameters: fullAdditionalParameters,
+    requestedRole,
     roleFit,
     managementAdvice,
-    topTraits: normalizeNameList(payload.topTraits || mainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
-    weakTraits: normalizeNameList(payload.weakTraits || mainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
+    topTraits: normalizeNameList(payload.topTraits || fullMainTraits.slice().sort((a, b) => b.score - a.score).slice(0, 3).map((item) => item.name)),
+    weakTraits: normalizeNameList(payload.weakTraits || fullMainTraits.slice().sort((a, b) => a.score - b.score).slice(0, 2).map((item) => item.name)),
     reliabilityFlags,
     convictionChange,
     securityTheory
@@ -1950,7 +2835,7 @@ function drawLogo(doc) {
 }
 
 app.get("/ping-version", (_req, res) => {
-  res.send("openai-expanded-report-v17-multi-assessment");
+  res.send("openai-expanded-report-v18-zpi-v2-2");
 });
 
 app.get("/", (_req, res) => {
@@ -2035,7 +2920,7 @@ app.get("/zenith-assessment", async (_req, res) => {
     assessmentType,
     assessmentTitle: config.title,
     requestedRole: link.requestedRole,
-    roleOptions: ROLE_OPTIONS,
+    roleOptions: getRoleOptionsForAssessment(assessmentType),
     questions: getQuestionnaireQuestions(assessmentType)
   });
 });
@@ -2056,7 +2941,7 @@ app.get("/human-sport-performance", async (_req, res) => {
     assessmentType,
     assessmentTitle: config.title,
     requestedRole: link.requestedRole,
-    roleOptions: ROLE_OPTIONS,
+    roleOptions: getRoleOptionsForAssessment(assessmentType),
     questions: getQuestionnaireQuestions(assessmentType)
   });
 });
@@ -2130,7 +3015,7 @@ app.get("/q/:token", async (req, res) => {
     assessmentType,
     assessmentTitle: config.title,
     requestedRole: link.requestedRole,
-    roleOptions: ROLE_OPTIONS,
+    roleOptions: getRoleOptionsForAssessment(assessmentType),
     questions: getQuestionnaireQuestions(assessmentType)
   });
 });
@@ -2148,19 +3033,28 @@ app.post("/q/:token", async (req, res) => {
 
     const assessmentType = getLinkAssessmentType(link);
     const answers = collectAnswers(req.body, assessmentType);
-    const traits = buildTraitsFromAnswers(answers, assessmentType);
+    const baseTraits = buildTraitsFromAnswers(answers, assessmentType);
+    const baseReliability = buildReliability(answers, baseTraits, assessmentType);
+    const traits = assessmentType === "sport_performance"
+      ? attachSportReliabilityDimension(
+          baseTraits,
+          baseReliability.reliabilityScore,
+          baseReliability.reliabilityLabel,
+          baseReliability.reliabilityFlags
+        )
+      : baseTraits;
     const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
-    const avgScore = avg(mainTraits.map((t) => t.score));
+    const avgScore = avg(mainTraits.filter((t) => displayDimensionName(t.name) !== "Attendibilità").map((t) => t.score));
     const avgRange = range(avgScore);
     const requestedRole = normalizeRequestedRole(
       req.body.requestedRole,
       req.body.requestedRoleOther,
       link.requestedRole
     );
-    const summary = buildSummary(traits, requestedRole);
-    const roleFit = calculateRoleFit(traits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits, roleFit });
-    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+    const summary = buildAssessmentSummary(traits, requestedRole, assessmentType);
+    const roleFit = calculateAssessmentRoleFit(traits, requestedRole, assessmentType);
+    const managementAdvice = buildAssessmentManagementAdvice({ traits, roleFit, assessmentType });
+    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = baseReliability;
 
     const assessment = await prisma.assessment.create({
       data: {
@@ -2194,7 +3088,9 @@ app.post("/q/:token", async (req, res) => {
           managementAdvice,
           topTraits: summary.topTraits,
           weakTraits: summary.weakTraits,
-          reliabilityFlags
+          reliabilityFlags,
+          scoringVersion: assessmentType === "zpi_hr" ? ZPI_SCORING_VERSION : SPORT_SCORING_VERSION,
+          scoringCalculatedAt: new Date().toISOString()
         },
         answersJson: answers,
         isGenerating: false,
@@ -2436,6 +3332,99 @@ app.post("/admin/regenerate-reports", requireAdmin, requireSuperAdmin, async (re
   }
 });
 
+
+app.post("/admin/recalculate-scoring-v2", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const { where, filters } = buildAdminAssessmentWhere(
+      req.body || {},
+      req.session.admin.organizationId
+    );
+
+    const assessments = await prisma.assessment.findMany({
+      where,
+      include: {
+        result: true
+      },
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+
+    const regenerateAi = req.body?.regenerateAi !== "false";
+
+    let recalculated = 0;
+    let skipped = 0;
+    const skippedReasons = {};
+
+    for (const assessment of assessments) {
+      const result = await recalculateAssessmentScoringV2({
+        assessment,
+        companyName: req.session.admin.organizationName,
+        regenerateAi
+      });
+
+      if (result.status === "recalculated") {
+        recalculated += 1;
+      } else {
+        skipped += 1;
+        const reason = result.reason || "Motivo non specificato";
+        skippedReasons[reason] = (skippedReasons[reason] || 0) + 1;
+      }
+    }
+
+    console.log("[ADMIN] bulk ZPI V2 scoring recalculation completed", {
+      recalculated,
+      skipped,
+      skippedReasons,
+      regenerateAi,
+      filters
+    });
+
+    return res.redirect(`/admin${buildAdminQueryString(filters)}`);
+  } catch (error) {
+    console.error("Errore ricalcolo massivo scoring ZPI V2:", error);
+    return res.status(500).send("Errore durante il ricalcolo massivo scoring ZPI V2.");
+  }
+});
+
+app.post("/admin/:id/recalculate-scoring-v2", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: {
+        result: true
+      }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    const regenerateAi = req.body?.regenerateAi !== "false";
+
+    const result = await recalculateAssessmentScoringV2({
+      assessment,
+      companyName: req.session.admin.organizationName,
+      regenerateAi
+    });
+
+    console.log("[ADMIN] single ZPI V2 scoring recalculation", {
+      assessmentId: assessment.id,
+      status: result.status,
+      reason: result.reason || null,
+      regenerateAi
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore ricalcolo scoring ZPI V2:", error);
+    return res.status(500).send("Errore durante il ricalcolo scoring ZPI V2.");
+  }
+});
+
 app.post("/admin/:id/generate-expanded-report", requireAdmin, requireSuperAdmin, async (req, res) => {
   try {
     const assessment = await prisma.assessment.findFirst({
@@ -2579,15 +3568,133 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
     const sourcePayload = source.result.traitsJson || {};
     const assessmentType = sourcePayload.assessmentType || source.assessmentType || getLinkAssessmentType(source.assessmentLink);
     const answers = source.result.answersJson || {};
-    const traits = buildTraitsFromAnswers(answers, assessmentType);
-    const { traits: mainTraits, additionalParameters } = splitDimensions(traits);
-    const avgScore = avg(mainTraits.map((t) => t.score));
-    const avgRange = range(avgScore);
     const requestedRole = source.requestedRole || source.assessmentLink?.requestedRole || "non_specificato";
-    const summary = buildSummary(traits, requestedRole);
-    const roleFit = calculateRoleFit(traits, requestedRole);
-    const managementAdvice = buildManagementAdvice({ traits, roleFit });
-    const { reliabilityScore, reliabilityLabel, reliabilityFlags } = buildReliability(answers, traits);
+
+    // IMPORTANTE:
+    // la duplicazione serve per test/debug di assessment già salvati.
+    // Non deve ricalcolare i tratti dalle risposte con il questions.js corrente,
+    // perché se il mapping domande/dimensioni è stato evoluto nel tempo si rischia
+    // di alterare punteggi storici già corretti (es. Affidabilità + autodisciplina
+    // o Resistenza al cambiamento che possono finire a 0).
+    //
+    // Quindi, quando il risultato sorgente contiene già traitsJson valido,
+    // cloniamo il payload numerico salvato e lo usiamo come fonte di verità.
+    // Il ricalcolo resta solo come fallback per vecchi record privi di traitsJson.
+    const hasStoredTraits = Array.isArray(sourcePayload.traits) && sourcePayload.traits.length > 0;
+
+    let traits;
+    let mainTraits;
+    let additionalParameters;
+    let avgScore;
+    let avgRange;
+    let summary;
+    let roleFit;
+    let managementAdvice;
+    let reliabilityScore;
+    let reliabilityLabel;
+    let reliabilityFlags;
+    let traitsJson;
+
+    if (hasStoredTraits) {
+      traits = sourcePayload.traits || [];
+      const splitStored = splitDimensions(traits);
+
+      mainTraits = Array.isArray(sourcePayload.mainTraits) && sourcePayload.mainTraits.length
+        ? sourcePayload.mainTraits
+        : splitStored.traits;
+
+      additionalParameters = Array.isArray(sourcePayload.additionalParameters) && sourcePayload.additionalParameters.length
+        ? sourcePayload.additionalParameters
+        : splitStored.additionalParameters;
+
+      const normalizedStored = getNormalizedAnalysis(
+        {
+          ...sourcePayload,
+          assessmentType,
+          traits,
+          mainTraits,
+          additionalParameters
+        },
+        requestedRole
+      );
+
+      roleFit = sourcePayload.roleFit || normalizedStored.roleFit || calculateRoleFit(traits, requestedRole);
+      managementAdvice = sourcePayload.managementAdvice || normalizedStored.managementAdvice || buildManagementAdvice({ traits, roleFit });
+
+      const fallbackSummary = buildSummary(traits, requestedRole);
+      summary = {
+        orientation: source.result.orientation || fallbackSummary.orientation,
+        roleComment: source.result.roleComment || fallbackSummary.roleComment,
+        topTraits: Array.isArray(sourcePayload.topTraits) ? sourcePayload.topTraits : (normalizedStored.topTraits || fallbackSummary.topTraits),
+        weakTraits: Array.isArray(sourcePayload.weakTraits) ? sourcePayload.weakTraits : (normalizedStored.weakTraits || fallbackSummary.weakTraits)
+      };
+
+      avgScore = typeof source.result.avgScore === "number"
+        ? source.result.avgScore
+        : avg(mainTraits.map((t) => t.score));
+
+      avgRange = source.result.avgRange || range(avgScore);
+
+      reliabilityScore = typeof source.result.reliabilityScore === "number"
+        ? source.result.reliabilityScore
+        : buildReliability(answers, traits, assessmentType).reliabilityScore;
+
+      reliabilityLabel = source.result.reliabilityLabel || reliabilityLabelFromScore(reliabilityScore);
+      reliabilityFlags = Array.isArray(sourcePayload.reliabilityFlags) ? sourcePayload.reliabilityFlags : [];
+
+      traitsJson = {
+        ...sourcePayload,
+        assessmentType,
+        assessmentTitle: sourcePayload.assessmentTitle || getAssessmentConfig(assessmentType).title,
+        traits,
+        mainTraits,
+        additionalParameters,
+        roleFit,
+        managementAdvice,
+        topTraits: summary.topTraits,
+        weakTraits: summary.weakTraits,
+        reliabilityFlags,
+        duplicatedFromAssessmentId: source.id,
+        duplicatedAt: new Date().toISOString()
+      };
+    } else {
+      const baseTraits = buildTraitsFromAnswers(answers, assessmentType);
+      const reliability = buildReliability(answers, baseTraits, assessmentType);
+      traits = assessmentType === "sport_performance"
+        ? attachSportReliabilityDimension(
+            baseTraits,
+            reliability.reliabilityScore,
+            reliability.reliabilityLabel,
+            reliability.reliabilityFlags
+          )
+        : baseTraits;
+      const splitRecalculated = splitDimensions(traits);
+      mainTraits = splitRecalculated.traits;
+      additionalParameters = splitRecalculated.additionalParameters;
+      avgScore = avg(mainTraits.filter((t) => displayDimensionName(t.name) !== "Attendibilità").map((t) => t.score));
+      avgRange = range(avgScore);
+      summary = buildAssessmentSummary(traits, requestedRole, assessmentType);
+      roleFit = calculateAssessmentRoleFit(traits, requestedRole, assessmentType);
+      managementAdvice = buildAssessmentManagementAdvice({ traits, roleFit, assessmentType });
+      reliabilityScore = reliability.reliabilityScore;
+      reliabilityLabel = reliability.reliabilityLabel;
+      reliabilityFlags = reliability.reliabilityFlags;
+
+      traitsJson = {
+        assessmentType,
+        assessmentTitle: getAssessmentConfig(assessmentType).title,
+        traits,
+        mainTraits,
+        additionalParameters,
+        roleFit,
+        managementAdvice,
+        topTraits: summary.topTraits,
+        weakTraits: summary.weakTraits,
+        reliabilityFlags,
+        duplicatedFromAssessmentId: source.id,
+        duplicatedAt: new Date().toISOString()
+      };
+    }
 
     const copiedName = `${source.respondentName || "Anonimo"} - copia test`;
     const copiedCompany = source.candidateCompany
@@ -2616,20 +3723,7 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
         roleComment: summary.roleComment,
         reliabilityScore,
         reliabilityLabel,
-        traitsJson: {
-          assessmentType,
-          assessmentTitle: getAssessmentConfig(assessmentType).title,
-          traits,
-          mainTraits,
-          additionalParameters,
-          roleFit,
-          managementAdvice,
-          topTraits: summary.topTraits,
-          weakTraits: summary.weakTraits,
-          reliabilityFlags,
-          duplicatedFromAssessmentId: source.id,
-          duplicatedAt: new Date().toISOString()
-        },
+        traitsJson,
         answersJson: answers,
         expandedReportJson: null,
         expandedReportGeneratedAt: null,
@@ -2639,6 +3733,8 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
     });
 
     if (req.body.generateAi === "yes") {
+      const normalizedForAi = getNormalizedAnalysis(traitsJson, requestedRole);
+
       startExpandedReportJob({
         assessmentId: duplicated.id,
         companyName: req.session.admin.organizationName,
@@ -2651,7 +3747,7 @@ app.post("/admin/:id/duplicate-test", requireAdmin, requireSuperAdmin, async (re
           roleFit,
           managementAdvice
         },
-        traits,
+        traits: normalizedForAi.traits || traits,
         reliabilityScore,
         reliabilityLabel,
         reliabilityFlags,
@@ -2692,12 +3788,16 @@ function buildEditableWordHtml({ assessment, normalized, expanded }) {
   const title = assessment.result?.traitsJson?.assessmentTitle || getAssessmentConfig(assessment.assessmentType).title;
   const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
   const traits = Array.isArray(expanded?.traits) ? expanded.traits : [];
+  const executiveAssessmentRole = isExecutiveAssessmentRole(
+    assessment?.requestedRole,
+    normalized?.assessmentType || assessment?.assessmentType || "zpi_hr"
+  );
 
   const traitHtml = traits.map((trait) => {
     const title = trait.displayName || trait.name || "Tratto";
     const description = trait.description ? `<p><em>(${escapeHtml(trait.description)})</em></p>` : "";
     const remedies = trait.showRemedies !== false ? `<p><strong>Rimedi pratici:</strong> ${escapeHtml(trait.improvementPlan || "-")}</p>` : "";
-    const action = trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
+    const action = !executiveAssessmentRole && trait.showSkillAction !== false ? `<p><strong>Come gestirlo nella pratica:</strong> ${escapeHtml(trait.skillAction || trait.teamLeverage || "-")}</p>` : "";
 
     return `
       <h2>${escapeHtml(title)}</h2>
@@ -2827,10 +3927,14 @@ function htmlToPlainText(html) {
   return decodeBasicHtmlEntities(String(html || "")
     .replace(/<\s*style[\s\S]*?<\s*\/\s*style\s*>/gi, " ")
     .replace(/<\s*script[\s\S]*?<\s*\/\s*script\s*>/gi, " ")
-    .replace(/<\s*\/\s*(p|div|h1|h2|h3|h4|li|tr)\s*>/gi, "\n\n")
+    .replace(/<\s*(h1|h2|h3|h4)\b[^>]*>/gi, "\n\n")
+    .replace(/<\s*\/\s*(h1|h2|h3|h4)\s*>/gi, "\n\n")
+    .replace(/<\s*(p|div|li|tr)\b[^>]*>/gi, "\n")
+    .replace(/<\s*\/\s*(p|div|li|tr)\s*>/gi, "\n\n")
     .replace(/<\s*br\s*\/?\s*>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
     .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .replace(/[ \t]{2,}/g, " ")
     .trim());
@@ -2916,18 +4020,18 @@ function extractValidatedWordPlainText(revision) {
   try {
     if (fileName.endsWith(".docx") || buffer.slice(0, 2).toString("utf8") === "PK") {
       const text = extractDocxPlainText(buffer);
-      if (text) return text;
+      if (text) return cleanValidatedReportPlainText(text);
     }
 
     const utf8Text = buffer.toString("utf8");
 
     if (/<html|<body|<p|<h1|<h2/i.test(utf8Text)) {
-      return htmlToPlainText(utf8Text);
+      return cleanValidatedReportPlainText(htmlToPlainText(utf8Text));
     }
 
     const latinText = buffer.toString("latin1");
     if (/<html|<body|<p|<h1|<h2/i.test(latinText)) {
-      return htmlToPlainText(latinText);
+      return cleanValidatedReportPlainText(htmlToPlainText(latinText));
     }
 
     return "";
@@ -3097,7 +4201,38 @@ app.get("/admin/:id/word", requireAdmin, requireSuperAdmin, async (req, res) => 
 
   res.setHeader("Content-Type", "application/msword; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename=report-${assessment.id}.doc`);
-  res.send(html);
+  res.send(normalizePdfVisibleText(html));
+});
+
+
+app.post("/admin/:id/validate-ai", requireAdmin, requireSuperAdmin, async (req, res) => {
+  try {
+    const assessment = await prisma.assessment.findFirst({
+      where: {
+        id: req.params.id,
+        organizationId: req.session.admin.organizationId
+      },
+      include: { result: true }
+    });
+
+    if (!assessment || !assessment.result) {
+      return res.status(404).send("Assessment non trovato");
+    }
+
+    await prisma.assessmentResult.update({
+      where: { id: assessment.result.id },
+      data: {
+        isValidated: true,
+        validatedAt: new Date(),
+        validatedById: req.session.admin.id
+      }
+    });
+
+    return res.redirect(`/admin/${assessment.id}`);
+  } catch (error) {
+    console.error("Errore validazione relazione AI:", error);
+    return res.status(500).send("Errore durante la validazione della relazione AI.");
+  }
 });
 
 app.post("/admin/:id/upload-validated-report", requireAdmin, requireSuperAdmin, async (req, res) => {
@@ -3193,6 +4328,46 @@ app.post("/admin/:id/unvalidate-report", requireAdmin, requireSuperAdmin, async 
   res.redirect(`/admin/${assessment.id}`);
 });
 
+
+function buildDimensionDiagnostics({ normalized, answers, assessmentType = "zpi_hr" }) {
+  const config = getAssessmentConfig(assessmentType);
+  const questionByKey = new Map(config.questions.map((question) => [question.key, question]));
+  const dimensions = [
+    ...(Array.isArray(normalized?.mainTraits) ? normalized.mainTraits : []),
+    ...(Array.isArray(normalized?.additionalParameters) ? normalized.additionalParameters : [])
+  ];
+
+  return dimensions.map((dimension) => {
+    const items = (Array.isArray(dimension?.items) ? dimension.items : []).map((item) => {
+      const question = questionByKey.get(item.questionKey) || null;
+      return {
+        questionKey: item.questionKey,
+        questionId: item.questionId,
+        text: question?.text || "",
+        sourceTrait: item.sourceTrait || question?.trait || "-",
+        answer: item.answer || answers?.[item.questionKey] || "-",
+        answerLabel: answerLabel(item.answer || answers?.[item.questionKey], question),
+        reverse: !!item.reverse,
+        legacyReverse: !!item.legacyReverse,
+        value: Number(item.value || 0),
+        reviewStatus: item.reviewStatus || null,
+        proposedDimension: item.proposedDimension || null,
+        subDimension: item.subDimension || null
+      };
+    });
+
+    return {
+      name: normalizeDimensionNameForDisplay(dimension?.name),
+      displayName: displayDimensionName(dimension?.name),
+      category: dimension?.category,
+      score: Number(dimension?.score || 0),
+      chartScore: chartScore(dimension?.score || 0),
+      questionCount: Number(dimension?.questionCount || items.length || 0),
+      items
+    };
+  });
+}
+
 app.get("/admin/:id", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
     where: {
@@ -3256,6 +4431,11 @@ app.get("/admin/:id", requireAdmin, async (req, res) => {
       traits: normalized.traits.map(withDisplayMeta),
       mainTraits: normalized.mainTraits.map(withDisplayMeta),
       additionalParameters: normalized.additionalParameters.map(withDisplayMeta),
+      dimensionDiagnostics: buildDimensionDiagnostics({
+        normalized,
+        answers: assessment.result?.answersJson || {},
+        assessmentType
+      }),
       expandedReport: expanded,
       isValidated: !!assessment.result?.isValidated,
       validatedAt: assessment.result?.validatedAt || null,
@@ -3307,106 +4487,359 @@ function stripLeadingDefinitionSentence(text, description = "") {
   return value || String(text || "").trim();
 }
 
-function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
-  if (!expandedReportJson || typeof expandedReportJson !== "object") {
-    return expandedReportJson;
+
+function stressFallbackExpandedText(chartValue) {
+  const value = Number(chartValue || 0);
+
+  if (value >= 70) {
+    return "Il dato indica una possibile gestione esterna della pressione: la persona può apparire in equilibrio, ma potrebbe aver accettato compromessi o mantenere sotto controllo una situazione che non affronta fino in fondo. La lettura va verificata con esempi concreti, distinguendo tra reale serenità e mantenimento dell’equilibrio.";
   }
 
+  if (value >= 30) {
+    return "La persona gestisce efficacemente eventuali situazioni di stress o pressione. Il dato suggerisce una condizione complessivamente serena: anche se sono presenti impegni, richieste o qualche fonte di tensione, tende a mantenere lucidità e continuità operativa.";
+  }
+
+  if (value >= 0) {
+    return "Può esserci una situazione o una persona che ostacola la persona e assorbe parte della sua attenzione. Questo può drenare energia, buonumore e continuità operativa, soprattutto se il nodo non viene chiarito con esempi concreti.";
+  }
+
+  if (value >= -30) {
+    return "Sono presenti situazioni di conflitto o influenze negative che possono incidere sul modo di lavorare. Possono emergere alti e bassi, cali di motivazione o riprese discontinue, soprattutto quando la persona è esposta alla fonte del contrasto.";
+  }
+
+  if (value >= -70) {
+    return "La persona può vivere una forte condizione di stress legata a una o più situazioni conflittuali. Questo può tradursi in errori, distrazioni e perdita di continuità, per cui il dato va approfondito con attenzione e senza letture generiche.";
+  }
+
+  return "Il dato suggerisce agitazione marcata legata a una situazione conflittuale o a pressioni significative. La lettura richiede confronto diretto e osservazione concreta prima di trarre conclusioni operative.";
+}
+
+function stressFallbackImprovementPlan(chartValue) {
+  const value = Number(chartValue || 0);
+
+  if (value >= 30 && value < 70) {
+    return "Valorizzare la capacità di gestione della pressione mantenendo priorità chiare e condizioni operative ordinate, senza trattare il dato come una criticità.";
+  }
+
+  if (value >= 70) {
+    return "Verificare se esistono compromessi, situazioni sospese o relazioni non affrontate che la persona mantiene sotto controllo senza risolvere. Usare domande concrete, non interpretazioni generiche.";
+  }
+
+  return "Individuare con esempi concreti le situazioni o le persone che assorbono attenzione, poi trasformare il nodo in azioni semplici: chiarimento, priorità scritte, tempi realistici e confronto tempestivo.";
+}
+
+function stressFallbackSkillAction(chartValue) {
+  const value = Number(chartValue || 0);
+
+  if (value >= 30 && value < 70) {
+    return "Mantenere un contesto chiaro e ordinato, perché la persona tende già a gestire efficacemente eventuali pressioni.";
+  }
+
+  if (value >= 70) {
+    return "Aprire un confronto prudente su eventuali situazioni mantenute in equilibrio ma non affrontate, chiedendo fatti, esempi e conseguenze pratiche.";
+  }
+
+  return "Ridurre ambiguità e fonti di pressione non chiarite, verificando cosa assorbe attenzione e quali passaggi pratici possono liberare continuità operativa.";
+}
+
+
+
+function dimensionFallbackExpandedText(displayName, chartValue) {
+  const value = Number(chartValue || 0);
+  const low = value < 30;
+  const high = value >= 60;
+
+  const templates = {
+    "Organizzazione e pianificazione": high
+      ? "La persona mostra una buona capacità di mettere ordine nel lavoro, programmare attività e mantenere una direzione operativa. La continuità va comunque verificata nei fatti, soprattutto quando aumentano urgenze e richieste contemporanee."
+      : "La gestione di ordine, tempi e priorità va presidiata con attenzione. Nel lavoro può servire una struttura più chiara per evitare dispersione, rinvii o passaggi non chiusi.",
+    "Automotivazione": high
+      ? "La spinta personale verso il risultato appare presente e può sostenere iniziativa, energia e desiderio di riuscire. Va collegata a obiettivi concreti per verificare continuità nel tempo."
+      : "La spinta interna può dipendere dal contesto, dal riconoscimento e dalla vicinanza di un referente. È utile verificare come la persona si attiva quando mancano stimoli esterni.",
+    "Autodisciplina / affidabilità": high
+      ? "La continuità esecutiva appare solida: la persona tende a dare peso agli accordi, chiudere i compiti affidati e sostenere le responsabilità operative. Il dato va confermato osservando puntualità, rispetto delle consegne e cura dei dettagli."
+      : "La continuità esecutiva va seguita. La persona può avviare attività o accettare impegni, ma rischiare di lasciare sospesi se mancano scadenze, controllo o responsabilità ben definite.",
+    "Sicurezza": high
+      ? "Le convinzioni appaiono strutturate e la persona può sostenere il proprio punto di vista con decisione. È utile verificare che questa sicurezza resti concreta, aggiornata ai dati e non diventi rigidità."
+      : "Le convinzioni possono non essere sempre stabili. La persona può cercare conferme esterne o modificare posizione con facilità, soprattutto davanti a interlocutori più decisi o situazioni nuove.",
+    "Dinamismo": high
+      ? "L’energia di azione appare presente: la persona può avviare attività con prontezza e mantenere ritmo operativo. Va verificato che questa energia resti collegata a priorità e chiusura dei compiti."
+      : "L’attivazione può essere discontinua. La persona può rendere meglio con compiti chiari, tempi definiti e avvii guidati, soprattutto nei momenti più movimentati.",
+    "Flessibilità comunicativa": high
+      ? "La determinazione comunicativa appare marcata. La persona può sostenere una posizione, affrontare il confronto e orientare l’interlocutore verso il risultato, purché mantenga ascolto e misura."
+      : "La determinazione comunicativa può essere fragile. Nel lavoro può servire supporto per chiarire richieste, sostenere una posizione e gestire conversazioni scomode senza rinviare il confronto.",
+    "Responsabilità": high
+      ? "La persona tende a sentirsi parte attiva nella gestione dei problemi e può cercare soluzioni invece di limitarsi a segnalare ostacoli. La continuità va verificata quando emergono errori, imprevisti o feedback critici."
+      : "La presa in carico va rafforzata. La persona può reagire alle situazioni più che sentirsi causa della soluzione, soprattutto quando il problema coinvolge vincoli o decisioni esterne.",
+    "Ascolto attivo": high
+      ? "La capacità di comprendere punti di vista diversi appare utile nel confronto. Può aiutare a leggere persone e situazioni prima di intervenire, riducendo giudizi affrettati."
+      : "La comprensione dei punti di vista diversi va allenata. La persona può ascoltare, ma rischiare di filtrare alcune situazioni attraverso la propria lettura iniziale.",
+    "Comprensione": high
+      ? "La sensibilità relazionale appare presente e può aiutare a cogliere bisogni, stati d’animo e segnali pratici nelle interazioni quotidiane."
+      : "La componente empatica può risultare discontinua, soprattutto in presenza di tensione o disaccordo. È utile verificare tono, accoglienza e capacità di leggere l’impatto relazionale delle risposte.",
+    "Espansività": high
+      ? "L’approccio relazionale appare aperto e visibile. La persona può creare contatto con facilità, purché la relazione resti funzionale al lavoro e non tolga spazio alla chiusura delle attività."
+      : "L’approccio può essere selettivo o riservato. La persona può interagire quando serve, ma potrebbe non prendere spontaneamente iniziativa relazionale in contesti nuovi.",
+    "Resistenza al cambiamento": high
+      ? "Il cambiamento può essere vissuto con cautela o resistenza. È utile verificare come la persona reagisce quando deve modificare procedure, abitudini o punti di vista consolidati."
+      : "La disponibilità al cambiamento appare possibile, ma va governata con criteri chiari per evitare adattamenti troppo rapidi o cambi di direzione non sufficientemente valutati.",
+    "Leadership naturale": high
+      ? "La tendenza a guidare e diventare punto di riferimento appare presente. Va verificato se questa spinta produce orientamento utile, ascolto e responsabilizzazione del gruppo."
+      : "La guida spontanea degli altri non appare dominante. La persona può contribuire bene su compiti definiti, ma potrebbe non prendere naturalmente il ruolo di riferimento.",
+    "Management": high
+      ? "La capacità di organizzare persone, attività e responsabilità appare utilizzabile. Va verificata nella pratica attraverso assegnazione di compiti, controllo degli avanzamenti e chiusura delle attività."
+      : "La capacità di coordinare persone, attività e responsabilità va costruita con gradualità. Nel lavoro può servire una struttura chiara prima di affidare compiti di gestione più ampi.",
+    "Cooperazione": high
+      ? "La collaborazione appare una risorsa: la persona può condividere informazioni, lavorare con continuità con gli altri e contribuire a un clima operativo più ordinato."
+      : "La collaborazione può dipendere molto da chiarezza dei ruoli e qualità dello scambio. È utile verificare continuità nella condivisione delle informazioni e disponibilità al confronto.",
+    "Principi": high
+      ? "Il riferimento a regole, correttezza e comportamenti professionali appare presente. Va verificato che resti concreto e funzionale, soprattutto quando servono adattamenti operativi."
+      : "Il rapporto con regole, criteri e comportamenti professionali va osservato nel lavoro quotidiano. È utile verificare coerenza tra dichiarazioni, azioni, rispetto degli accordi e gestione delle eccezioni.",
+    "Vendite": high
+      ? "La predisposizione a proporre, influenzare e sostenere una posizione appare utilizzabile. Va verificato che la spinta persuasiva resti coerente con ruolo, contesto e qualità della relazione."
+      : "La proposta, la negoziazione o la capacità di sostenere una posizione possono richiedere supporto. La persona potrebbe evitare di insistere, gestire obiezioni o chiedere una decisione.",
+    "Gestione priorità": high
+      ? "La gestione delle priorità appare presente: la persona può distinguere ciò che richiede attenzione immediata da ciò che può essere pianificato, soprattutto se gli obiettivi sono chiari."
+      : "La gestione delle priorità va presidiata con strumenti semplici. In presenza di molte richieste, la persona può avere bisogno di criteri espliciti per scegliere cosa fare prima.",
+    "Capacità di gestione finanziaria": high
+      ? "La gestione pratica delle risorse economiche appare orientata a continuità e futuro. Nel lavoro può aiutare a considerare costi, sprechi, ritorno delle attività e sostenibilità delle scelte."
+      : "La gestione pratica delle risorse economiche può essere poco strutturata. Nel lavoro può servire supporto quando le decisioni hanno impatto su costi, budget, materiali o ritorno delle attività."
+  };
+
+  return templates[displayName] || (low
+    ? "Il dato va verificato nel lavoro quotidiano con esempi concreti, perché può indicare un’area da presidiare con obiettivi chiari, feedback e osservazione sul campo."
+    : "Il dato offre una traccia utile di lettura operativa e va collegato a comportamenti osservabili, risultati concreti e confronto nel colloquio.");
+}
+
+function dimensionFallbackImprovementPlan(displayName, chartValue) {
+  const value = Number(chartValue || 0);
+  if (value >= 40) {
+    return "Valorizzare il tratto con responsabilità coerenti, obiettivi concreti e verifica periodica dell’applicazione nel lavoro reale.";
+  }
+
+  const templates = {
+    "Management": "Partire da micro-responsabilità di coordinamento: una consegna, un passaggio informativo, un controllo avanzamento o una piccola attività da organizzare.",
+    "Principi": "Usare regole chiare, esempi concreti e confronto su casi reali per verificare coerenza tra comportamento atteso e comportamento osservato.",
+    "Gestione priorità": "Definire ogni giorno poche priorità scritte, distinguendo urgenza, importanza, scadenza e impatto operativo.",
+    "Vendite": "Allenare schemi semplici di proposta: bisogno, beneficio, prova concreta e richiesta finale, partendo da situazioni a basso rischio.",
+    "Sicurezza": "Rafforzare il criterio decisionale con esempi, dati e regole pratiche su quando procedere e quando chiedere conferma.",
+    "Responsabilità": "Chiedere sempre una proposta di azione insieme alla segnalazione del problema: cosa dipende da sé, cosa fare subito e cosa verificare dopo.",
+    "Ascolto attivo": "Allenare riformulazione, domande di chiarimento e distinzione tra fatti, interpretazioni e richieste dell’interlocutore.",
+    "Comprensione": "Lavorare su segnali osservabili: tono, accoglienza, domande aperte, conferma di comprensione e gestione del disaccordo.",
+    "Autodisciplina / affidabilità": "Usare consegne scritte, scadenze ravvicinate e verifica della chiusura effettiva delle attività, non solo dell’avvio."
+  };
+
+  return templates[displayName] || "Collegare il miglioramento a obiettivi misurabili, tappe brevi, feedback ravvicinati e comportamenti osservabili nel lavoro quotidiano.";
+}
+
+function dimensionFallbackSkillAction(displayName, chartValue) {
+  const value = Number(chartValue || 0);
+  if (value >= 50) {
+    return "Valorizzare il tratto assegnando responsabilità coerenti e verificando che resti utile al ruolo e al contesto.";
+  }
+
+  const templates = {
+    "Management": "Affidare responsabilità di coordinamento solo in modo graduale, con confini chiari, referente definito e verifica degli avanzamenti.",
+    "Principi": "Confrontare il comportamento con esempi pratici, regole condivise e riscontri osservabili, evitando valutazioni generiche.",
+    "Gestione priorità": "Dare criteri espliciti su cosa viene prima, cosa può attendere e quale risultato deve essere chiuso entro la giornata.",
+    "Vendite": "Non esporre subito la persona a negoziazioni delicate: preparare frasi guida, obiezioni ricorrenti e confini della proposta.",
+    "Sicurezza": "Aiutare la persona a decidere usando criteri concreti e verificare dopo l’azione se la scelta ha prodotto il risultato atteso.",
+    "Responsabilità": "Gestire con compiti chiari, autonomia delimitata e richiesta costante di una proposta operativa prima di dare la soluzione.",
+    "Ascolto attivo": "Osservare riunioni e interazioni, chiedendo alla persona di sintetizzare il punto di vista altrui prima di rispondere.",
+    "Comprensione": "Affiancare nelle conversazioni delicate e dare feedback immediati su tono, tatto e capacità di leggere il bisogno dell’altro.",
+    "Autodisciplina / affidabilità": "Presidiare con checklist, scadenze brevi e conferma di chiusura, soprattutto sulle attività ripetitive o meno visibili."
+  };
+
+  return templates[displayName] || "Dare obiettivi concreti, visibili e ravvicinati, verificando il comportamento nel lavoro reale con esempi e riscontri periodici.";
+}
+
+function firstNonEmptyAiField(source, fieldNames = []) {
+  for (const fieldName of fieldNames) {
+    const value = source?.[fieldName];
+
+    if (typeof value === "string" && value.trim() && !isPlaceholderText(value)) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function expandedTraitTextFromAi(trait) {
+  return firstNonEmptyAiField(trait, [
+    "expandedText",
+    "analysis",
+    "text",
+    "descriptionText",
+    "traitAnalysis"
+  ]);
+}
+
+function improvementPlanFromAi(trait) {
+  return firstNonEmptyAiField(trait, [
+    "improvementPlan",
+    "practicalRemedies",
+    "remedies",
+    "remedy",
+    "actionPlan",
+    "developmentPlan"
+  ]);
+}
+
+function skillActionFromAi(trait) {
+  return firstNonEmptyAiField(trait, [
+    "skillAction",
+    "teamLeverage",
+    "managementTips",
+    "managementAdvice",
+    "practicalManagement",
+    "managerAction"
+  ]);
+}
+
+function applyClientOutputRulesToExpandedReport(expandedReportJson, normalized) {
+  if (!expandedReportJson || typeof expandedReportJson !== "object") {
+    expandedReportJson = { generalSummary: "", generalManagementAdvice: "", traits: [] };
+  }
+
+  const directionalExecutive = isDirectionalExecutiveNormalized(normalized);
   const shouldAddResponsibilityNote = shouldAddResponsibilityOpinionNote(normalized);
-  const normalizedDimensions = Array.isArray(normalized?.traits) ? normalized.traits : [];
-  const cleanedGeneralSummary = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const cleanedGeneralSummaryBase = stripForbiddenGeneralRelationPhrases(expandedReportJson.generalSummary || "");
+  const cleanedGeneralSummary = directionalExecutive
+    ? stripExecutiveRoleFitPhrases(cleanedGeneralSummaryBase)
+    : cleanedGeneralSummaryBase;
+  const aiTraits = Array.isArray(expandedReportJson.traits) ? expandedReportJson.traits : [];
 
-  const traits = Array.isArray(expandedReportJson.traits)
-    ? expandedReportJson.traits.map((trait) => {
-        const displayName = displayDimensionName(trait?.name);
-        const dimension = findDimensionByDisplayName(normalizedDimensions, trait?.name || displayName);
-        const value = chartScore(dimension?.score ?? trait?.score ?? 0);
-        const description = dimensionDescription(trait?.name || displayName);
+  const aiTraitByName = new Map();
+  aiTraits.forEach((trait) => {
+    const keys = [
+      dimensionAiMatchKey(trait?.canonicalName || trait?.name),
+      dimensionAiMatchKey(trait?.name),
+      dimensionAiMatchKey(trait?.displayName)
+    ].filter(Boolean);
 
-        let expandedText = stripLeadingDefinitionSentence(
-          String(trait.expandedText || "").trim(),
-          description
-        );
+    keys.forEach((key) => {
+      if (key && !aiTraitByName.has(key)) aiTraitByName.set(key, trait);
+    });
+  });
 
-        if (displayName === "AttendibilitÃ ") {
-          const truthfulness = truthfulnessStatusFromScore(value);
-          const statusText = `${truthfulness.label}: ${truthfulness.text}`;
-          const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
+  const allApprovedDimensions = [
+    ...(Array.isArray(normalized?.mainTraits) ? normalized.mainTraits : []),
+    ...(Array.isArray(normalized?.additionalParameters) ? normalized.additionalParameters : [])
+  ];
 
-          expandedText = stripLeadingTruthfulnessStatus(expandedText);
+  const traits = allApprovedDimensions.map((dimension) => {
+    const canonicalName = normalizeDimensionNameForDisplay(dimension?.name);
+    const displayName = displayDimensionName(canonicalName);
+    const aiMatchKey = dimensionAiMatchKey(canonicalName);
+    const aiTrait = aiTraitByName.get(aiMatchKey) || {};
+    const value = chartScore(dimension?.score ?? 0);
+    const description = dimensionDescription(canonicalName);
+    const evoGuide = evoGuideForDimension(displayName, dimension?.score ?? 0);
+    const truthfulness = displayName === "Attendibilità"
+      ? truthfulnessStatusFromScore(value)
+      : null;
 
-          // Evita incoerenze verbali tipo:
-          // "AttendibilitÃ  FORZATA..." + "l'indice resta adeguato".
-          // La lettura deve rimanere prudente e utilizzabile, non "adeguata" in senso pieno.
-          expandedText = expandedText
-            .replace(/L[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "Lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/L[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "Lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/l[â€™']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "lâ€™indice resta utilizzabile, ma richiede una lettura prudente.")
-            .replace(/l[â€™']indice di coerenza delle risposte Ã¨ adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "lâ€™indice resta utilizzabile, ma richiede una lettura prudente.");
+    let expandedText = stripLeadingDefinitionSentence(
+      expandedTraitTextFromAi(aiTrait),
+      description
+    );
 
-          if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
-            expandedText = expandedText
-              ? `${statusText} ${theoreticalNote} ${expandedText}`
-              : `${statusText} ${theoreticalNote}`;
-          } else {
-            expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
-          }
-        }
+    if (!expandedText) {
+      if (displayName === "Attendibilità" && truthfulness) {
+        expandedText = truthfulnessPdfStatusText(truthfulness);
+      } else if (canonicalName === "Stress" || displayName === "Gestione pressioni / Stress") {
+        expandedText = stressFallbackExpandedText(value);
+      } else if (evoGuide?.interpretation) {
+        expandedText = `${dimensionFallbackExpandedText(displayName, value)} Lettura specifica: ${evoGuide.interpretation}.`;
+      } else {
+        expandedText = dimensionFallbackExpandedText(displayName, value);
+      }
+    }
 
-        if (displayName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
-          expandedText = expandedText
-            ? `${expandedText} ${normalized.securityTheory.text}`
-            : normalized.securityTheory.text;
-        }
+    if (displayName === "Attendibilità") {
+      const statusText = truthfulnessPdfStatusText(truthfulness);
+      const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
 
-        if (
-          (displayName === "Sicurezza" || displayName === "Resistenza al cambiamento") &&
-          normalized?.convictionChange &&
-          !expandedText.includes(normalized.convictionChange.label)
-        ) {
-          expandedText = expandedText
-            ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
-            : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
-        }
+      expandedText = stripLeadingTruthfulnessStatus(expandedText);
+      expandedText = expandedText
+        .replace(/L[’']indice di coerenza complessivo resta adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
+        .replace(/L[’']indice di coerenza delle risposte è adeguato, quindi le indicazioni sono utilizzabili\.?/gi, "L’indice resta utilizzabile, ma richiede una lettura prudente.")
+        .replace(/\d{1,3}\s*\/\s*100/g, "");
 
-        if (shouldAddResponsibilityNote && displayName === "ResponsabilitÃ ") {
-          const note = responsibilityOpinionNote();
-          if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
-            expandedText = expandedText ? `${expandedText} ${note}` : note;
-          }
-        }
+      if (theoreticalNote && !/profilo teorico/i.test(expandedText)) {
+        expandedText = expandedText ? `${statusText} ${theoreticalNote} ${expandedText}` : `${statusText} ${theoreticalNote}`;
+      } else {
+        expandedText = expandedText ? `${statusText} ${expandedText}` : statusText;
+      }
+    }
 
-        return {
-          ...trait,
-          displayName,
-          description,
-          chartScore: value,
-          showRemedies: shouldShowRemediesForChartValue(value),
-          showSkillAction: shouldShowSkillActionForChartValue(value),
-          expandedText
-        };
-      })
-    : [];
+    if (displayName === "Sicurezza" && normalized?.securityTheory && !/sicurezza teorica/i.test(expandedText)) {
+      expandedText = expandedText ? `${expandedText} ${normalized.securityTheory.text}` : normalized.securityTheory.text;
+    }
 
-  return {
+    if (
+      (displayName === "Sicurezza" || displayName === "Resistenza al cambiamento") &&
+      normalized?.convictionChange &&
+      !expandedText.includes(normalized.convictionChange.label)
+    ) {
+      expandedText = expandedText
+        ? `${expandedText} ${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`
+        : `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey}`;
+    }
+
+    if (shouldAddResponsibilityNote && displayName === "Responsabilità") {
+      const note = responsibilityOpinionNote();
+      if (!expandedText.includes("opinione diversa") && !expandedText.includes("interlocutore")) {
+        expandedText = expandedText ? `${expandedText} ${note}` : note;
+      }
+    }
+
+    const fallbackImprovementPlan = displayName === "Gestione pressioni / Stress"
+      ? stressFallbackImprovementPlan(value)
+      : dimensionFallbackImprovementPlan(displayName, value);
+
+    const fallbackSkillAction = displayName === "Gestione pressioni / Stress"
+      ? stressFallbackSkillAction(value)
+      : dimensionFallbackSkillAction(displayName, value);
+
+    return {
+      ...aiTrait,
+      name: canonicalName,
+      displayName,
+      description,
+      chartScore: value,
+      score: dimension?.score ?? 0,
+      showRemedies: shouldShowRemediesForChartValue(value),
+      showSkillAction: !directionalExecutive && shouldShowSkillActionForChartValue(value),
+      expandedText,
+      improvementPlan: improvementPlanFromAi(aiTrait) || fallbackImprovementPlan,
+      skillAction: skillActionFromAi(aiTrait) || fallbackSkillAction
+    };
+  });
+
+  return normalizeTextPayload({
     ...expandedReportJson,
     generalSummary: cleanedGeneralSummary || expandedReportJson.generalSummary,
     traits
-  };
+  });
 }
 
 function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
-  if (expanded?.generalSummary) return stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+  const assessmentType = normalized?.assessmentType || assessment?.assessmentType || "zpi_hr";
+  const executiveAssessmentRole = isExecutiveAssessmentRole(assessment?.requestedRole, assessmentType);
+
+  if (expanded?.generalSummary) {
+    const generalSummary = stripForbiddenGeneralRelationPhrases(expanded.generalSummary);
+    return executiveAssessmentRole ? stripExecutiveRoleFitPhrases(generalSummary) : generalSummary;
+  }
 
   const topTraits = Array.isArray(normalized.topTraits) ? normalized.topTraits.slice(0, 3) : [];
   const weakTraits = Array.isArray(normalized.weakTraits) ? normalized.weakTraits.slice(0, 2) : [];
   const topText = topTraits.length ? topTraits.join(", ") : "alcuni punti utili al ruolo";
   const weakText = weakTraits.length ? weakTraits.join(", ") : "alcuni comportamenti da osservare meglio nel lavoro";
-  const roleFitText = normalized?.roleFit?.score != null
-    ? `CompatibilitÃ  con il ruolo ricoperto: ${normalized.roleFit.score}%. `
-    : "";
-  const reliabilityText = assessment.result?.reliabilityScore != null
-    ? `Indice di coerenza delle risposte: ${assessment.result.reliabilityScore}/100. `
+  const roleFitText = normalized?.roleFit?.score != null && !executiveAssessmentRole
+    ? `La compatibilità con il ruolo ricoperto è pari al ${normalized.roleFit.score}%. `
     : "";
   const theoreticalNote = theoreticalProfileNoteFromFlags(normalized?.reliabilityFlags || []);
   const theoreticalText = theoreticalNote ? `${theoreticalNote} ` : "";
@@ -3415,11 +4848,11 @@ function buildPlainGeneralRelation({ assessment, normalized, expanded }) {
     ? `${normalized.convictionChange.label}: ${normalized.convictionChange.interpretation} Chiave di sblocco: ${normalized.convictionChange.unlockKey} `
     : "";
 
-  return `${roleFitText}${reliabilityText}${theoreticalText}${securityTheoryText}${convictionChangeText}Il profilo mostra alcuni elementi che possono essere utili nella gestione quotidiana del lavoro, in particolare ${topText}. Questi aspetti possono aiutare la risorsa a dare continuitÃ  al proprio contributo, soprattutto se inserita in un contesto con obiettivi chiari e responsabilitÃ  ben definite.
+  return `${roleFitText}${theoreticalText}${securityTheoryText}${convictionChangeText}Nel modo in cui affronti il lavoro emergono alcuni elementi che possono aiutarti a dare continuità e struttura, in particolare ${topText}. Quando hai obiettivi chiari e responsabilità ben definite, puoi riuscire a trasformare meglio queste caratteristiche in risultati concreti.
 
-Le aree da seguire con maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nellâ€™osservazione sul campo. In una PMI Ã¨ importante tradurre questi elementi in indicazioni semplici: cosa affidare alla persona, quanto controllo prevedere, quali prioritÃ  chiarire e in quali situazioni affiancarla.
+Le aree che meritano maggiore attenzione sono ${weakText}. Non vanno lette come un giudizio definitivo, ma come segnali pratici da verificare nel colloquio e nell’osservazione sul campo. In alcune situazioni potresti avere bisogno di priorità più chiare, maggiore confronto o un affiancamento più vicino per evitare dispersione e mantenere coerenza tra intenzioni e azioni.
 
-Questa valutazione Ã¨ indicativa e non deve essere usata come unico strumento per decidere inserimenti, promozioni o cambi di mansione. Il risultato va sempre confrontato con colloquio, esperienza reale, referenze interne e comportamento osservato nel lavoro.`;
+Questa valutazione non definisce chi sei e non sostituisce l’esperienza reale. Serve come prima traccia di lettura: va confrontata con esempi concreti, comportamenti osservati, colloquio e risultati nel lavoro quotidiano.`;
 }
 
 function drawSimpleSectionTitle(doc, title) {
@@ -3428,7 +4861,7 @@ function drawSimpleSectionTitle(doc, title) {
 }
 
 function writeParagraphs(doc, text) {
-  String(text || "-")
+  String(normalizePdfVisibleText(text) || "-")
     .split(/\n\s*\n/g)
     .map((part) => part.trim())
     .filter(Boolean)
@@ -3440,6 +4873,97 @@ function writeParagraphs(doc, text) {
       doc.moveDown(0.6);
     });
 }
+
+
+function cleanValidatedReportPlainText(text) {
+  return normalizePdfVisibleText(normalizeBrokenUtf8(text))
+    .replace(/Lattendibilità/g, "L’attendibilità")
+    .replace(/lapertura/g, "l’apertura")
+    .replace(/Lassetto/g, "L’assetto")
+    .replace(/Latteggiamento/g, "L’atteggiamento")
+    .replace(/lefficienza/g, "l’efficienza")
+    .replace(/limplementazione/g, "l’implementazione")
+    .replace(/dilogistica/gi, "di logistica")
+    .replace(/trattto/gi, "tratto")
+    .replace(/trattò/gi, "tratto")
+    .replace(/dominance/gi, "dominante")
+    .replace(/poich/gi, "poiché")
+    .replace(/criticit/gi, "criticità")
+    .replace(/realt/gi, "realtà")
+    .replace(/veridicit/gi, "veridicità")
+    .replace(/influenzabilit/gi, "influenzabilità")
+    .replace(/proattivit/gi, "proattività")
+    .replace(/reattivit/gi, "reattività")
+    .replace(/stabilit/gi, "stabilità")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function isValidatedReportHeading(line) {
+  const value = normalizePdfVisibleText(line).trim();
+  if (!value || value.length > 90) return false;
+
+  const knownHeadings = new Set([
+    "Human & Sport Performance",
+    "ZPI™ – Zenith Performance Index",
+    "Dati anagrafici",
+    "Relazione generale",
+    "Approfondimento dei tratti",
+    ...TRAIT_DIMENSIONS.map((name) => displayDimensionName(name)),
+    ...ADDITIONAL_PARAMETER_DIMENSIONS.map((name) => displayDimensionName(name))
+  ]);
+
+  if (knownHeadings.has(value)) return true;
+
+  return /^(Organizzazione|Automotivazione|Autodisciplina|Affidabilità|Sicurezza|Gestione pressioni|Stress|Dinamismo|Flessibilità|Responsabilità|Ascolto attivo|Comprensione|Espansività|Resistenza al cambiamento|Leadership naturale|Management|Cooperazione|Principi|Vendite|Gestione priorità|Capacità di gestione finanziaria|Attendibilità)$/i.test(value);
+}
+
+function writeValidatedReportText(doc, text) {
+  const normalizedText = cleanValidatedReportPlainText(text);
+  const blocks = String(normalizedText || "-")
+    .split(/\n\s*\n/g)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  blocks.forEach((block) => {
+    const oneLine = block.replace(/\s+/g, " ").trim();
+
+    if (isValidatedReportHeading(oneLine)) {
+      doc.moveDown(0.2);
+      doc.font("Helvetica-Bold").fontSize(14).fillColor("black").text(oneLine, {
+        align: "left",
+        lineGap: 3
+      });
+      doc.font("Helvetica").moveDown(0.35);
+      return;
+    }
+
+    const labelMatch = oneLine.match(/^(Rimedi pratici|Come gestirlo nella pratica|Nome|Email|Età|Azienda risorsa|Ruolo target|Data compilazione):\s*(.*)$/i);
+    if (labelMatch) {
+      doc.font("Helvetica-Bold").fontSize(11).fillColor("black").text(`${labelMatch[1]}: `, {
+        continued: !!labelMatch[2],
+        align: "left",
+        lineGap: 3
+      });
+      if (labelMatch[2]) {
+        doc.font("Helvetica").fontSize(11).text(labelMatch[2], {
+          align: "left",
+          lineGap: 3
+        });
+      }
+      doc.font("Helvetica").moveDown(0.55);
+      return;
+    }
+
+    doc.font("Helvetica").fontSize(11).fillColor("black").text(block, {
+      align: "left",
+      lineGap: 3
+    });
+    doc.moveDown(0.6);
+  });
+}
+
 
 app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   const assessment = await prisma.assessment.findFirst({
@@ -3481,10 +5005,10 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     ? extractValidatedWordPlainText(validatedRevision)
     : "";
 
-  const doc = new PDFDocument({
+  const doc = patchPdfTextNormalization(new PDFDocument({
     margin: 50,
     size: "A4"
-  });
+  }));
 
   res.setHeader("Content-Type", "application/pdf");
   res.setHeader(
@@ -3532,15 +5056,15 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
   drawSimpleSectionTitle(doc, "Relazione generale");
 
   if (validatedReportText) {
-    doc.fontSize(9).fillColor("#2f4b7c").text("Relazione validata da revisione Word caricata.", { align: "left" });
-    doc.moveDown(0.5);
-    writeParagraphs(doc, validatedReportText);
+    writeValidatedReportText(doc, validatedReportText);
   } else {
     const generalRelation = buildPlainGeneralRelation({ assessment, normalized, expanded });
     writeParagraphs(doc, generalRelation);
   }
 
-  if (roleFit?.score != null) {
+  const executiveAssessmentRole = isExecutiveAssessmentRole(assessment.requestedRole, assessmentType);
+
+  if (roleFit?.score != null && !executiveAssessmentRole) {
     doc.moveDown(0.1);
     doc.fontSize(12).fillColor("black").text(`CompatibilitÃ  con il ruolo ricoperto: ${roleFit.score}%`, {
       align: "left"
@@ -3548,10 +5072,12 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
     doc.moveDown(0.6);
   }
 
-  doc.moveDown(0.2);
-  doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
-  doc.moveDown(0.2);
-  writeParagraphs(doc, managementAdvice || "Gestire la risorsa con obiettivi chiari, prioritÃ  scritte e momenti di confronto periodici.");
+  if (!executiveAssessmentRole) {
+    doc.moveDown(0.2);
+    doc.fontSize(14).fillColor("black").text("Indicazione pratica per la gestione");
+    doc.moveDown(0.2);
+    writeParagraphs(doc, managementAdvice || "Gestire con obiettivi chiari, priorità scritte e momenti di confronto periodici.");
+  }
 
   doc.fillColor("black");
 
@@ -3587,7 +5113,7 @@ app.get("/admin/:id/pdf", requireAdmin, async (req, res) => {
           doc.moveDown(0.3);
         }
 
-        if (t.showSkillAction !== false) {
+        if (!executiveAssessmentRole && t.showSkillAction !== false) {
           doc.fontSize(11).text(
             `Come gestirlo nella pratica: ${t.skillAction || t.teamLeverage || "-"}`
           );
